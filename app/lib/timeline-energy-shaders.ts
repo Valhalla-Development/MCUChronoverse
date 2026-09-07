@@ -44,16 +44,19 @@ export const temporalPlasmaVertexShader = /* glsl */ `
     attribute vec3 aCentre;
     attribute vec3 aTangent;
     attribute float aDistance;
+    attribute float aNodeCoordinate;
     varying vec3 vSurface;
     varying vec3 vCentre;
     varying vec3 vTangent;
     varying float vDistance;
+    varying float vNodeCoordinate;
 
     void main() {
         vSurface = (modelMatrix * vec4(position, 1.0)).xyz;
         vCentre = (modelMatrix * vec4(aCentre, 1.0)).xyz;
         vTangent = mat3(modelMatrix) * aTangent;
         vDistance = aDistance;
+        vNodeCoordinate = aNodeCoordinate;
         gl_Position = projectionMatrix * viewMatrix * vec4(vSurface, 1.0);
     }
 `;
@@ -62,10 +65,12 @@ export const temporalPlasmaFragmentShader = /* glsl */ `
     uniform float uTime;
     uniform float uLength;
     uniform float uRadius;
+    uniform float uNodeSpacing;
     varying vec3 vSurface;
     varying vec3 vCentre;
     varying vec3 vTangent;
     varying float vDistance;
+    varying float vNodeCoordinate;
     ${energyNoise}
 
     void main() {
@@ -86,6 +91,8 @@ export const temporalPlasmaFragmentShader = /* glsl */ `
         float along = vDistance + dot(closest, tangent);
         float time = uTime;
         float heat = noise3(vec3(along * 2.8 - time * 0.22, time * 0.035, 4.7));
+        float nodeDistance = abs(fract(vNodeCoordinate + 0.5) - 0.5) * uNodeSpacing;
+        float nodeHeat = exp(-nodeDistance * nodeDistance * 28.0) * (0.65 + heat * 0.35);
 
         // Integrate a few depths through the proxy, rather than lighting its smooth surface.
         // The centreline and proxy geometry never move; only the density field evolves.
@@ -132,10 +139,11 @@ export const temporalPlasmaFragmentShader = /* glsl */ `
         vec3 emission = vec3(1.0, 0.91, 0.64) * hotShoulder * (0.55 + heat * 0.28);
         emission += vec3(1.0, 0.59, 0.12) * gold * (0.40 + heat * 0.22);
         emission += vec3(1.0, 0.22, 0.018) * orange * (0.10 + heat * 0.05);
-        emission += vec3(1.0, 0.26, 0.034) * plasma * 1.65;
+        emission += vec3(1.0, 0.26, 0.034) * plasma * (1.65 + nodeHeat * 0.3);
         emission += vec3(1.0, 0.37, 0.075) * filaments * 1.9;
         emission += vec3(1.0, 0.60, 0.23) * grains * 2.2;
         emission += vec3(0.065, 0.012, 0.002) * atmosphere * (0.65 + heat * 0.35);
+        emission += vec3(0.11, 0.039, 0.005) * nodeHeat * exp(-radius * radius * 32.0);
         float edgeFade = 1.0 - smoothstep(uRadius * 0.72, uRadius, radius);
         float endDistance = min(vDistance, uLength - vDistance);
         float endFade = smoothstep(0.0, min(0.18, uLength * 0.25), endDistance);

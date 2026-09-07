@@ -22,7 +22,6 @@ import {
     useState,
 } from "react";
 import {
-    AdditiveBlending,
     type Camera,
     CatmullRomCurve3,
     Color,
@@ -48,6 +47,7 @@ import {
 import { configureTextBuilder } from "troika-three-text";
 import type { TimelineEntry } from "../data/types";
 import { timelineNodePosition } from "../lib/timeline";
+import { createTimelineRingMaterial } from "../lib/timeline-ring-material";
 import { TimelineEnergy } from "./timeline-energy";
 
 // Troika's worker hydrates functions from strings, which strict production CSP deliberately blocks.
@@ -97,26 +97,17 @@ const NORMAL_OUTER_RING_GEOMETRY = new TorusGeometry(0.32, 0.012, 8, 48);
 const SELECTED_OUTER_RING_GEOMETRY = new TorusGeometry(0.45, 0.012, 8, 48);
 const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.24, 0.008, 8, 40);
 const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.34, 0.008, 8, 40);
-const NORMAL_OUTER_RING_MATERIAL = new MeshBasicMaterial({
-    blending: AdditiveBlending,
-    color: "#ffad52",
-    depthWrite: false,
+const NORMAL_OUTER_RING_MATERIAL = createTimelineRingMaterial({
+    colour: "#ffad52",
     opacity: 0.45,
-    transparent: true,
 });
-const SELECTED_OUTER_RING_MATERIAL = new MeshBasicMaterial({
-    blending: AdditiveBlending,
-    color: "#ffad52",
-    depthWrite: false,
+const SELECTED_OUTER_RING_MATERIAL = createTimelineRingMaterial({
+    colour: "#ffad52",
     opacity: 0.9,
-    transparent: true,
 });
-const INNER_RING_MATERIAL = new MeshBasicMaterial({
-    blending: AdditiveBlending,
-    color: "#ffe0a3",
-    depthWrite: false,
+const INNER_RING_MATERIAL = createTimelineRingMaterial({
+    colour: "#ffe0a3",
     opacity: 0.32,
-    transparent: true,
 });
 const NODE_SPHERE_MATERIALS = Object.fromEntries(
     CONTENT_TYPES.map((contentType) => [
@@ -762,10 +753,15 @@ function InstancedNodeSphereGroup({
 
 interface InstancedTimelineRingsProps {
     instances: readonly TimelineNodeInstance[];
+    reducedMotion: boolean;
     selected?: TimelineNodeInstance;
 }
 
-function InstancedTimelineRings({ instances, selected }: InstancedTimelineRingsProps) {
+function InstancedTimelineRings({
+    instances,
+    reducedMotion,
+    selected,
+}: InstancedTimelineRingsProps) {
     const normalOuterRef = useRef<InstancedMesh>(null);
     const normalInnerRef = useRef<InstancedMesh>(null);
     const selectedOuterRef = useRef<InstancedMesh>(null);
@@ -789,6 +785,10 @@ function InstancedTimelineRings({ instances, selected }: InstancedTimelineRingsP
     }, []);
 
     useFrame(({ clock }) => {
+        const elapsed = reducedMotion ? 0 : clock.elapsedTime;
+        NORMAL_OUTER_RING_MATERIAL.uniforms.uTime.value = elapsed;
+        SELECTED_OUTER_RING_MATERIAL.uniforms.uTime.value = elapsed;
+        INNER_RING_MATERIAL.uniforms.uTime.value = elapsed;
         groupEuler.set(clock.elapsedTime * 0.11, Math.PI / 2, 0);
         groupQuaternion.setFromEuler(groupEuler);
 
@@ -857,6 +857,7 @@ interface InstancedTimelineNodesProps {
     count: number;
     entries: readonly TimelineEntry[];
     onSelect: (slug: string) => void;
+    reducedMotion: boolean;
     selectedSlug?: string;
 }
 
@@ -865,6 +866,7 @@ function InstancedTimelineNodes({
     entries,
     onSelect,
     selectedSlug,
+    reducedMotion,
 }: InstancedTimelineNodesProps) {
     const [hovered, setHovered] = useState(false);
     useCursor(hovered);
@@ -916,7 +918,11 @@ function InstancedTimelineNodes({
 
     return (
         <>
-            <InstancedTimelineRings instances={normalInstances} selected={selected} />
+            <InstancedTimelineRings
+                instances={normalInstances}
+                reducedMotion={reducedMotion}
+                selected={selected}
+            />
             {CONTENT_TYPES.map((contentType) => {
                 const contentInstances = instancesByContentType[contentType];
                 return contentInstances.length > 0 ? (
@@ -1366,6 +1372,7 @@ function TimelineScene({
                 count={entries.length}
                 entries={entries}
                 onSelect={onSelect}
+                reducedMotion={reducedMotion}
                 selectedSlug={selectedSlug}
             />
             <TimelineCards
