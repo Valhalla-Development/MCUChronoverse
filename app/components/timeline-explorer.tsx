@@ -442,11 +442,6 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
             window.dispatchEvent(new Event("mcu-chronoverse:open-auth"));
         }
     }, [authUser, signOut]);
-    const toggleSelectedWatched = useCallback(() => {
-        if (selectedEntry && isWatchable(selectedEntry)) {
-            toggleWatched(selectedEntry.slug);
-        }
-    }, [selectedEntry, toggleWatched]);
     const handleOutsidePointerDown = useCallback(
         (event: React.PointerEvent<HTMLElement>) => {
             if (!selectedEntry) {
@@ -519,14 +514,17 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
         },
         [selectEntry]
     );
-    const focusTimelineAt = useCallback((index: number) => {
-        if (index < 0) {
-            return;
-        }
-        setSelectedEntry(null);
-        setTimelineIndex(index);
-        setFocusRequest((current) => ({ index, key: current.key + 1 }));
-    }, []);
+    const focusTimelineAt = useCallback(
+        (index: number, detailEntry: TimelineEntry | null = null) => {
+            if (index < 0) {
+                return;
+            }
+            setSelectedEntry(detailEntry);
+            setTimelineIndex(index);
+            setFocusRequest((current) => ({ index, key: current.key + 1 }));
+        },
+        []
+    );
     const handleTimelineStep = useCallback(
         (event: MouseEvent<HTMLButtonElement>) => {
             const direction = Number(event.currentTarget.dataset.direction);
@@ -547,14 +545,14 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
         [focusTimelineAt, pendingWatchReturnIndex]
     );
     const beginPendingWatch = useCallback(
-        (slug: string, entryIndex: number) => {
+        (slug: string, entryIndex: number, expandNext = false) => {
             const nextIndex = visibleEntries.findIndex(
                 (entry) =>
                     entry.slug !== slug && isWatchable(entry) && !watchedSlugs.includes(entry.slug)
             );
             setPendingWatchSlug(slug);
             setPendingWatchReturnIndex(entryIndex >= 0 ? entryIndex : null);
-            focusTimelineAt(nextIndex);
+            focusTimelineAt(nextIndex, expandNext ? (visibleEntries[nextIndex] ?? null) : null);
             pendingWatchTimeout.current = setTimeout(() => {
                 setPendingWatchSlug(null);
                 setPendingWatchReturnIndex(null);
@@ -562,6 +560,33 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
         },
         [focusTimelineAt, visibleEntries, watchedSlugs]
     );
+    const toggleSelectedWatched = useCallback(() => {
+        if (!(selectedEntry && isWatchable(selectedEntry))) {
+            return;
+        }
+
+        const { slug } = selectedEntry;
+        const entryIndex = visibleEntries.findIndex((entry) => entry.slug === slug);
+        const undoing = watchedSlugs.includes(slug);
+        toggleWatched(slug);
+        if (undoing) {
+            if (pendingWatchSlug === slug) {
+                clearTimeout(pendingWatchTimeout.current ?? undefined);
+                undoPendingWatch(entryIndex);
+            }
+            return;
+        }
+        clearTimeout(pendingWatchTimeout.current ?? undefined);
+        beginPendingWatch(slug, entryIndex, true);
+    }, [
+        beginPendingWatch,
+        pendingWatchSlug,
+        selectedEntry,
+        toggleWatched,
+        undoPendingWatch,
+        visibleEntries,
+        watchedSlugs,
+    ]);
     const handleWatchlistToggle = useCallback(
         (event: MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
