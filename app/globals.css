@@ -577,6 +577,13 @@ a {
   justify-content: space-between;
 }
 
+.timeline-detail-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+  align-items: center;
+}
+
 .timeline-detail-eyebrow {
   display: flex;
   gap: 0.55rem;
@@ -592,6 +599,56 @@ a {
 .timeline-detail-eyebrow span {
   font-size: 0.5rem;
   color: rgb(255 176 94 / 45%);
+}
+
+.timeline-detail-saga {
+  position: relative;
+  display: inline-flex;
+  gap: 0.32rem;
+  align-items: center;
+  padding: 0.24rem 0.48rem 0.22rem;
+  overflow: hidden;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.56rem;
+  font-weight: 650;
+  color: #ffe4ad;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: linear-gradient(
+    110deg,
+    rgb(255 139 61 / 16%),
+    rgb(255 216 143 / 5%)
+  );
+  border: 1px solid rgb(255 180 91 / 28%);
+  border-radius: 999px;
+  box-shadow:
+    0 0 18px rgb(255 126 47 / 10%),
+    0 0 0 1px rgb(255 255 255 / 3%) inset;
+}
+
+.timeline-detail-saga .ui-icon {
+  width: 0.62rem;
+  height: 0.62rem;
+  color: #ffad55;
+  filter: drop-shadow(0 0 5px rgb(255 138 61 / 70%));
+}
+
+.timeline-detail-saga[data-saga="Multiverse Saga"] {
+  color: #e9ddff;
+  background: linear-gradient(
+    110deg,
+    rgb(153 92 255 / 18%),
+    rgb(93 189 255 / 7%)
+  );
+  border-color: rgb(178 135 255 / 30%);
+  box-shadow:
+    0 0 18px rgb(136 80 255 / 12%),
+    0 0 0 1px rgb(255 255 255 / 3%) inset;
+}
+
+.timeline-detail-saga[data-saga="Multiverse Saga"] .ui-icon {
+  color: #bd98ff;
+  filter: drop-shadow(0 0 5px rgb(153 92 255 / 75%));
 }
 
 .timeline-detail-title {
@@ -2235,6 +2292,15 @@ a {
   .timeline-detail-title {
     margin-top: 0.45rem;
     font-size: 1.25rem;
+  }
+
+  .timeline-detail-kicker {
+    gap: 0.35rem 0.5rem;
+  }
+
+  .timeline-detail-saga {
+    padding: 0.2rem 0.4rem 0.18rem;
+    font-size: 0.5rem;
   }
 
   .timeline-detail-description {

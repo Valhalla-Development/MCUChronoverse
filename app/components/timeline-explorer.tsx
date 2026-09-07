@@ -159,13 +159,19 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
                 >
                     <div className="timeline-detail-heading">
                         <div>
-                            <p className="timeline-detail-eyebrow">
-                                {entry.placement}
-                                <span aria-hidden="true">
-                                    <UiIcon name="diamond" />
+                            <div className="timeline-detail-kicker">
+                                <p className="timeline-detail-eyebrow">
+                                    {entry.placement}
+                                    <span aria-hidden="true">
+                                        <UiIcon name="diamond" />
+                                    </span>
+                                    {contentTypeNames[entry.contentType]}
+                                </p>
+                                <span className="timeline-detail-saga" data-saga={entry.saga}>
+                                    <UiIcon name="sparkle" />
+                                    {entry.saga}
                                 </span>
-                                {contentTypeNames[entry.contentType]}
-                            </p>
+                            </div>
                             <h1 className="timeline-detail-title">{entry.title}</h1>
                         </div>
                         <button
