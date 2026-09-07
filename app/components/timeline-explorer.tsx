@@ -632,6 +632,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                         focusKey={focusRequest.key}
                         onSelect={selectEntry}
                         selectedSlug={selectedEntry?.slug}
+                        watchedSlugs={watchedSlugs}
                     />
                 </div>
                 <div className="grain" />

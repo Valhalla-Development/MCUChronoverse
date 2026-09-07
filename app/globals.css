@@ -471,6 +471,29 @@ a {
   box-shadow: 0 0 24px rgb(255 139 61 / 75%);
 }
 
+.timeline-card-watched-indicator {
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #17100a;
+  background: linear-gradient(135deg, #ffe3a8, #ff9b4a);
+  border: 1px solid #ffc276;
+  border-radius: 999px;
+  box-shadow: 0 0 14px rgb(255 139 61 / 38%);
+  transform: rotate(-4deg);
+}
+
+.timeline-card-watched-indicator svg {
+  width: 0.68rem;
+  height: 0.68rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .timeline-detail-glow {
   position: absolute;
   top: -8rem;

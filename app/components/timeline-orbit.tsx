@@ -2,6 +2,7 @@
 
 import {
     Image as DreiImage,
+    Html,
     OrbitControls,
     PerformanceMonitor,
     Sparkles,
@@ -591,6 +592,7 @@ interface TimelineOrbitProps {
     focusKey: number;
     onSelect: (slug: string) => void;
     selectedSlug?: string;
+    watchedSlugs: readonly string[];
 }
 
 interface TimelineNodeProps {
@@ -603,6 +605,7 @@ interface TimelineNodeProps {
     onCardPointerOut: (event: ThreeEvent<PointerEvent>) => void;
     onCardPointerOver: (event: ThreeEvent<PointerEvent>) => void;
     onCardSelect: (event: ThreeEvent<MouseEvent>) => void;
+    watched: boolean;
 }
 
 interface TimelinePosterCardProps {
@@ -613,6 +616,7 @@ interface TimelinePosterCardProps {
     onPointerOut: (event: ThreeEvent<PointerEvent>) => void;
     onPointerOver: (event: ThreeEvent<PointerEvent>) => void;
     onSelect: (event: ThreeEvent<MouseEvent>) => void;
+    watched: boolean;
 }
 
 function PosterArtwork({
@@ -680,6 +684,7 @@ function TimelinePosterCard({
     onPointerOut,
     onPointerOver,
     onSelect,
+    watched,
 }: TimelinePosterCardProps) {
     const formattedPlacement = formatCardPlacement(entry.placement);
     const formattedTitle = formatCardTitle(entry.title);
@@ -748,6 +753,20 @@ function TimelinePosterCard({
                     <primitive attach="geometry" object={CARD_PLANE_GEOMETRY} />
                     <primitive attach="material" object={posterShadeMaterial} />
                 </mesh>
+                {watched ? (
+                    <Html
+                        center
+                        position={[CARD_WIDTH / 2 - CARD_PADDING - 0.055, metaTop - 0.055, 0.12]}
+                        style={{ pointerEvents: "none" }}
+                        zIndexRange={[30, 30]}
+                    >
+                        <span className="timeline-card-watched-indicator">
+                            <svg aria-hidden="true" viewBox="0 0 16 16">
+                                <path d="m3.5 8.25 3 3 6-7" />
+                            </svg>
+                        </span>
+                    </Html>
+                ) : null}
                 <Text
                     anchorX="left"
                     anchorY="top"
@@ -1081,6 +1100,7 @@ function TimelineNode({
     onCardPointerOut,
     onCardPointerOver,
     onCardSelect,
+    watched,
 }: TimelineNodeProps) {
     const position = timelineNodePosition(index, count);
 
@@ -1094,6 +1114,7 @@ function TimelineNode({
                 onPointerOut={onCardPointerOut}
                 onPointerOver={onCardPointerOver}
                 onSelect={onCardSelect}
+                watched={watched}
             />
         </group>
     );
@@ -1110,12 +1131,20 @@ interface TimelineCardsProps {
     focusIndex: number;
     onSelect: (slug: string) => void;
     selectedSlug?: string;
+    watchedSlugs: readonly string[];
 }
 
-function TimelineCards({ entries, focusIndex, onSelect, selectedSlug }: TimelineCardsProps) {
+function TimelineCards({
+    entries,
+    focusIndex,
+    onSelect,
+    selectedSlug,
+    watchedSlugs,
+}: TimelineCardsProps) {
     const [hoveredSlug, setHoveredSlug] = useState<string>();
     const billboardRefs = useRef<Array<Group | null>>([]);
     const cardRefs = useRef<Array<Group | null>>([]);
+    const watchedSlugSet = useMemo(() => new Set(watchedSlugs), [watchedSlugs]);
     useCursor(Boolean(hoveredSlug));
     const registrations = useMemo<TimelineCardRegistration[]>(
         () =>
@@ -1209,6 +1238,7 @@ function TimelineCards({ entries, focusIndex, onSelect, selectedSlug }: Timeline
                 onCardPointerOut={handlePointerOut}
                 onCardPointerOver={handlePointerOver}
                 onCardSelect={handleSelect}
+                watched={watchedSlugSet.has(entry.slug)}
             />
         );
     });
@@ -1586,6 +1616,7 @@ interface TimelineSceneProps {
     reducedMotion: boolean;
     sceneKey: string;
     selectedSlug?: string;
+    watchedSlugs: readonly string[];
     zoomDistance: number;
 }
 
@@ -1599,6 +1630,7 @@ function TimelineScene({
     qualityFactor,
     reducedMotion,
     selectedSlug,
+    watchedSlugs,
     onZoomDistanceChange,
     zoomDistance,
     sceneKey,
@@ -1655,6 +1687,7 @@ function TimelineScene({
                 focusIndex={focusIndex}
                 onSelect={onSelect}
                 selectedSlug={selectedSlug}
+                watchedSlugs={watchedSlugs}
             />
             <OrbitControls
                 dampingFactor={0.075}
@@ -1718,6 +1751,7 @@ export function TimelineOrbit({
     focusKey,
     onSelect,
     selectedSlug,
+    watchedSlugs,
 }: TimelineOrbitProps) {
     const [webGlSupported, setWebGlSupported] = useState<boolean | null>(null);
     const [reducedMotion, setReducedMotion] = useState(false);
@@ -1849,6 +1883,7 @@ export function TimelineOrbit({
                             reducedMotion={reducedMotion}
                             sceneKey={sceneKey}
                             selectedSlug={selectedSlug}
+                            watchedSlugs={watchedSlugs}
                             zoomDistance={zoomDistance}
                         />
                         {performanceFallback && !reducedMotion ? (
