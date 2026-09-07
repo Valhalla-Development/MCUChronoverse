@@ -2,7 +2,6 @@
 
 import { resolve } from "node:path";
 import { getTitleDetailsByIMDBId, getTitleDetailsByName, type ITitle } from "@valhalladev/movier";
-import { curatedChronology } from "../app/data/chronology";
 import { isMetadataCacheRecordStale } from "../app/data/metadata-freshness";
 import { log } from "../app/lib/console";
 
@@ -21,6 +20,17 @@ interface CachedTitle {
     posterUrl?: string;
     rating?: number;
     runtime: string;
+    traktUrl: string;
+}
+
+interface TraktSearchResult {
+    movie?: {
+        ids: { slug?: string };
+    };
+    show?: {
+        ids: { slug?: string };
+    };
+    type: "movie" | "show";
 }
 
 type MetadataCache = Record<string, CacheRecord>;
@@ -31,6 +41,7 @@ const refresh = Bun.argv.includes("--refresh");
 const delayMs = 750;
 const seasonSuffix = /\s+Season\s+\d+$/i;
 const imdbIdPattern = /\/title\/(tt\d+)/;
+const traktApiUrl = "https://api.trakt.tv";
 
 const sleep = (milliseconds: number) =>
     new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
@@ -46,14 +57,42 @@ const writeCache = async (nextCache: MetadataCache) => {
     await Bun.write(cachePath, `${JSON.stringify(nextCache, null, 2)}\n`);
 };
 
-const selectTitleData = (title: ITitle): CachedTitle => ({
+const selectTitleData = (title: ITitle, traktUrl: string): CachedTitle => ({
     description: title.plot,
     genres: title.genres,
     imdbUrl: title.mainSource.sourceUrl,
     posterUrl: title.posterImage.url,
     rating: title.mainRate.rate,
     runtime: title.runtime.title,
+    traktUrl,
 });
+
+const lookupTraktUrl = async (imdbUrl: string): Promise<string> => {
+    const imdbId = imdbUrl.match(imdbIdPattern)?.[1];
+    if (!imdbId) {
+        throw new Error(`Cannot look up Trakt URL without a valid IMDb URL: ${imdbUrl}`);
+    }
+
+    const response = await fetch(`${traktApiUrl}/search/imdb/${imdbId}`, {
+        headers: {
+            "Content-Type": "application/json",
+            "trakt-api-key": traktClientId,
+            "trakt-api-version": "2",
+        },
+    });
+    if (!response.ok) {
+        throw new Error(`Trakt lookup failed for ${imdbId} with status ${response.status}`);
+    }
+
+    const results = (await response.json()) as TraktSearchResult[];
+    const result = results.find((item) => item.type === "movie" || item.type === "show");
+    const slug = result?.type === "movie" ? result.movie?.ids.slug : result?.show?.ids.slug;
+    if (!(result && slug)) {
+        throw new Error(`Trakt returned no movie or show for ${imdbId}`);
+    }
+
+    return `https://app.trakt.tv/${result.type === "movie" ? "movies" : "shows"}/${slug}`;
+};
 
 const lookupTitle = async (
     title: string,
@@ -85,13 +124,23 @@ const lookupTitle = async (
     throw lastError ?? new Error(`No result found for ${title}`);
 };
 
-const token = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
-if (!token) {
-    log.error(
-        "TMDB_READ_ACCESS_TOKEN is required. Add it to .env before running the enrichment script."
-    );
-    process.exit(1);
-}
+const requireEnvironmentVariable = (name: "TMDB_READ_ACCESS_TOKEN" | "TRAKT_CLIENT_ID") => {
+    const value = process.env[name]?.trim();
+    if (!value) {
+        log.error(`${name} is required. Add it to .env before running the enrichment script.`);
+        throw new Error(`Missing required environment variable: ${name}`);
+    }
+    return value;
+};
+
+const token = requireEnvironmentVariable("TMDB_READ_ACCESS_TOKEN");
+const traktClientId = requireEnvironmentVariable("TRAKT_CLIENT_ID");
+
+// The cache may be incomplete after an interrupted enrichment run, so load the curated
+// entries without constructing the application-facing chronology first.
+process.env.TIMELINE_ALLOW_INCOMPLETE_METADATA = "1";
+const { curatedChronology } = await import("../app/data/chronology");
+delete process.env.TIMELINE_ALLOW_INCOMPLETE_METADATA;
 
 const cache = await readCache();
 let resolved = 0;
@@ -114,23 +163,28 @@ for (const entry of curatedChronology) {
         // Each item is written immediately and delayed to keep the enrichment run API-friendly.
         // biome-ignore lint/performance/noAwaitInLoops: The script intentionally processes one title at a time.
         const title = await lookupTitle(entry.title, entry.releaseDate, entry.imdbUrl);
+        // biome-ignore lint/performance/noAwaitInLoops: Trakt lookups share the sequential rate limit.
+        const traktUrl = await lookupTraktUrl(title.mainSource.sourceUrl);
 
         cache[entry.slug] = {
             fetchedAt: new Date().toISOString(),
             requestedTitle: entry.title,
-            source: selectTitleData(title),
+            source: selectTitleData(title, traktUrl),
             status: "resolved",
         };
         resolved += 1;
         log.ok(`Resolved ${entry.title}`);
     } catch (error) {
-        cache[entry.slug] = {
-            error: error instanceof Error ? error.message : String(error),
-            fetchedAt: new Date().toISOString(),
-            requestedTitle: entry.title,
-            source: null,
-            status: "failed",
-        };
+        // Keep the last known-good record if a provider is temporarily unavailable.
+        if (!cachedEntry?.source) {
+            cache[entry.slug] = {
+                error: error instanceof Error ? error.message : String(error),
+                fetchedAt: new Date().toISOString(),
+                requestedTitle: entry.title,
+                source: null,
+                status: "failed",
+            };
+        }
         failed += 1;
         log.warn(`Failed to resolve ${entry.title}`, error);
     }

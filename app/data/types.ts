@@ -48,6 +48,6 @@ export interface TimelineEntry {
     slug: string;
     status: ContentStatus;
     title: string;
-    traktUrl?: string;
+    traktUrl: string;
     universe: string;
 }

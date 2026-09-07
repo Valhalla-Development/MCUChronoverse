@@ -262,7 +262,7 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
                                 </a>
                                 <a
                                     className="focus-ring timeline-detail-imdb timeline-detail-trakt"
-                                    href={entry.traktUrl ?? "#"}
+                                    href={entry.traktUrl}
                                     rel="noreferrer"
                                     target="_blank"
                                 >

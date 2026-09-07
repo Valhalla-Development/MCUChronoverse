@@ -95,10 +95,10 @@ The archive includes films, series, specials, shorts, one-shots, and upcoming en
 bun run dev          # Start the local development server
 bun run lint         # Run TypeScript and Biome checks
 bun run type-check   # Run the TypeScript checker
-bun run data:enrich  # Refresh cached metadata with TMDB
+bun run data:enrich  # Refresh cached metadata with TMDB and Trakt
 ```
 
-The metadata enrichment script is intended for development use and should not be run as part of the production application.
+The metadata enrichment script requires TMDB and Trakt API credentials documented in `.env.example`. It is intended for development use and should not be run as part of the production application.
 
 ## 🤝 Contributing
 

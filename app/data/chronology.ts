@@ -3,7 +3,7 @@ import type { TimelineEntry } from "./types";
 
 type EnrichedTimelineFields = Pick<
     TimelineEntry,
-    "description" | "genres" | "imdbUrl" | "posterUrl" | "rating" | "runtime"
+    "description" | "genres" | "imdbUrl" | "posterUrl" | "rating" | "runtime" | "traktUrl"
 >;
 
 type CuratedTimelineEntry = Omit<TimelineEntry, keyof EnrichedTimelineFields> &
@@ -22,6 +22,7 @@ const requiredMetadataFields = [
     "posterUrl",
     "rating",
     "runtime",
+    "traktUrl",
 ] as const satisfies readonly (keyof EnrichedTimelineFields)[];
 
 export const curatedChronology: readonly CuratedTimelineEntry[] = [
@@ -1119,7 +1120,7 @@ export const chronology: readonly TimelineEntry[] = curatedChronology.map((entry
     const missingFields = requiredMetadataFields.filter(
         (field) => mergedEntry[field] === undefined
     );
-    if (missingFields.length > 0) {
+    if (missingFields.length > 0 && process.env.TIMELINE_ALLOW_INCOMPLETE_METADATA !== "1") {
         throw new Error(`Missing enriched metadata for ${entry.slug}: ${missingFields.join(", ")}`);
     }
 
