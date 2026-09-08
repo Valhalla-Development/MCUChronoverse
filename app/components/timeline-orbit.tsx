@@ -97,30 +97,44 @@ const SELECTED_OUTER_RING_GEOMETRY = new TorusGeometry(0.45, 0.012, 8, 48);
 const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.24, 0.008, 8, 40);
 const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.34, 0.008, 8, 40);
 // Draw the tick locally so the status never needs a remote fallback font.
-const WATCHED_TICK_MATERIAL = new ShaderMaterial({
+const WATCHED_BADGE_MATERIAL = new ShaderMaterial({
     depthTest: false,
     depthWrite: false,
     fragmentShader: /* glsl */ `
         varying vec2 vUv;
         uniform vec3 uColour;
+        uniform vec3 uBackground;
+        uniform vec3 uRim;
         float segmentDistance(vec2 p, vec2 a, vec2 b) {
             vec2 ab = b - a;
             return length(p - a - ab * clamp(dot(p - a, ab) / dot(ab, ab), 0.0, 1.0));
         }
         void main() {
             float distanceToTick = min(
-                segmentDistance(vUv, vec2(0.15, 0.48), vec2(0.40, 0.25)),
-                segmentDistance(vUv, vec2(0.40, 0.25), vec2(0.85, 0.78))
+                segmentDistance(vUv, vec2(0.36, 0.49), vec2(0.46, 0.39)),
+                segmentDistance(vUv, vec2(0.46, 0.39), vec2(0.65, 0.62))
             );
-            float aa = fwidth(distanceToTick);
-            float alpha = 1.0 - smoothstep(0.055 - aa, 0.055 + aa, distanceToTick);
-            gl_FragColor = vec4(uColour, alpha);
+            float radius = length(vUv - 0.5);
+            float aa = max(fwidth(radius), 0.001);
+            float tick = 1.0 - smoothstep(0.025 - aa, 0.025 + aa, distanceToTick);
+            float rim = smoothstep(0.315 - aa, 0.315 + aa, radius)
+                * (1.0 - smoothstep(0.34 - aa, 0.34 + aa, radius));
+            float disk = 1.0 - smoothstep(0.34 - aa, 0.34 + aa, radius);
+            float collar = 1.0 - smoothstep(0.405 - aa, 0.405 + aa, radius);
+            vec3 colour = mix(vec3(0.0024), uBackground, disk);
+            colour = mix(colour, uRim, rim * 0.65);
+            colour = mix(colour, uColour, tick);
+            gl_FragColor = vec4(colour, collar);
             #include <colorspace_fragment>
         }
     `,
     toneMapped: false,
     transparent: true,
-    uniforms: { uColour: { value: new Color("#c49a65") } },
+    uniforms: {
+        uBackground: { value: new Color("#17100e") },
+        uColour: { value: new Color("#e0a15f") },
+        uRim: { value: new Color("#da9e60") },
+    },
     vertexShader: /* glsl */ `
         varying vec2 vUv;
         void main() {
@@ -336,7 +350,13 @@ const posterShadeFragmentShader = /* glsl */ `
     }
 `;
 
-function createCardSurfaceMaterial(accentColour: string, highlighted: boolean): ShaderMaterial {
+function createCardSurfaceMaterial(
+    accentColour: string,
+    highlighted: boolean,
+    watched = false
+): ShaderMaterial {
+    const idleBorderColour = watched ? "#be7852" : "#ffffff";
+    const idleBorderOpacity = watched ? 0.24 : 0.11;
     return new ShaderMaterial({
         depthTest: false,
         depthWrite: false,
@@ -346,8 +366,10 @@ function createCardSurfaceMaterial(accentColour: string, highlighted: boolean): 
         uniforms: {
             uAccentColour: { value: new Color(accentColour) },
             uAccentStrength: { value: highlighted ? 0.13 : 0.07 },
-            uBorderColour: { value: new Color(highlighted ? accentColour : "#ffffff") },
-            uBorderOpacity: { value: highlighted ? 0.42 : 0.11 },
+            uBorderColour: {
+                value: new Color(highlighted ? accentColour : idleBorderColour),
+            },
+            uBorderOpacity: { value: highlighted ? 0.42 : idleBorderOpacity },
             uEdgeAccentOpacity: { value: highlighted ? 1 : 0.65 },
             uHighlighted: { value: highlighted ? 1 : 0 },
             uSurfaceColour: { value: new Color(highlighted ? "#08080b" : "#060709") },
@@ -359,29 +381,34 @@ function createCardSurfaceMaterial(accentColour: string, highlighted: boolean): 
 
 type CardSurfaceMaterialSet = Record<
     TimelineEntry["contentType"],
-    Record<"highlighted" | "idle", ShaderMaterial>
+    Record<"highlighted" | "idle" | "watched", ShaderMaterial>
 >;
 
 const cardSurfaceMaterials = {
     film: {
         highlighted: createCardSurfaceMaterial(cardAccentColours.film, true),
         idle: createCardSurfaceMaterial(cardAccentColours.film, false),
+        watched: createCardSurfaceMaterial(cardAccentColours.film, false, true),
     },
     "one-shot": {
         highlighted: createCardSurfaceMaterial(cardAccentColours["one-shot"], true),
         idle: createCardSurfaceMaterial(cardAccentColours["one-shot"], false),
+        watched: createCardSurfaceMaterial(cardAccentColours["one-shot"], false, true),
     },
     series: {
         highlighted: createCardSurfaceMaterial(cardAccentColours.series, true),
         idle: createCardSurfaceMaterial(cardAccentColours.series, false),
+        watched: createCardSurfaceMaterial(cardAccentColours.series, false, true),
     },
     short: {
         highlighted: createCardSurfaceMaterial(cardAccentColours.short, true),
         idle: createCardSurfaceMaterial(cardAccentColours.short, false),
+        watched: createCardSurfaceMaterial(cardAccentColours.short, false, true),
     },
     special: {
         highlighted: createCardSurfaceMaterial(cardAccentColours.special, true),
         idle: createCardSurfaceMaterial(cardAccentColours.special, false),
+        watched: createCardSurfaceMaterial(cardAccentColours.special, false, true),
     },
 } satisfies CardSurfaceMaterialSet;
 
@@ -582,6 +609,7 @@ function TimelinePosterCard({
     const placementTop = metaTop - META_ROW_STEP;
     const titleTop = placementTop - TITLE_ROW_STEP - additionalPlacementHeight;
     const renderOrder = 100;
+    const idleSurface = watched ? "watched" : "idle";
     return (
         <group position={[0, cardHeight / 2 + CARD_GAP_FROM_ORB, 0]} ref={billboardRef}>
             <group ref={cardRef} renderOrder={CARD_RENDER_ORDER_BASE}>
@@ -608,7 +636,7 @@ function TimelinePosterCard({
                         attach="material"
                         object={
                             cardSurfaceMaterials[entry.contentType][
-                                highlighted ? "highlighted" : "idle"
+                                highlighted ? "highlighted" : idleSurface
                             ]
                         }
                     />
@@ -638,31 +666,17 @@ function TimelinePosterCard({
                     <primitive attach="material" object={posterShadeMaterial} />
                 </mesh>
                 {watched ? (
-                    <>
-                        <mesh
-                            geometry={CARD_PLANE_GEOMETRY}
-                            material={WATCHED_TICK_MATERIAL}
-                            position={[META_LEFT + CARD_TEXT_WIDTH - 0.35, metaTop - 0.056, 0.026]}
-                            renderOrder={renderOrder + 7}
-                            scale={[0.066, 0.066, 1]}
-                        />
-                        <Text
-                            anchorX="right"
-                            anchorY="top"
-                            characters="WATCHED"
-                            color="#c49a65"
-                            font={GEIST_MONO_FONT_URL}
-                            fontSize={0.068}
-                            frustumCulled={false}
-                            letterSpacing={0.06}
-                            position={[META_LEFT + CARD_TEXT_WIDTH, metaTop - 0.018, 0.026]}
-                            ref={configureOverlayMesh}
-                            renderOrder={renderOrder + 7}
-                            whiteSpace="nowrap"
-                        >
-                            WATCHED
-                        </Text>
-                    </>
+                    <mesh
+                        geometry={CARD_PLANE_GEOMETRY}
+                        material={WATCHED_BADGE_MATERIAL}
+                        position={[
+                            POSTER_WIDTH / 2 - 0.095,
+                            posterPositionY - POSTER_HEIGHT / 2,
+                            0.032,
+                        ]}
+                        renderOrder={renderOrder + 8}
+                        scale={[0.23, 0.23, 1]}
+                    />
                 ) : null}
                 <Text
                     anchorX="left"
@@ -671,7 +685,7 @@ function TimelinePosterCard({
                     color={cardAccentColours[entry.contentType]}
                     fillOpacity={highlighted ? 1 : 0.9}
                     font={GEIST_MONO_FONT_URL}
-                    fontSize={watched ? 0.095 : META_FONT_SIZE}
+                    fontSize={META_FONT_SIZE}
                     frustumCulled={false}
                     letterSpacing={0.1}
                     maxWidth={CARD_TEXT_WIDTH}
