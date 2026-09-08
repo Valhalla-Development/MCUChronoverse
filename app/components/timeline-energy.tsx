@@ -4,11 +4,16 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import {
     AdditiveBlending,
-    BufferAttribute,
+    BackSide,
+    Box3,
+    BoxGeometry,
     type Curve,
+    DataTexture,
+    FloatType,
+    RGBAFormat,
     ShaderMaterial,
     TubeGeometry,
-    type Vector3,
+    Vector3,
 } from "three";
 import {
     temporalCoreFragmentShader,
@@ -20,7 +25,6 @@ import { TimelineEnergyParticles } from "./timeline-energy-particles";
 
 const CORE_RADIUS = 0.026;
 const PLASMA_RADIUS = 0.68;
-const RADIAL_SEGMENTS = 16;
 
 interface TimelineEnergyProps {
     compact: boolean;
@@ -30,39 +34,40 @@ interface TimelineEnergyProps {
     reducedMotion: boolean;
 }
 
-function createPlasmaGeometry(
-    curve: Curve<Vector3>,
-    segments: number,
-    eventCount: number
-): TubeGeometry {
-    const geometry = new TubeGeometry(curve, segments, PLASMA_RADIUS, RADIAL_SEGMENTS, false);
-    const vertexCount = (segments + 1) * (RADIAL_SEGMENTS + 1);
-    const centres = new Float32Array(vertexCount * 3);
-    const tangents = new Float32Array(vertexCount * 3);
-    const distances = new Float32Array(vertexCount);
-    const nodeCoordinates = new Float32Array(vertexCount);
-    const length = curve.getLength();
+function createPlasmaVolume(curve: Curve<Vector3>, segments: number) {
+    const points = curve.getSpacedPoints(segments);
+    const bounds = new Box3().setFromPoints(points);
+    const firstX = points[0].x;
+    const span = Math.max(points.at(-1)?.x ?? firstX, firstX + 0.0001) - firstX;
+    const samples = new Float32Array((segments + 1) * 4);
+    const point = new Vector3();
+    let interval = 0;
 
-    // TubeGeometry uses arc-length sampling. Reuse that parameterization for the volume's
-    // local frame so its energy stays attached to the existing chronology at every zoom.
-    for (let segment = 0; segment <= segments; segment += 1) {
-        const progress = segment / segments;
-        const centre = curve.getPointAt(progress);
-        const tangent = geometry.tangents[segment];
-        const nodeCoordinate = curve.getUtoTmapping(progress, 0) * Math.max(eventCount - 1, 1);
-        for (let radial = 0; radial <= RADIAL_SEGMENTS; radial += 1) {
-            const index = segment * (RADIAL_SEGMENTS + 1) + radial;
-            centre.toArray(centres, index * 3);
-            tangent.toArray(tangents, index * 3);
-            distances[index] = progress * length;
-            nodeCoordinates[index] = nodeCoordinate;
+    // The chronology runs monotonically along x. Resample its existing arc-length points
+    // at uniform x positions so every volume sample follows the real curve, even end-on.
+    for (let index = 0; index <= segments; index += 1) {
+        const x = firstX + (index / segments) * span;
+        while (interval < segments - 1 && points[interval + 1].x < x) {
+            interval += 1;
         }
+        const start = points[interval];
+        const end = points[interval + 1];
+        const fraction = (x - start.x) / Math.max(end.x - start.x, 0.000_001);
+        point.lerpVectors(start, end, fraction);
+        point.toArray(samples, index * 4);
+        samples[index * 4 + 3] = ((interval + fraction) / segments) * curve.getLength();
     }
-    geometry.setAttribute("aCentre", new BufferAttribute(centres, 3));
-    geometry.setAttribute("aTangent", new BufferAttribute(tangents, 3));
-    geometry.setAttribute("aDistance", new BufferAttribute(distances, 1));
-    geometry.setAttribute("aNodeCoordinate", new BufferAttribute(nodeCoordinates, 1));
-    return geometry;
+    const texture = new DataTexture(samples, segments + 1, 1, RGBAFormat, FloatType);
+    texture.needsUpdate = true;
+    bounds.min.y -= PLASMA_RADIUS;
+    bounds.min.z -= PLASMA_RADIUS;
+    bounds.max.y += PLASMA_RADIUS;
+    bounds.max.z += PLASMA_RADIUS;
+    const size = bounds.getSize(new Vector3());
+    const centre = bounds.getCenter(new Vector3());
+    const geometry = new BoxGeometry(size.x, size.y, size.z);
+    geometry.translate(centre.x, centre.y, centre.z);
+    return { bounds, geometry, texture };
 }
 
 export function TimelineEnergy({
@@ -72,13 +77,10 @@ export function TimelineEnergy({
     qualityFactor,
     reducedMotion,
 }: TimelineEnergyProps) {
-    const segmentDensity = compact ? 7 + qualityFactor * 3 : 10 + qualityFactor * 6;
-    const segments = Math.max(Math.round(eventCount * segmentDensity), 96);
-    const samples = compact || qualityFactor < 0.5 ? 3 : 4;
-    const plasmaGeometry = useMemo(
-        () => createPlasmaGeometry(curve, segments, eventCount),
-        [curve, eventCount, segments]
-    );
+    // Keep sampling and geometry stable during adaptive quality changes. The particle
+    // density and frame cadence scale smoothly without replacing the visible material.
+    const segments = Math.max(eventCount * 12, 96);
+    const volume = useMemo(() => createPlasmaVolume(curve, segments), [curve, segments]);
     const coreGeometry = useMemo(
         () => new TubeGeometry(curve, segments, CORE_RADIUS, 10, false),
         [curve, segments]
@@ -87,20 +89,24 @@ export function TimelineEnergy({
         () =>
             new ShaderMaterial({
                 blending: AdditiveBlending,
-                defines: { PLASMA_SAMPLES: samples },
+                depthTest: false,
                 depthWrite: false,
                 fragmentShader: temporalPlasmaFragmentShader,
+                side: BackSide,
                 toneMapped: false,
                 transparent: true,
                 uniforms: {
-                    uLength: { value: curve.getLength() },
+                    uBoundsMax: { value: volume.bounds.max },
+                    uBoundsMin: { value: volume.bounds.min },
+                    uCurve: { value: volume.texture },
+                    uCurveSize: { value: segments + 1 },
                     uNodeSpacing: { value: curve.getLength() / Math.max(eventCount - 1, 1) },
                     uRadius: { value: PLASMA_RADIUS },
                     uTime: { value: 0 },
                 },
                 vertexShader: temporalPlasmaVertexShader,
             }),
-        [curve, eventCount, samples]
+        [curve, eventCount, segments, volume]
     );
     const coreMaterial = useMemo(
         () =>
@@ -113,7 +119,13 @@ export function TimelineEnergy({
         []
     );
 
-    useEffect(() => () => plasmaGeometry.dispose(), [plasmaGeometry]);
+    useEffect(
+        () => () => {
+            volume.geometry.dispose();
+            volume.texture.dispose();
+        },
+        [volume]
+    );
     useEffect(() => () => coreGeometry.dispose(), [coreGeometry]);
     useEffect(() => () => plasmaMaterial.dispose(), [plasmaMaterial]);
     useEffect(() => () => coreMaterial.dispose(), [coreMaterial]);
@@ -126,7 +138,7 @@ export function TimelineEnergy({
 
     return (
         <group dispose={null}>
-            <mesh geometry={plasmaGeometry} material={plasmaMaterial} renderOrder={1} />
+            <mesh geometry={volume.geometry} material={plasmaMaterial} renderOrder={1} />
             <mesh geometry={coreGeometry} material={coreMaterial} renderOrder={2} />
             <TimelineEnergyParticles
                 compact={compact}

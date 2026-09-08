@@ -41,70 +41,90 @@ export const temporalCoreFragmentShader = /* glsl */ `
 `;
 
 export const temporalPlasmaVertexShader = /* glsl */ `
-    attribute vec3 aCentre;
-    attribute vec3 aTangent;
-    attribute float aDistance;
-    attribute float aNodeCoordinate;
     varying vec3 vSurface;
-    varying vec3 vCentre;
-    varying vec3 vTangent;
-    varying float vDistance;
-    varying float vNodeCoordinate;
 
     void main() {
         vSurface = (modelMatrix * vec4(position, 1.0)).xyz;
-        vCentre = (modelMatrix * vec4(aCentre, 1.0)).xyz;
-        vTangent = mat3(modelMatrix) * aTangent;
-        vDistance = aDistance;
-        vNodeCoordinate = aNodeCoordinate;
         gl_Position = projectionMatrix * viewMatrix * vec4(vSurface, 1.0);
     }
 `;
 
 export const temporalPlasmaFragmentShader = /* glsl */ `
     uniform float uTime;
-    uniform float uLength;
     uniform float uRadius;
     uniform float uNodeSpacing;
+    uniform float uCurveSize;
+    uniform sampler2D uCurve;
+    uniform vec3 uBoundsMin;
+    uniform vec3 uBoundsMax;
     varying vec3 vSurface;
-    varying vec3 vCentre;
-    varying vec3 vTangent;
-    varying float vDistance;
-    varying float vNodeCoordinate;
     ${energyNoise}
 
-    void main() {
-        vec3 tangent = normalize(vTangent);
-        vec3 ray = normalize(vSurface - cameraPosition);
-        vec3 normal = normalize(cross(tangent, vec3(0.0, 1.0, 0.0)));
-        vec3 binormal = cross(tangent, normal);
-        vec3 offset = vSurface - vCentre;
-        vec3 radialRay = ray - tangent * dot(ray, tangent);
-        vec3 radialOffset = offset - tangent * dot(offset, tangent);
-        float rayLengthSquared = max(dot(radialRay, radialRay), 0.025);
-        float closestTime = -dot(radialOffset, radialRay) / rayLengthSquared;
-        vec3 closest = offset + ray * closestTime;
-        vec3 closestRadial = closest - tangent * dot(closest, tangent);
-        float radius = length(closestRadial);
-        float chord = sqrt(max(uRadius * uRadius - radius * radius, 0.0));
-        float halfTravel = chord / sqrt(rayLengthSquared);
-        float along = vDistance + dot(closest, tangent);
-        float time = uTime;
-        float heat = noise3(vec3(along * 2.8 - time * 0.22, time * 0.035, 4.7));
-        float nodeDistance = abs(fract(vNodeCoordinate + 0.5) - 0.5) * uNodeSpacing;
-        float nodeHeat = exp(-nodeDistance * nodeDistance * 28.0) * (0.65 + heat * 0.35);
+    vec4 curveAt(float x) {
+        float progress = clamp((x - uBoundsMin.x) / (uBoundsMax.x - uBoundsMin.x), 0.0, 1.0);
+        float index = progress * (uCurveSize - 1.0);
+        float first = floor(index);
+        vec4 a = texture2D(uCurve, vec2((first + 0.5) / uCurveSize, 0.5));
+        vec4 b = texture2D(uCurve, vec2((min(first + 1.0, uCurveSize - 1.0) + 0.5) / uCurveSize, 0.5));
+        return mix(a, b, fract(index));
+    }
 
-        // Integrate a few depths through the proxy, rather than lighting its smooth surface.
-        // The centreline and proxy geometry never move; only the density field evolves.
+    void main() {
+        vec3 ray = normalize(vSurface - cameraPosition);
+        // A closed proxy supplies one exit face from every angle, including from inside.
+        // Clip parallel ray components explicitly instead of dividing by a near-zero angle.
+        vec3 safeRay = mix(vec3(-1.0), vec3(1.0), step(vec3(0.0), ray)) * max(abs(ray), vec3(0.000001));
+        vec3 nearTimes = (uBoundsMin - cameraPosition) / safeRay;
+        vec3 farTimes = (uBoundsMax - cameraPosition) / safeRay;
+        vec3 lower = min(nearTimes, farTimes);
+        vec3 upper = max(nearTimes, farTimes);
+        float entry = max(0.0, max(lower.x, max(lower.y, lower.z)));
+        float exit = min(upper.x, min(upper.y, upper.z));
+        if (exit <= entry) discard;
+
+        // Centre the bounded optical depth on the stream, not the empty space where a
+        // shallow ray first enters its box. This preserves energy at long viewing angles.
+        float raySpan = min(exit - entry, 6.0);
+        vec2 radialOrigin = cameraPosition.yz - (uBoundsMin.yz + uBoundsMax.yz) * 0.5;
+        float radialSpeed = dot(ray.yz, ray.yz);
+        float centreTime = radialSpeed > 0.000001
+            ? -dot(radialOrigin, ray.yz) / radialSpeed
+            : entry + raySpan * 0.5;
+        entry = clamp(centreTime - raySpan * 0.5, entry, exit - raySpan);
+        float stepLength = raySpan / 5.0;
+        float time = uTime;
         float plasma = 0.0;
         float filaments = 0.0;
         float grains = 0.0;
-        for (int step = 0; step < PLASMA_SAMPLES; step++) {
-            float depth = (float(step) + 0.5) / float(PLASMA_SAMPLES) * 2.0 - 1.0;
-            vec3 samplePoint = closest + ray * (halfTravel * depth);
-            vec2 crossSection = vec2(dot(samplePoint, normal), dot(samplePoint, binormal));
+        float radius = uRadius;
+        float along = 0.0;
+        vec3 startPoint = cameraPosition + ray * entry;
+        vec4 curveStart = curveAt(startPoint.x);
+        for (int sampleIndex = 0; sampleIndex < 5; sampleIndex++) {
+            float startTime = entry + float(sampleIndex) * stepLength;
+            vec3 endPoint = cameraPosition + ray * (startTime + stepLength);
+            vec4 curveEnd = curveAt(endPoint.x);
+            vec3 samplePoint = cameraPosition + ray * (startTime + stepLength * 0.5);
+            vec4 centre = mix(curveStart, curveEnd, 0.5);
+            vec2 crossSection = samplePoint.yz - centre.yz;
             float radialDistance = length(crossSection);
-            float travel = vDistance + dot(samplePoint, tangent);
+
+            // Measure the closest point on the sampled curve segment for the narrow bloom.
+            // Using actual curve points avoids the false luminous rings of tangent extrapolation.
+            vec3 segment = curveEnd.xyz - curveStart.xyz;
+            vec3 origin = curveStart.xyz - cameraPosition;
+            float raySegment = dot(ray, segment);
+            float denominator = max(dot(segment, segment) - raySegment * raySegment, 0.000001);
+            float fraction = clamp((raySegment * dot(ray, origin) - dot(segment, origin)) / denominator, 0.0, 1.0);
+            vec3 nearest = origin + segment * fraction;
+            float rayTime = clamp(dot(ray, nearest), entry, exit);
+            float distanceToCurve = length(nearest - ray * rayTime);
+            if (distanceToCurve < radius) {
+                radius = distanceToCurve;
+                along = mix(curveStart.w, curveEnd.w, fraction);
+            }
+
+            float travel = centre.w;
             vec3 p = vec3(travel * 2.3 - time * 0.30, crossSection * 7.0);
             float broad = noise3(p + vec3(0, time * 0.08, -time * 0.055));
             vec3 warped = p * vec3(2.2, 1.7, 1.7) + (broad - 0.5) * 2.8;
@@ -112,10 +132,12 @@ export const temporalPlasmaFragmentShader = /* glsl */ `
             float fine = noise3(warped * 3.1 - vec3(time * 0.16, 0, time * 0.06));
             float density = broad * 0.48 + detail * 0.35 + fine * 0.17;
             float bodyRadius = 0.17 + broad * 0.25 + detail * 0.10;
-            float body = 1.0 - smoothstep(0.045, bodyRadius, radialDistance);
+            float endDistance = min(samplePoint.x - uBoundsMin.x, uBoundsMax.x - samplePoint.x);
+            float endFade = smoothstep(0.0, min(0.18, (uBoundsMax.x - uBoundsMin.x) * 0.25), endDistance);
+            float body = (1.0 - smoothstep(0.045, bodyRadius, radialDistance)) * endFade;
             float breakup = smoothstep(0.23, 0.72, density);
             float tendrils = pow(max(0.0, 1.0 - abs(detail - 0.5) * 9.0), 3.0);
-            float outer = exp(-radialDistance * radialDistance * 13.0);
+            float outer = exp(-radialDistance * radialDistance * 13.0) * endFade;
             plasma += body * breakup * (0.48 + fine * 0.8);
             filaments += tendrils * outer * smoothstep(0.30, 0.68, broad) * 0.34;
 
@@ -125,11 +147,15 @@ export const temporalPlasmaFragmentShader = /* glsl */ `
             float grainResolution = 1.0 - smoothstep(0.65, 1.6, length(fwidth(grainCoordinate)));
             grains += pow(smoothstep(0.52, 0.88, grain), 3.0)
                 * body * (0.3 + breakup) * grainResolution;
+            curveStart = curveEnd;
         }
-        float integration = chord * 2.0 / float(PLASMA_SAMPLES);
+        float integration = min(raySpan, uRadius * 2.0) / 5.0;
         plasma *= integration;
         filaments *= integration;
         grains *= integration;
+        float heat = noise3(vec3(along * 2.8 - time * 0.22, time * 0.035, 4.7));
+        float nodeDistance = abs(fract(along / max(uNodeSpacing, 0.0001) + 0.5) - 0.5) * uNodeSpacing;
+        float nodeHeat = exp(-nodeDistance * nodeDistance * 28.0) * (0.65 + heat * 0.35);
 
         // Analytic emission shoulders provide local, structured bloom without exposing cards.
         float hotShoulder = exp(-pow(radius / 0.043, 2.0));
@@ -145,8 +171,6 @@ export const temporalPlasmaFragmentShader = /* glsl */ `
         emission += vec3(0.065, 0.012, 0.002) * atmosphere * (0.65 + heat * 0.35);
         emission += vec3(0.11, 0.039, 0.005) * nodeHeat * exp(-radius * radius * 32.0);
         float edgeFade = 1.0 - smoothstep(uRadius * 0.72, uRadius, radius);
-        float endDistance = min(vDistance, uLength - vDistance);
-        float endFade = smoothstep(0.0, min(0.18, uLength * 0.25), endDistance);
-        gl_FragColor = vec4(emission * edgeFade * endFade, 1.0);
+        gl_FragColor = vec4(emission * edgeFade, 1.0);
     }
 `;
