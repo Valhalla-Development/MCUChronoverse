@@ -4,8 +4,6 @@ import {
     Image as DreiImage,
     OrbitControls,
     PerformanceMonitor,
-    Sparkles,
-    Stars,
     Text,
     useCursor,
 } from "@react-three/drei";
@@ -47,6 +45,7 @@ import { configureTextBuilder } from "troika-three-text";
 import type { TimelineEntry } from "../data/types";
 import { timelineNodePosition } from "../lib/timeline";
 import { createTimelineRingMaterial } from "../lib/timeline-ring-material";
+import { CosmicBackground } from "./cosmic-background";
 import { TimelineEnergy } from "./timeline-energy";
 
 // Troika's worker hydrates functions from strings, which strict production CSP deliberately blocks.
@@ -1395,31 +1394,14 @@ function TimelineScene({
         [entries]
     );
     const curve = useMemo(() => createTimelineCurve(points), [points]);
-    const span = Math.max((entries.length - 1) * 2.2, 4);
-    const starCount = Math.round(compact ? 400 + qualityFactor * 250 : 800 + qualityFactor * 800);
-    const sparkleCount = Math.round(compact ? 24 + qualityFactor * 21 : 60 + qualityFactor * 60);
     return (
         <>
-            <fog args={["#020203", 12, 35]} attach="fog" />
+            <color args={["#000000"]} attach="background" />
+            <fog args={["#000000", 12, 35]} attach="fog" />
             <ambientLight intensity={0.45} />
             <pointLight color="#ff782d" intensity={28} position={[0, 4, 6]} />
             <pointLight color="#444cff" intensity={8} position={[0, -5, -3]} />
-            <Stars
-                count={starCount}
-                depth={40}
-                factor={2.3}
-                fade
-                radius={70}
-                speed={reducedMotion ? 0 : 0.08}
-            />
-            <Sparkles
-                color="#e7a35e"
-                count={sparkleCount}
-                opacity={0.45}
-                scale={[span + 10, 7, 7]}
-                size={1.3}
-                speed={reducedMotion ? 0 : 0.14}
-            />
+            <CosmicBackground nodes={points} reducedMotion={reducedMotion} />
             <TimelineEnergy
                 compact={compact}
                 curve={curve}
@@ -1585,7 +1567,7 @@ export function TimelineOrbit({
 
     if (webGlSupported === null) {
         return (
-            <div className="grid h-full place-items-center bg-[#020203]">
+            <div className="grid h-full place-items-center bg-black">
                 <p className="font-mono text-[0.7rem] text-white/35 uppercase tracking-[0.2em]">
                     Calibrating temporal coordinates
                 </p>
@@ -1595,7 +1577,7 @@ export function TimelineOrbit({
 
     if (!webGlSupported) {
         return (
-            <div className="grid h-full place-items-center bg-[#020203] p-8 text-center">
+            <div className="grid h-full place-items-center bg-black p-8 text-center">
                 <div className="max-w-md">
                     <p className="font-mono text-gold text-xs uppercase tracking-[0.2em]">
                         3D unavailable

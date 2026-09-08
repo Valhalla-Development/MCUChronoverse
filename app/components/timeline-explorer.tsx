@@ -40,7 +40,7 @@ const TimelineOrbit = dynamic(
     () => import("./timeline-orbit").then((module) => module.TimelineOrbit),
     {
         loading: () => (
-            <div className="grid h-full place-items-center bg-[#020203]">
+            <div className="grid h-full place-items-center bg-black">
                 <p className="font-mono text-[0.7rem] text-white/35 uppercase tracking-[0.2em]">
                     Opening temporal archive
                 </p>
@@ -647,7 +647,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
     return (
         <LayoutGroup id="timeline-entry-expansion">
             <main
-                className="relative h-dvh min-h-128 overflow-hidden bg-[#020203] text-ink"
+                className="relative h-dvh min-h-128 overflow-hidden bg-black text-ink"
                 onPointerDown={handleOutsidePointerDown}
             >
                 <div className="absolute inset-0 isolate z-0">
