@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
     AdditiveBlending,
     BufferAttribute,
@@ -20,6 +20,9 @@ const particleVertexShader = /* glsl */ `
     uniform float uTime;
     uniform float uViewportHeight;
     uniform float uPixelRatio;
+    uniform float uParticleCount;
+    uniform float uParticleFade;
+    attribute float aIndex;
     attribute vec3 aTangent;
     attribute vec3 aNormal;
     attribute vec4 aLife;
@@ -50,7 +53,8 @@ const particleVertexShader = /* glsl */ `
 
         // Subpixel grains retain their area instead of becoming equal-sized bright dots.
         float coverage = min(1.0, projectedSize * projectedSize / (minimumSize * minimumSize));
-        vStyle = vec4(aStyle.x * fadeIn * fadeOut * coverage, aStyle.yz, life);
+        float densityFade = 1.0 - smoothstep(uParticleCount, uParticleCount + uParticleFade, aIndex);
+        vStyle = vec4(aStyle.x * fadeIn * fadeOut * coverage * densityFade, aStyle.yz, life);
         vFragment = aShape.w;
         gl_Position = projectionMatrix * viewPosition;
     }
@@ -95,17 +99,16 @@ interface TimelineEnergyParticlesProps {
     reducedMotion: boolean;
 }
 
-function createParticleGeometry(
-    curve: Curve<Vector3>,
-    eventCount: number,
-    compact: boolean,
-    qualityFactor: number
-) {
+function getParticleCount(length: number, compact: boolean, qualityFactor: number): number {
     const quality = MathUtils.clamp(qualityFactor, 0.35, 1);
-    const length = curve.getLength();
     const density = (compact ? 80 : 116) * (0.6 + quality * 0.4);
     const limit = Math.round((compact ? 18_000 : 30_000) * (0.65 + quality * 0.35));
-    const particleCount = Math.min(Math.max(Math.round(length * density), 160), limit);
+    return Math.min(Math.max(Math.round(length * density), 160), limit);
+}
+
+function createParticleGeometry(curve: Curve<Vector3>, eventCount: number, compact: boolean) {
+    const length = curve.getLength();
+    const particleCount = getParticleCount(length, compact, 1);
     const sampleCount = Math.max(64, Math.min(eventCount * 12, 4096));
     const samples = curve.getSpacedPoints(sampleCount);
     const positions = new Float32Array(particleCount * 3);
@@ -114,6 +117,7 @@ function createParticleGeometry(
     const lives = new Float32Array(particleCount * 4);
     const shapes = new Float32Array(particleCount * 4);
     const styles = new Float32Array(particleCount * 4);
+    const indices = new Float32Array(particleCount);
     const point = new Vector3();
     const tangent = new Vector3();
     const normal = new Vector3();
@@ -124,6 +128,7 @@ function createParticleGeometry(
     };
 
     for (let index = 0; index < particleCount; index += 1) {
+        indices[index] = index;
         const progress = random();
         const sampleProgress = progress * sampleCount;
         const sampleIndex = Math.min(Math.floor(sampleProgress), sampleCount - 1);
@@ -178,6 +183,7 @@ function createParticleGeometry(
     geometry.setAttribute("aLife", new BufferAttribute(lives, 4));
     geometry.setAttribute("aShape", new BufferAttribute(shapes, 4));
     geometry.setAttribute("aStyle", new BufferAttribute(styles, 4));
+    geometry.setAttribute("aIndex", new BufferAttribute(indices, 1));
     geometry.computeBoundingBox();
     // Shader offsets must be included so culling remains correct near the ends of the stream.
     geometry.boundingBox?.expandByScalar(MAX_PARTICLE_RADIUS + MAX_PARTICLE_TRAVEL + 0.04);
@@ -194,9 +200,11 @@ export function TimelineEnergyParticles({
     reducedMotion,
 }: TimelineEnergyParticlesProps) {
     const geometry = useMemo(
-        () => createParticleGeometry(curve, eventCount, compact, qualityFactor),
-        [compact, curve, eventCount, qualityFactor]
+        () => createParticleGeometry(curve, eventCount, compact),
+        [compact, curve, eventCount]
     );
+    const targetParticleCount = getParticleCount(curve.getLength(), compact, qualityFactor);
+    const activeParticleCount = useRef(targetParticleCount);
     const material = useMemo(
         () =>
             new ShaderMaterial({
@@ -206,6 +214,8 @@ export function TimelineEnergyParticles({
                 toneMapped: false,
                 transparent: true,
                 uniforms: {
+                    uParticleCount: { value: 0 },
+                    uParticleFade: { value: 1 },
                     uPixelRatio: { value: 1 },
                     uTime: { value: 0 },
                     uViewportHeight: { value: 1 },
@@ -218,8 +228,23 @@ export function TimelineEnergyParticles({
     useEffect(() => () => geometry.dispose(), [geometry]);
     useEffect(() => () => material.dispose(), [material]);
 
-    useFrame(({ clock, gl, size }) => {
+    useFrame(({ clock, gl, size }, delta) => {
         const pixelRatio = gl.getPixelRatio();
+        const maximumParticleCount = geometry.getAttribute("position").count;
+        const particleFade = Math.max(16, maximumParticleCount * 0.035);
+        // Retain each grain's seed and lifetime while fading the density before trimming draws.
+        activeParticleCount.current = Math.min(
+            maximumParticleCount,
+            reducedMotion
+                ? targetParticleCount
+                : MathUtils.damp(activeParticleCount.current, targetParticleCount, 3, delta)
+        );
+        geometry.setDrawRange(
+            0,
+            Math.min(maximumParticleCount, Math.ceil(activeParticleCount.current + particleFade))
+        );
+        material.uniforms.uParticleCount.value = activeParticleCount.current;
+        material.uniforms.uParticleFade.value = particleFade;
         material.uniforms.uTime.value = reducedMotion ? 0 : clock.elapsedTime;
         material.uniforms.uViewportHeight.value = size.height * pixelRatio;
         material.uniforms.uPixelRatio.value = pixelRatio;

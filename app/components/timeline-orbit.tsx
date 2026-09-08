@@ -1405,19 +1405,21 @@ function TimelineScene({
     );
 }
 
-function DemandFrameLoop({ framesPerSecond }: { framesPerSecond: number }) {
+function DemandFrameLoop({ framesPerSecond }: { framesPerSecond?: number }) {
     const invalidate = useThree((state) => state.invalidate);
 
     useEffect(() => {
-        if (framesPerSecond <= 0) {
+        if (framesPerSecond !== undefined && framesPerSecond <= 0) {
             return;
         }
-        const frameInterval = 1000 / framesPerSecond;
+        // Keep one R3F frame mode so adapting the cadence never resets its animation clock.
+        const frameInterval = framesPerSecond === undefined ? 0 : 1000 / framesPerSecond;
         let animationFrame = 0;
         let lastFrameTime = 0;
         const requestFrame = (time: number) => {
             if (time - lastFrameTime >= frameInterval) {
-                lastFrameTime = time - ((time - lastFrameTime) % frameInterval);
+                lastFrameTime =
+                    frameInterval === 0 ? time : time - ((time - lastFrameTime) % frameInterval);
                 invalidate();
             }
             animationFrame = window.requestAnimationFrame(requestFrame);
@@ -1555,7 +1557,7 @@ export function TimelineOrbit({
             <Canvas
                 camera={cameraSettings}
                 dpr={2}
-                frameloop={reducedMotion || performanceFallback ? "demand" : "always"}
+                frameloop="demand"
                 gl={{ alpha: false, powerPreference: "high-performance", stencil: false }}
             >
                 <Suspense fallback={null}>
@@ -1579,9 +1581,11 @@ export function TimelineOrbit({
                             watchedSlugs={watchedSlugs}
                             zoomDistance={zoomDistance}
                         />
-                        {performanceFallback && !reducedMotion ? (
-                            <DemandFrameLoop framesPerSecond={30} />
-                        ) : null}
+                        {reducedMotion ? null : (
+                            <DemandFrameLoop
+                                framesPerSecond={performanceFallback ? 30 : undefined}
+                            />
+                        )}
                     </PerformanceMonitor>
                 </Suspense>
             </Canvas>
