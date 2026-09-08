@@ -96,52 +96,31 @@ const NORMAL_OUTER_RING_GEOMETRY = new TorusGeometry(0.32, 0.012, 8, 48);
 const SELECTED_OUTER_RING_GEOMETRY = new TorusGeometry(0.45, 0.012, 8, 48);
 const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.24, 0.008, 8, 40);
 const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.34, 0.008, 8, 40);
-// A single transparent surface keeps the gradient, halo and rounded tick in the
-// card's draw order. A nested Group would replace that order with its own.
-const WATCHED_INDICATOR_MATERIAL = new ShaderMaterial({
+// Draw the tick locally so the status never needs a remote fallback font.
+const WATCHED_TICK_MATERIAL = new ShaderMaterial({
     depthTest: false,
     depthWrite: false,
     fragmentShader: /* glsl */ `
         varying vec2 vUv;
-        uniform vec3 uLight;
-        uniform vec3 uGold;
-        uniform vec3 uBorder;
-        uniform vec3 uInk;
-
+        uniform vec3 uColour;
         float segmentDistance(vec2 p, vec2 a, vec2 b) {
             vec2 ab = b - a;
             return length(p - a - ab * clamp(dot(p - a, ab) / dot(ab, ab), 0.0, 1.0));
         }
-
         void main() {
-            vec2 p = vUv - 0.5;
-            float radius = length(p);
-            float aa = max(fwidth(radius), 0.001);
-            float disk = 1.0 - smoothstep(0.30 - aa, 0.30 + aa, radius);
-            float border = smoothstep(0.28 - aa, 0.28 + aa, radius);
-            float gradient = clamp(0.5 + (p.x - p.y) / 0.85, 0.0, 1.0);
-            vec3 colour = mix(mix(uLight, uGold, gradient), uBorder, border);
-            float tickDistance = min(
-                segmentDistance(p, vec2(-0.105, 0.0), vec2(-0.035, -0.07)),
-                segmentDistance(p, vec2(-0.035, -0.07), vec2(0.105, 0.093))
+            float distanceToTick = min(
+                segmentDistance(vUv, vec2(0.15, 0.48), vec2(0.40, 0.25)),
+                segmentDistance(vUv, vec2(0.40, 0.25), vec2(0.85, 0.78))
             );
-            float tick = 1.0 - smoothstep(0.021 - aa, 0.021 + aa, tickDistance);
-            colour = mix(colour, uInk, tick);
-            float halo = 0.22 * exp(-max(radius - 0.30, 0.0) * 20.0);
-            halo *= 1.0 - smoothstep(0.40, 0.50, radius);
-            float alpha = disk + halo * (1.0 - disk);
-            gl_FragColor = vec4(mix(uGold, colour, disk), alpha);
+            float aa = fwidth(distanceToTick);
+            float alpha = 1.0 - smoothstep(0.055 - aa, 0.055 + aa, distanceToTick);
+            gl_FragColor = vec4(uColour, alpha);
             #include <colorspace_fragment>
         }
     `,
     toneMapped: false,
     transparent: true,
-    uniforms: {
-        uBorder: { value: new Color("#ffc276") },
-        uGold: { value: new Color("#ff9b4a") },
-        uInk: { value: new Color("#17100a") },
-        uLight: { value: new Color("#ffe3a8") },
-    },
+    uniforms: { uColour: { value: new Color("#c49a65") } },
     vertexShader: /* glsl */ `
         varying vec2 vUv;
         void main() {
@@ -659,14 +638,31 @@ function TimelinePosterCard({
                     <primitive attach="material" object={posterShadeMaterial} />
                 </mesh>
                 {watched ? (
-                    <mesh
-                        geometry={CARD_PLANE_GEOMETRY}
-                        material={WATCHED_INDICATOR_MATERIAL}
-                        position={[CARD_WIDTH / 2 - CARD_PADDING - 0.055, metaTop - 0.055, 0.032]}
-                        renderOrder={renderOrder + 8}
-                        rotation={[0, 0, -0.07]}
-                        scale={[0.35, 0.35, 1]}
-                    />
+                    <>
+                        <mesh
+                            geometry={CARD_PLANE_GEOMETRY}
+                            material={WATCHED_TICK_MATERIAL}
+                            position={[META_LEFT + CARD_TEXT_WIDTH - 0.35, metaTop - 0.056, 0.026]}
+                            renderOrder={renderOrder + 7}
+                            scale={[0.066, 0.066, 1]}
+                        />
+                        <Text
+                            anchorX="right"
+                            anchorY="top"
+                            characters="WATCHED"
+                            color="#c49a65"
+                            font={GEIST_MONO_FONT_URL}
+                            fontSize={0.068}
+                            frustumCulled={false}
+                            letterSpacing={0.06}
+                            position={[META_LEFT + CARD_TEXT_WIDTH, metaTop - 0.018, 0.026]}
+                            ref={configureOverlayMesh}
+                            renderOrder={renderOrder + 7}
+                            whiteSpace="nowrap"
+                        >
+                            WATCHED
+                        </Text>
+                    </>
                 ) : null}
                 <Text
                     anchorX="left"
@@ -675,7 +671,7 @@ function TimelinePosterCard({
                     color={cardAccentColours[entry.contentType]}
                     fillOpacity={highlighted ? 1 : 0.9}
                     font={GEIST_MONO_FONT_URL}
-                    fontSize={META_FONT_SIZE}
+                    fontSize={watched ? 0.095 : META_FONT_SIZE}
                     frustumCulled={false}
                     letterSpacing={0.1}
                     maxWidth={CARD_TEXT_WIDTH}
