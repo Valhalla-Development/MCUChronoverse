@@ -2,7 +2,6 @@
 
 import {
     Image as DreiImage,
-    Html,
     OrbitControls,
     PerformanceMonitor,
     Sparkles,
@@ -97,6 +96,60 @@ const NORMAL_OUTER_RING_GEOMETRY = new TorusGeometry(0.32, 0.012, 8, 48);
 const SELECTED_OUTER_RING_GEOMETRY = new TorusGeometry(0.45, 0.012, 8, 48);
 const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.24, 0.008, 8, 40);
 const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.34, 0.008, 8, 40);
+// A single transparent surface keeps the gradient, halo and rounded tick in the
+// card's draw order. A nested Group would replace that order with its own.
+const WATCHED_INDICATOR_MATERIAL = new ShaderMaterial({
+    depthTest: false,
+    depthWrite: false,
+    fragmentShader: /* glsl */ `
+        varying vec2 vUv;
+        uniform vec3 uLight;
+        uniform vec3 uGold;
+        uniform vec3 uBorder;
+        uniform vec3 uInk;
+
+        float segmentDistance(vec2 p, vec2 a, vec2 b) {
+            vec2 ab = b - a;
+            return length(p - a - ab * clamp(dot(p - a, ab) / dot(ab, ab), 0.0, 1.0));
+        }
+
+        void main() {
+            vec2 p = vUv - 0.5;
+            float radius = length(p);
+            float aa = max(fwidth(radius), 0.001);
+            float disk = 1.0 - smoothstep(0.30 - aa, 0.30 + aa, radius);
+            float border = smoothstep(0.28 - aa, 0.28 + aa, radius);
+            float gradient = clamp(0.5 + (p.x - p.y) / 0.85, 0.0, 1.0);
+            vec3 colour = mix(mix(uLight, uGold, gradient), uBorder, border);
+            float tickDistance = min(
+                segmentDistance(p, vec2(-0.105, 0.0), vec2(-0.035, -0.07)),
+                segmentDistance(p, vec2(-0.035, -0.07), vec2(0.105, 0.093))
+            );
+            float tick = 1.0 - smoothstep(0.021 - aa, 0.021 + aa, tickDistance);
+            colour = mix(colour, uInk, tick);
+            float halo = 0.22 * exp(-max(radius - 0.30, 0.0) * 20.0);
+            halo *= 1.0 - smoothstep(0.40, 0.50, radius);
+            float alpha = disk + halo * (1.0 - disk);
+            gl_FragColor = vec4(mix(uGold, colour, disk), alpha);
+            #include <colorspace_fragment>
+        }
+    `,
+    toneMapped: false,
+    transparent: true,
+    uniforms: {
+        uBorder: { value: new Color("#ffc276") },
+        uGold: { value: new Color("#ff9b4a") },
+        uInk: { value: new Color("#17100a") },
+        uLight: { value: new Color("#ffe3a8") },
+    },
+    vertexShader: /* glsl */ `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+});
 const NORMAL_OUTER_RING_MATERIAL = createTimelineRingMaterial({
     colour: "#ffad52",
     opacity: 0.45,
@@ -606,18 +659,14 @@ function TimelinePosterCard({
                     <primitive attach="material" object={posterShadeMaterial} />
                 </mesh>
                 {watched ? (
-                    <Html
-                        center
-                        position={[CARD_WIDTH / 2 - CARD_PADDING - 0.055, metaTop - 0.055, 0.12]}
-                        style={{ pointerEvents: "none" }}
-                        zIndexRange={[30, 30]}
-                    >
-                        <span className="timeline-card-watched-indicator">
-                            <svg aria-hidden="true" viewBox="0 0 16 16">
-                                <path d="m3.5 8.25 3 3 6-7" />
-                            </svg>
-                        </span>
-                    </Html>
+                    <mesh
+                        geometry={CARD_PLANE_GEOMETRY}
+                        material={WATCHED_INDICATOR_MATERIAL}
+                        position={[CARD_WIDTH / 2 - CARD_PADDING - 0.055, metaTop - 0.055, 0.032]}
+                        renderOrder={renderOrder + 8}
+                        rotation={[0, 0, -0.07]}
+                        scale={[0.35, 0.35, 1]}
+                    />
                 ) : null}
                 <Text
                     anchorX="left"
