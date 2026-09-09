@@ -1,4 +1,89 @@
 import { AdditiveBlending, ShaderMaterial } from "three";
+import { energyNoise } from "./timeline-energy-shaders";
+
+/** Flowing plasma and a soft emission shoulder share one instanced tube per strand. */
+export function createTimelineNodeFilamentMaterial({ cardConnection = false } = {}) {
+    return new ShaderMaterial({
+        blending: AdditiveBlending,
+        depthWrite: false,
+        fragmentShader: /* glsl */ `
+            uniform float uTime;
+            uniform float uMotion;
+            uniform float uConnection;
+            varying vec3 vNormal;
+            varying vec3 vView;
+            varying vec3 vAccent;
+            varying float vAlong;
+            varying float vSeed;
+            varying float vAround;
+            ${energyNoise}
+            void main() {
+                float facing = max(dot(normalize(vNormal), normalize(vView)), 0.0);
+                float radial = sqrt(max(0.0, 1.0 - facing * facing));
+                float filament = exp(-pow(radial / 0.12, 2.0));
+                float fade = mix(1.0 - smoothstep(0.72, 1.0, vAlong), 1.0, uConnection);
+                float travel = uTime * uMotion;
+                vec3 coordinate = vec3(vAlong * 11.0 - travel * 1.3, vAround * 3.0, vSeed);
+                float plasma = noise3(coordinate);
+                float detail = noise3(coordinate * 2.4 + vec3(travel * 0.4, 5.7, 1.3));
+                float surge = pow(0.5 + 0.5 * sin(vAlong * 20.0 - travel * 2.4 + vSeed), 8.0) * uMotion;
+                float body = exp(-radial * radial * (6.0 + detail * 7.0));
+                float shoulder = exp(-radial * radial * 3.0) * 0.14;
+                float flow = 0.85 + plasma * 0.45 + surge * 0.5;
+                vec3 colour = mix(vAccent, vec3(1.0, 0.27, 0.035), smoothstep(0.1, 0.85, vAlong) * (1.0 - uConnection));
+                vec3 emission = mix(colour, vec3(1.0, 0.94, 0.82), 0.6) * filament * flow;
+                emission += colour * (body * (0.15 + plasma * 0.45 + surge * 0.25) + shoulder);
+                float edge = 1.0 - smoothstep(0.72, 1.0, radial);
+                gl_FragColor = vec4(emission * edge * fade, 1.0);
+                #include <colorspace_fragment>
+            }
+        `,
+        toneMapped: false,
+        transparent: true,
+        uniforms: {
+            uConnection: { value: cardConnection ? 1 : 0 },
+            uMotion: { value: 1 },
+            uTime: { value: 0 },
+        },
+        vertexShader: /* glsl */ `
+            uniform float uTime;
+            uniform float uMotion;
+            uniform float uConnection;
+            varying vec3 vNormal;
+            varying vec3 vView;
+            varying vec3 vAccent;
+            varying float vAlong;
+            varying float vSeed;
+            varying float vAround;
+            void main() {
+                // Seed from the fixed node position, not the moving card or elapsed time.
+                vec3 anchor = (instanceMatrix * vec4(0.0, -0.5 * uConnection, 0.0, 1.0)).xyz;
+                float seed = fract(sin(floor(anchor.x * 10.0 + 0.5) * 12.9898) * 43758.5453);
+                vec3 point = position;
+                float strandLength = length(instanceMatrix[1].xyz);
+                // Keep the first core-radius of the link axial so it emerges from the centre.
+                float envelope = smoothstep(0.14, 0.23, uv.x * strandLength)
+                    * pow(sin(uv.x * 3.141593), 2.0) * uConnection;
+                float phase = seed * 6.283185;
+                float bend = sin(uv.x * (3.141593 + seed * 3.0) + phase);
+                float drift = sin(uv.x * 6.283185 + uTime * (0.4 + seed * 0.25) + phase)
+                    * 0.012 * uMotion;
+                point.x += envelope * (bend * (0.045 + seed * 0.045) + drift);
+                point.z += envelope * cos(uv.x * 4.7 + phase) * (0.015 + seed * 0.02);
+                vec4 viewPosition = modelViewMatrix * instanceMatrix * vec4(point, 1.0);
+                mat3 basis = mat3(instanceMatrix);
+                vec3 scaleSquared = vec3(dot(basis[0], basis[0]), dot(basis[1], basis[1]), dot(basis[2], basis[2]));
+                vNormal = normalMatrix * basis * (normal / max(scaleSquared, vec3(0.000001)));
+                vView = -viewPosition.xyz;
+                vAccent = instanceColor;
+                vAlong = uv.x;
+                vSeed = seed * 23.71;
+                vAround = uv.y;
+                gl_Position = projectionMatrix * viewPosition;
+            }
+        `,
+    });
+}
 
 /** One small billboard per anchor supplies bloom and sparks without lights or postprocessing. */
 export function createTimelineNodeMaterial() {
@@ -19,9 +104,9 @@ export function createTimelineNodeMaterial() {
                 float aa = max(fwidth(r), 0.001);
                 float breath = 1.0 + sin(uTime * 1.15 + vSeed) * uMotion * (0.035 + vFocus * 0.035);
                 float glow = exp(-r * r * 75.0) * 0.65 + exp(-r * r * 19.0) * 0.075;
-                float halo = 1.0 - smoothstep(0.002, 0.002 + aa, abs(r - 0.185));
+                float halo = 1.0 - smoothstep(0.002, 0.002 + aa, abs(r - 0.13));
                 vec2 stream = vec2(dot(p, vStream), dot(p, vec2(-vStream.y, vStream.x)));
-                float bleed = exp(-stream.x * stream.x * 12.0 - stream.y * stream.y * 900.0) * 0.16;
+                float bleed = exp(-stream.x * stream.x * 12.0 - stream.y * stream.y * 900.0) * 0.055;
                 float sparks = 0.0;
                 for (int i = 0; i < 4; i++) {
                     float seed = float(i) * 2.39996 + vSeed;

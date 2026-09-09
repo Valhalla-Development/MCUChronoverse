@@ -38,14 +38,17 @@ import {
     ShaderMaterial,
     SphereGeometry,
     TorusGeometry,
+    TubeGeometry,
     Vector3,
 } from "three";
 import { configureTextBuilder } from "troika-three-text";
 import type { TimelineEntry } from "../data/types";
 import { timelineNodePosition } from "../lib/timeline";
+import { createTimelineConnectorVolume } from "../lib/timeline-connector-volume";
 import { getTimelineNodeAccent } from "../lib/timeline-node-accent";
 import {
     createTimelineNodeCoreMaterial,
+    createTimelineNodeFilamentMaterial,
     createTimelineNodeMaterial,
 } from "../lib/timeline-node-material";
 import { createTimelineRingMaterial } from "../lib/timeline-ring-material";
@@ -68,7 +71,7 @@ const TIMELINE_CARD_FOCUS_OFFSET_Y = 1.28;
 const CARD_WIDTH = 1.29;
 const CARD_BASE_HEIGHT = 2.6;
 const CARD_RADIUS = 0.098;
-const CARD_GAP_FROM_ORB = 0.22;
+const CARD_GAP_FROM_ORB = 0.65;
 const CARD_PADDING = 0.08;
 const POSTER_WIDTH = CARD_WIDTH - CARD_PADDING * 2;
 const POSTER_HEIGHT = POSTER_WIDTH * 1.5;
@@ -87,10 +90,45 @@ const CARD_PLANE_GEOMETRY = new PlaneGeometry(1, 1);
 const CARD_HIT_MATERIAL = new MeshBasicMaterial({ visible: false });
 const POSTER_TEXTURE_WIDTH = 640;
 const NODE_SPHERE_GEOMETRY = new SphereGeometry(0.11, 24, 24);
-const NORMAL_OUTER_RING_GEOMETRY = new TorusGeometry(0.32, 0.004, 8, 48);
-const SELECTED_OUTER_RING_GEOMETRY = new TorusGeometry(0.45, 0.005, 8, 48);
-const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.24, 0.003, 8, 40);
-const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.34, 0.004, 8, 40);
+const NODE_LIFT = 0.3;
+// Each arm merges tangentially into the stream and curls gently into the raised core.
+const NODE_FILAMENT_CURVE = new CatmullRomCurve3([
+    new Vector3(0, 0, 0),
+    new Vector3(0.2, -0.025, 0.035),
+    new Vector3(0.5, -NODE_LIFT + 0.025, 0.02),
+    new Vector3(0.82, -NODE_LIFT, 0),
+]);
+const NODE_FILAMENT_GEOMETRY = new TubeGeometry(NODE_FILAMENT_CURVE, 32, 0.085, 12, false);
+const NORMAL_OUTER_RING_GEOMETRY = new TorusGeometry(0.223, 0.003, 8, 48);
+const SELECTED_OUTER_RING_GEOMETRY = new TorusGeometry(0.284, 0.004, 8, 48);
+const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.185, 0.0025, 8, 40);
+const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.231, 0.003, 8, 40);
+const CARD_CONNECTION_CURVE = new LineCurve3(new Vector3(0, -0.5, 0), new Vector3(0, 0.5, 0));
+const CARD_CONNECTION_GEOMETRY = new TubeGeometry(
+    // The shader varies the middle of each link while keeping its exit centred on the orb.
+    CARD_CONNECTION_CURVE,
+    32,
+    0.07,
+    12,
+    false
+);
+const NODE_FILAMENT_VOLUME = createTimelineConnectorVolume(NODE_FILAMENT_CURVE);
+const CARD_CONNECTION_VOLUME = createTimelineConnectorVolume(CARD_CONNECTION_CURVE, true);
+const CONNECTOR_EFFECTS = {
+    surface: {
+        arm: {
+            createMaterial: createTimelineNodeFilamentMaterial,
+            geometry: NODE_FILAMENT_GEOMETRY,
+        },
+        card: {
+            createMaterial: () => createTimelineNodeFilamentMaterial({ cardConnection: true }),
+            geometry: CARD_CONNECTION_GEOMETRY,
+        },
+    },
+    volumetric: { arm: NODE_FILAMENT_VOLUME, card: CARD_CONNECTION_VOLUME },
+};
+// Switch to .surface to restore the previous connector effect without changing geometry settings.
+const CONNECTOR_EFFECT = CONNECTOR_EFFECTS.volumetric;
 // Draw the tick locally so the status never needs a remote fallback font.
 const WATCHED_BADGE_MATERIAL = new ShaderMaterial({
     depthTest: true,
@@ -847,44 +885,58 @@ function InstancedTimelineRings({
         }
     }, [instances, selected]);
 
-    useFrame(({ clock }) => {
-        const elapsed = reducedMotion ? 0 : clock.elapsedTime;
-        NORMAL_OUTER_RING_MATERIAL.uniforms.uTime.value = elapsed;
-        SELECTED_OUTER_RING_MATERIAL.uniforms.uTime.value = elapsed;
-        INNER_RING_MATERIAL.uniforms.uTime.value = elapsed;
-        groupEuler.set(elapsed * 0.055, 1.05, 0);
-        groupQuaternion.setFromEuler(groupEuler);
+    const updateRings = useCallback(
+        (elapsed: number) => {
+            NORMAL_OUTER_RING_MATERIAL.uniforms.uTime.value = elapsed;
+            SELECTED_OUTER_RING_MATERIAL.uniforms.uTime.value = elapsed;
+            INNER_RING_MATERIAL.uniforms.uTime.value = elapsed;
+            groupEuler.set(elapsed * 0.055, 1.05, 0);
+            groupQuaternion.setFromEuler(groupEuler);
 
-        const writeInstances = (mesh: InstancedMesh | null, inner: boolean) => {
-            if (!mesh) {
-                return;
-            }
-            const quaternion = inner
-                ? ringQuaternion.copy(groupQuaternion).multiply(innerQuaternion)
-                : groupQuaternion;
-            instances.forEach(({ position }, instanceId) => {
-                matrix.compose(position, quaternion, scale);
-                mesh.setMatrixAt(instanceId, matrix);
-            });
-            mesh.instanceMatrix.needsUpdate = true;
-        };
-        writeInstances(normalOuterRef.current, false);
-        writeInstances(normalInnerRef.current, true);
+            const writeInstances = (mesh: InstancedMesh | null, inner: boolean) => {
+                if (!mesh) {
+                    return;
+                }
+                const quaternion = inner
+                    ? ringQuaternion.copy(groupQuaternion).multiply(innerQuaternion)
+                    : groupQuaternion;
+                instances.forEach(({ position }, instanceId) => {
+                    matrix.compose(position, quaternion, scale);
+                    mesh.setMatrixAt(instanceId, matrix);
+                });
+                mesh.instanceMatrix.needsUpdate = true;
+            };
+            writeInstances(normalOuterRef.current, false);
+            writeInstances(normalInnerRef.current, true);
 
-        const writeSelected = (mesh: InstancedMesh | null, inner: boolean) => {
-            if (!(mesh && selected)) {
-                return;
-            }
-            const quaternion = inner
-                ? ringQuaternion.copy(groupQuaternion).multiply(innerQuaternion)
-                : groupQuaternion;
-            matrix.compose(selected.position, quaternion, scale);
-            mesh.setMatrixAt(0, matrix);
-            mesh.instanceMatrix.needsUpdate = true;
-        };
-        writeSelected(selectedOuterRef.current, false);
-        writeSelected(selectedInnerRef.current, true);
-    });
+            const writeSelected = (mesh: InstancedMesh | null, inner: boolean) => {
+                if (!(mesh && selected)) {
+                    return;
+                }
+                const quaternion = inner
+                    ? ringQuaternion.copy(groupQuaternion).multiply(innerQuaternion)
+                    : groupQuaternion;
+                matrix.compose(selected.position, quaternion, scale);
+                mesh.setMatrixAt(0, matrix);
+                mesh.instanceMatrix.needsUpdate = true;
+            };
+            writeSelected(selectedOuterRef.current, false);
+            writeSelected(selectedInnerRef.current, true);
+        },
+        [
+            groupEuler,
+            groupQuaternion,
+            innerQuaternion,
+            instances,
+            matrix,
+            ringQuaternion,
+            scale,
+            selected,
+        ]
+    );
+
+    useLayoutEffect(() => updateRings(0), [updateRings]);
+    useFrame(({ clock }) => updateRings(reducedMotion ? 0 : clock.elapsedTime));
 
     return (
         <>
@@ -950,6 +1002,50 @@ function TimelineNodeGlow({ instances, reducedMotion, selected }: InstancedTimel
     );
 }
 
+function TimelineNodeFilaments({ instances, reducedMotion }: InstancedTimelineRingsProps) {
+    const meshRef = useRef<InstancedMesh>(null);
+    const material = useMemo(CONNECTOR_EFFECT.arm.createMaterial, []);
+    useEffect(() => () => material.dispose(), [material]);
+    useLayoutEffect(() => {
+        const mesh = meshRef.current as InstancedMesh;
+        const matrix = new Matrix4();
+        const colour = new Color();
+        let armIndex = 0;
+        instances.forEach(({ entry, position }, index) => {
+            for (const direction of [-1, 1]) {
+                // End anchors only draw the arm that joins the existing stream.
+                if (
+                    (index === 0 && direction === -1) ||
+                    (index === instances.length - 1 && direction === 1)
+                ) {
+                    continue;
+                }
+                matrix.makeScale(direction, 1, direction).setPosition(position);
+                mesh.setMatrixAt(armIndex, matrix);
+                mesh.setColorAt(armIndex, colour.set(getTimelineNodeAccent(entry)));
+                armIndex += 1;
+            }
+        });
+        mesh.count = armIndex;
+        mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor) {
+            mesh.instanceColor.needsUpdate = true;
+        }
+    }, [instances]);
+    useFrame(({ clock }) => {
+        material.uniforms.uTime.value = reducedMotion ? 0 : clock.elapsedTime;
+        material.uniforms.uMotion.value = reducedMotion ? 0 : 1;
+    });
+    return (
+        <instancedMesh
+            args={[CONNECTOR_EFFECT.arm.geometry, material, instances.length * 2]}
+            frustumCulled={false}
+            ref={meshRef}
+            renderOrder={3}
+        />
+    );
+}
+
 interface InstancedTimelineNodesProps {
     count: number;
     entries: readonly TimelineEntry[];
@@ -973,7 +1069,7 @@ function InstancedTimelineNodes({
                 const position = timelineNodePosition(index, count);
                 return {
                     entry,
-                    position: new Vector3(position.x, position.y, position.z),
+                    position: new Vector3(position.x, position.y + NODE_LIFT, position.z),
                 };
             }),
         [count, entries]
@@ -1012,16 +1108,20 @@ function InstancedTimelineNodes({
 
     return (
         <>
-            <TimelineNodeGlow
-                instances={instances}
-                reducedMotion={reducedMotion}
-                selected={selected}
-            />
-            <InstancedTimelineRings
-                instances={normalInstances}
-                reducedMotion={reducedMotion}
-                selected={selected}
-            />
+            <TimelineNodeFilaments instances={instances} reducedMotion={reducedMotion} />
+            {/* Keep the transparent node details in one stable pass across camera angles. */}
+            <group renderOrder={SELECTED_CARD_RENDER_ORDER + 1}>
+                <TimelineNodeGlow
+                    instances={instances}
+                    reducedMotion={reducedMotion}
+                    selected={selected}
+                />
+                <InstancedTimelineRings
+                    instances={normalInstances}
+                    reducedMotion={reducedMotion}
+                    selected={selected}
+                />
+            </group>
             <InstancedNodeSphereGroup
                 instances={normalInstances}
                 material={NODE_SPHERE_MATERIAL}
@@ -1036,7 +1136,7 @@ function InstancedTimelineNodes({
                     onPointerOut={handleSelectedPointerOut}
                     onPointerOver={handleSelectedPointerOver}
                     position={selected.position}
-                    scale={1.55}
+                    scale={1.25}
                 >
                     <primitive attach="geometry" object={NODE_SPHERE_GEOMETRY} />
                     <primitive attach="material" object={SELECTED_NODE_SPHERE_MATERIAL} />
@@ -1087,6 +1187,7 @@ interface TimelineCardsProps {
     entries: readonly TimelineEntry[];
     focusIndex: number;
     onSelect: (slug: string) => void;
+    reducedMotion: boolean;
     selectedSlug?: string;
     watchedSlugs: readonly string[];
 }
@@ -1105,6 +1206,7 @@ function TimelineCards({
     entries,
     focusIndex,
     onSelect,
+    reducedMotion,
     selectedSlug,
     watchedSlugs,
 }: TimelineCardsProps) {
@@ -1112,6 +1214,22 @@ function TimelineCards({
     const billboardRefs = useRef<Array<Group | null>>([]);
     const cardRefs = useRef<Array<Group | null>>([]);
     const anchorViewPosition = useMemo(() => new Vector3(), []);
+    const connectionRef = useRef<InstancedMesh>(null);
+    const connectionMaterial = useMemo(CONNECTOR_EFFECT.card.createMaterial, []);
+    useEffect(() => () => connectionMaterial.dispose(), [connectionMaterial]);
+    const connection = useMemo(
+        () => ({
+            direction: new Vector3(),
+            end: new Vector3(),
+            matrix: new Matrix4(),
+            midpoint: new Vector3(),
+            quaternion: new Quaternion(),
+            scale: new Vector3(1, 1, 1),
+            start: new Vector3(),
+            up: new Vector3(0, 1, 0),
+        }),
+        []
+    );
     const watchedSlugSet = useMemo(() => new Set(watchedSlugs), [watchedSlugs]);
     useCursor(Boolean(hoveredSlug));
     const registrations = useMemo<TimelineCardRegistration[]>(
@@ -1155,7 +1273,45 @@ function TimelineCards({
         setHoveredSlug((current) => (current === slug ? undefined : current));
     }, []);
 
-    useFrame(({ camera, invalidate }, delta) => {
+    useLayoutEffect(() => {
+        const mesh = connectionRef.current as InstancedMesh;
+        const colour = new Color();
+        entries.forEach((entry, index) => {
+            mesh.setColorAt(index, colour.set(getTimelineNodeAccent(entry)));
+        });
+        mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+        if (mesh.instanceColor) {
+            mesh.instanceColor.needsUpdate = true;
+        }
+    }, [entries]);
+
+    const updateConnection = useCallback(
+        (billboard: Group, card: Group, index: number) => {
+            const mesh = connectionRef.current as InstancedMesh;
+            if (!billboard.parent) {
+                return;
+            }
+            billboard.parent.getWorldPosition(connection.start);
+            connection.start.y += NODE_LIFT;
+            // Transform the actual card bottom, including its billboard rotation and focus scale.
+            connection.end.set(0, CARD_GAP_FROM_ORB - billboard.position.y, 0);
+            card.localToWorld(connection.end);
+            connection.direction.subVectors(connection.end, connection.start);
+            connection.scale.y = connection.direction.length();
+            connection.quaternion.setFromUnitVectors(
+                connection.up,
+                connection.direction.normalize()
+            );
+            connection.midpoint.addVectors(connection.start, connection.end).multiplyScalar(0.5);
+            connection.matrix.compose(connection.midpoint, connection.quaternion, connection.scale);
+            mesh.setMatrixAt(index, connection.matrix);
+        },
+        [connection]
+    );
+
+    useFrame(({ camera, clock, invalidate }, delta) => {
+        connectionMaterial.uniforms.uTime.value = reducedMotion ? 0 : clock.elapsedTime;
+        connectionMaterial.uniforms.uMotion.value = reducedMotion ? 0 : 1;
         let animationMoving = false;
         entries.forEach((entry, index) => {
             const billboard = billboardRefs.current[index];
@@ -1186,34 +1342,47 @@ function TimelineCards({
                 anchorViewPosition.z,
                 selected
             );
+            updateConnection(billboard, card, index);
             animationMoving ||=
                 Math.abs(nextScale - targetScale) > 0.001 ||
                 Math.abs(nextOffsetY - targetOffsetY) > 0.001;
         });
+        (connectionRef.current as InstancedMesh).instanceMatrix.needsUpdate = true;
         if (animationMoving) {
             invalidate();
         }
     });
 
-    return entries.map((entry, index) => {
-        const selected = selectedSlug === entry.slug;
-        const highlighted = selected || focusIndex === index || hoveredSlug === entry.slug;
-        return (
-            <TimelineNode
-                billboardRef={registrations[index].billboardRef}
-                cardRef={registrations[index].cardRef}
-                count={entries.length}
-                entry={entry}
-                highlighted={highlighted}
-                index={index}
-                key={entry.slug}
-                onCardPointerOut={handlePointerOut}
-                onCardPointerOver={handlePointerOver}
-                onCardSelect={handleSelect}
-                watched={watchedSlugSet.has(entry.slug)}
-            />
-        );
-    });
+    return (
+        <>
+            <group renderOrder={SELECTED_CARD_RENDER_ORDER + 1}>
+                <instancedMesh
+                    args={[CONNECTOR_EFFECT.card.geometry, connectionMaterial, entries.length]}
+                    frustumCulled={false}
+                    ref={connectionRef}
+                />
+            </group>
+            {entries.map((entry, index) => {
+                const selected = selectedSlug === entry.slug;
+                const highlighted = selected || focusIndex === index || hoveredSlug === entry.slug;
+                return (
+                    <TimelineNode
+                        billboardRef={registrations[index].billboardRef}
+                        cardRef={registrations[index].cardRef}
+                        count={entries.length}
+                        entry={entry}
+                        highlighted={highlighted}
+                        index={index}
+                        key={entry.slug}
+                        onCardPointerOut={handlePointerOut}
+                        onCardPointerOver={handlePointerOver}
+                        onCardSelect={handleSelect}
+                        watched={watchedSlugSet.has(entry.slug)}
+                    />
+                );
+            })}
+        </>
+    );
 }
 
 interface TargetableControls {
@@ -1467,6 +1636,7 @@ function TimelineScene({
                 entries={entries}
                 focusIndex={focusIndex}
                 onSelect={onSelect}
+                reducedMotion={reducedMotion}
                 selectedSlug={selectedSlug}
                 watchedSlugs={watchedSlugs}
             />
