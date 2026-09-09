@@ -101,8 +101,8 @@ const cloudVertexShader = /* glsl */ `
         vec3 relative = mod(aCentre + drift - cameraPosition + uVolume * 0.5, uVolume)
             - uVolume * 0.5;
         float distanceToCamera = length(relative);
-        vFade = smoothstep(16.0, 30.0, distanceToCamera)
-            * (1.0 - smoothstep(uVolume * 0.31, uVolume * 0.46, distanceToCamera));
+        vFade = smoothstep(10.0, 19.0, distanceToCamera)
+            * (1.0 - smoothstep(uVolume * 0.34, uVolume * 0.48, distanceToCamera));
         vec4 view = viewMatrix * vec4(relative + cameraPosition, 1.0);
         float angle = aCloudStyle.z;
         vec2 local = position.xy * aCloudStyle.xy;
@@ -116,6 +116,7 @@ const cloudVertexShader = /* glsl */ `
 const cloudFragmentShader = /* glsl */ `
     uniform float uWarmth;
     uniform float uCloudOpacity;
+    uniform float uPalette;
     varying vec2 vUv;
     varying float vFade;
     varying float vSeed;
@@ -136,22 +137,46 @@ const cloudFragmentShader = /* glsl */ `
     void main() {
         vec2 p = vUv * 2.0 - 1.0;
         vec2 seed = vec2(vSeed, vSeed * 0.37);
-        vec2 warp = vec2(smoke(p * 2.3 + seed), smoke(p * 2.3 + seed + 31.0));
-        float density = smoke(p * 3.7 + warp * 2.2 + seed);
-        float edge = 1.0 - smoothstep(0.28, 0.95, length(p + (warp - 0.5) * 0.28));
+        vec2 warp = vec2(smoke(p * 1.8 + seed), smoke(p * 2.1 + seed + 31.0));
+        float density = smoke(p * 3.15 + warp * 2.45 + seed);
+        float edge = 1.0 - smoothstep(0.25, 0.98, length(p + (warp - 0.5) * 0.34));
         // Eroded holes and a soft boundary produce isolated smoke, never a
         // rectangular overlay or a continuous bright band across the scene.
-        float holes = smoothstep(0.28, 0.64, smoke(p * 2.8 + seed + 83.0));
-        float alpha = edge * holes * smoothstep(0.25, 0.7, density) * vFade * 0.095;
-        vec3 colour = mix(vec3(0.17, 0.052, 0.009), vec3(0.36, 0.125, 0.014), density);
-        float tintMask = smoothstep(0.2, 0.65, noise(p * 1.8 + seed + 41.0));
-        vec3 tint = mix(vec3(0.38, 0.19, 0.012), vec3(0.4, 0.045, 0.006),
-            noise(p * 2.1 + seed + uWarmth * 3.0));
-        // Change chroma within selected smoky pockets, preserving luminance
-        // instead of raising opacity or washing the black gaps with colour.
-        vec3 luminance = vec3(0.2126, 0.7152, 0.0722);
-        tint *= dot(colour, luminance) / dot(tint, luminance);
-        colour = mix(colour, tint, tintMask * (0.75 + uWarmth * 0.25));
+        float holes = smoothstep(0.3, 0.66, smoke(p * 2.55 + seed + 83.0));
+        float body = edge * holes * smoothstep(0.24, 0.69, density);
+        float alpha = body * vFade * mix(0.15, 0.23, density);
+
+        vec3 shadowColour;
+        vec3 bodyColour;
+        vec3 accentColour;
+        vec3 highlightColour;
+        if (uPalette < 0.5) {
+            shadowColour = vec3(0.075, 0.025, 0.24);
+            bodyColour = vec3(0.42, 0.075, 0.68);
+            accentColour = vec3(0.025, 0.42, 0.58);
+            highlightColour = vec3(0.72, 0.19, 0.075);
+        } else if (uPalette < 1.5) {
+            shadowColour = vec3(0.24, 0.018, 0.075);
+            bodyColour = vec3(0.68, 0.055, 0.23);
+            accentColour = vec3(0.035, 0.3, 0.68);
+            highlightColour = vec3(0.72, 0.3, 0.018);
+        } else {
+            shadowColour = vec3(0.012, 0.15, 0.18);
+            bodyColour = vec3(0.025, 0.46, 0.32);
+            accentColour = vec3(0.25, 0.075, 0.62);
+            highlightColour = vec3(0.68, 0.3, 0.018);
+        }
+
+        float colourRegion = smoke(p * 1.28 + seed + 41.0 + uWarmth * 4.0);
+        float accentMask = smoothstep(0.39, 0.68, colourRegion);
+        float highlightRegion = smoke(p * 2.7 - seed * 0.4 + 117.0);
+        float highlightMask = smoothstep(0.59, 0.78, highlightRegion)
+            * smoothstep(0.38, 0.72, density);
+        vec3 colour = mix(shadowColour, bodyColour, smoothstep(0.28, 0.76, density));
+        colour = mix(colour, accentColour, accentMask * 0.78);
+        colour = mix(colour, highlightColour, highlightMask * 0.66);
+        colour += mix(accentColour, highlightColour, highlightMask)
+            * smoothstep(0.64, 0.83, density) * 0.1;
         gl_FragColor = vec4(colour, alpha * uCloudOpacity);
         #include <colorspace_fragment>
     }
@@ -160,13 +185,12 @@ const cloudFragmentShader = /* glsl */ `
 function createField(count: number, volume: number, dust: boolean, loadSeed: number) {
     const positions = new Float32Array(count * 3);
     const styles = new Float32Array(count * 4);
-    // Preserve the broad composition and perturb its details with an independent
-    // load seed. Density and brightness have a slight downward bias to keep
-    // variation from gradually making the field brighter.
-    const random = seededRandom(dust ? 8191 : 137);
+    // A full refresh generates a new field while all scene remounts retain it.
+    const random = seededRandom((loadSeed + (dust ? 8191 : 137) * 1_000_003) % 4_294_967_296);
     const variation = seededRandom((loadSeed + (dust ? 8191 : 137)) % 4_294_967_296);
-    const density = 0.9 + variation() * 0.1;
+    const density = 0.92 + variation() * 0.08;
     const warmth = variation();
+    const palette = Math.floor(variation() * 3);
     const gaussian = () =>
         Math.sqrt(-2 * Math.log(Math.max(random(), 0.0001))) * Math.cos(random() * Math.PI * 2);
     // Separate, crooked filaments occupy a small fraction of the volume. Their
@@ -232,9 +256,9 @@ function createField(count: number, volume: number, dust: boolean, loadSeed: num
     const cloudCentres: number[] = [];
     const cloudStyles: number[] = [];
     if (dust) {
-        for (let index = 0; index < filaments.length; index += 4) {
+        for (let index = 0; index < filaments.length; index += 2) {
             const filament = filaments[index];
-            for (const t of [-0.45, 0.25]) {
+            for (const t of [-0.58, 0.08, 0.62]) {
                 point
                     .copy(filament.centre)
                     .addScaledVector(filament.direction, t * filament.length)
@@ -243,7 +267,7 @@ function createField(count: number, volume: number, dust: boolean, loadSeed: num
                         Math.sin(t * 3 + filament.phase) * filament.bend
                     );
                 cloudCentres.push(point.x, point.y, point.z);
-                cloudStyles.push(8 + filament.width * 7, 5 + filament.width * 4, filament.phase);
+                cloudStyles.push(15 + filament.width * 11, 9 + filament.width * 7, filament.phase);
             }
         }
     }
@@ -251,6 +275,7 @@ function createField(count: number, volume: number, dust: boolean, loadSeed: num
         cloudCentres: new Float32Array(cloudCentres),
         cloudStyles: new Float32Array(cloudStyles),
         density,
+        palette,
         positions,
         styles,
         warmth,
@@ -281,6 +306,7 @@ function CosmicLayer({
             uCloudOpacity: { value: field.density },
             uDust: { value: dust ? 1 : 0 },
             uNodes: { value: Array.from({ length: 6 }, () => new Vector3(1e6, 1e6, 1e6)) },
+            uPalette: { value: field.palette },
             uPixelRatio: { value: 1 },
             uTime: { value: 0 },
             uVolume: { value: volume },
