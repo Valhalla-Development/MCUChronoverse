@@ -45,7 +45,7 @@ import { configureTextBuilder } from "troika-three-text";
 import type { TimelineEntry } from "../data/types";
 import { timelineNodePosition } from "../lib/timeline";
 import { createTimelineConnectorVolume } from "../lib/timeline-connector-volume";
-import { getTimelineNodeAccent } from "../lib/timeline-node-accent";
+import { cardAccentColours, getTimelineNodeAccent } from "../lib/timeline-node-accent";
 import {
     createTimelineNodeCoreMaterial,
     createTimelineNodeFilamentMaterial,
@@ -59,13 +59,6 @@ import { TimelineEnergy } from "./timeline-energy";
 // Main-thread typesetting remains asynchronous and only runs when card text changes.
 configureTextBuilder({ useWorker: false });
 
-const cardAccentColours: Record<TimelineEntry["contentType"], string> = {
-    film: "#d98a7d",
-    "one-shot": "#b88cff",
-    series: "#65cfff",
-    short: "#61e4a8",
-    special: "#ffe08a",
-};
 const TIMELINE_CARD_FOCUS_OFFSET_Y = 1.28;
 
 const CARD_WIDTH = 1.29;
