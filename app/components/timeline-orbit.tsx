@@ -61,22 +61,20 @@ configureTextBuilder({ useWorker: false });
 
 const TIMELINE_CARD_FOCUS_OFFSET_Y = 1.28;
 
-const CARD_WIDTH = 1.29;
-const CARD_BASE_HEIGHT = 2.6;
-const CARD_RADIUS = 0.098;
+const CARD_WIDTH = 1.32;
+const CARD_BASE_HEIGHT = 1.86;
+const CARD_RADIUS = 0.085;
 const CARD_GAP_FROM_ORB = 0.65;
-const CARD_PADDING = 0.08;
+const CARD_PADDING = 0.008;
+// The 65% artwork over a 60% surface leaves a subtle 14% background bleed.
 const POSTER_WIDTH = CARD_WIDTH - CARD_PADDING * 2;
-const POSTER_HEIGHT = POSTER_WIDTH * 1.5;
-const META_LEFT = -CARD_WIDTH / 2 + CARD_PADDING + 0.05;
-const POSTER_META_GAP = 0.094;
-const META_FONT_SIZE = 0.114;
-const META_ROW_STEP = 0.198;
-const TITLE_ROW_STEP = 0.226;
-const TITLE_FONT_SIZE = 0.142;
-const META_LINE_HEIGHT = META_FONT_SIZE * 1.3;
-const TITLE_LINE_HEIGHT = TITLE_FONT_SIZE * 1.3;
-const CARD_TEXT_WIDTH = CARD_WIDTH - (CARD_PADDING + 0.05) * 2;
+const POSTER_HEIGHT = CARD_BASE_HEIGHT - CARD_PADDING * 2;
+const META_LEFT = -CARD_WIDTH / 2 + CARD_PADDING + 0.085;
+const META_FONT_SIZE = 0.067;
+const TITLE_FONT_SIZE = 0.102;
+const CARD_TEXT_WIDTH = CARD_WIDTH - (CARD_PADDING + 0.085) * 2;
+const CARD_BOTTOM_INSET = CARD_PADDING + 0.085;
+const CARD_META_GAP = 0.115;
 const CARD_RENDER_ORDER_BASE = 1000;
 const SELECTED_CARD_RENDER_ORDER = 2000;
 const CARD_PLANE_GEOMETRY = new PlaneGeometry(1, 1);
@@ -122,45 +120,52 @@ const CONNECTOR_EFFECTS = {
 };
 // Switch to .surface to restore the previous connector effect without changing geometry settings.
 const CONNECTOR_EFFECT = CONNECTOR_EFFECTS.volumetric;
-// Draw the tick locally so the status never needs a remote fallback font.
+// Draw the pill and checkmark together so their edges remain aligned as the card scales.
 const WATCHED_BADGE_MATERIAL = new ShaderMaterial({
     depthTest: true,
     depthWrite: false,
     fragmentShader: /* glsl */ `
         varying vec2 vUv;
-        uniform vec3 uColour;
-        uniform vec3 uBackground;
-        uniform vec3 uRim;
+
+        float roundedBoxDistance(vec2 point, vec2 bounds, float radius) {
+            vec2 offset = abs(point) - bounds + radius;
+            return length(max(offset, 0.0)) + min(max(offset.x, offset.y), 0.0) - radius;
+        }
+
         float segmentDistance(vec2 p, vec2 a, vec2 b) {
             vec2 ab = b - a;
             return length(p - a - ab * clamp(dot(p - a, ab) / dot(ab, ab), 0.0, 1.0));
         }
+
         void main() {
-            float distanceToTick = min(
-                segmentDistance(vUv, vec2(0.36, 0.49), vec2(0.46, 0.39)),
-                segmentDistance(vUv, vec2(0.46, 0.39), vec2(0.65, 0.62))
+            vec2 point = (vUv - 0.5) * vec2(2.65, 1.0);
+            float pillDistance = roundedBoxDistance(point, vec2(1.28, 0.43), 0.43);
+            float pillAa = max(fwidth(pillDistance), 0.002);
+            float pill = 1.0 - smoothstep(-pillAa, pillAa, pillDistance);
+
+            float innerDistance = roundedBoxDistance(point, vec2(1.24, 0.39), 0.39);
+            float inner = 1.0 - smoothstep(-pillAa, pillAa, innerDistance);
+            float rim = max(pill - inner, 0.0);
+
+            vec2 tickPoint = point - vec2(-0.91, 0.0);
+            float tickDistance = min(
+                segmentDistance(tickPoint, vec2(-0.12, 0.01), vec2(-0.02, -0.09)),
+                segmentDistance(tickPoint, vec2(-0.02, -0.09), vec2(0.17, 0.12))
             );
-            float radius = length(vUv - 0.5);
-            float aa = max(fwidth(radius), 0.001);
-            float tick = 1.0 - smoothstep(0.025 - aa, 0.025 + aa, distanceToTick);
-            float rim = smoothstep(0.315 - aa, 0.315 + aa, radius)
-                * (1.0 - smoothstep(0.34 - aa, 0.34 + aa, radius));
-            float disk = 1.0 - smoothstep(0.34 - aa, 0.34 + aa, radius);
-            float collar = 1.0 - smoothstep(0.405 - aa, 0.405 + aa, radius);
-            vec3 colour = mix(vec3(0.0024), uBackground, disk);
-            colour = mix(colour, uRim, rim * 0.65);
-            colour = mix(colour, uColour, tick);
-            gl_FragColor = vec4(colour, collar);
+            float tickAa = max(fwidth(tickDistance), 0.002);
+            float tick = 1.0 - smoothstep(0.026 - tickAa, 0.026 + tickAa, tickDistance);
+
+            vec3 glass = vec3(0.035, 0.042, 0.05);
+            vec3 colour = mix(glass, vec3(0.22), rim * 0.5);
+            colour = mix(colour, vec3(0.96), tick);
+            float alpha = inner * 0.76 + rim * 0.34;
+
+            gl_FragColor = vec4(colour, alpha * pill);
             #include <colorspace_fragment>
         }
     `,
     toneMapped: false,
     transparent: true,
-    uniforms: {
-        uBackground: { value: new Color("#17100e") },
-        uColour: { value: new Color("#e0a15f") },
-        uRim: { value: new Color("#da9e60") },
-    },
     vertexShader: /* glsl */ `
         varying vec2 vUv;
         void main() {
@@ -183,18 +188,22 @@ const INNER_RING_MATERIAL = createTimelineRingMaterial({
 });
 const NODE_SPHERE_MATERIAL = createTimelineNodeCoreMaterial();
 const SELECTED_NODE_SPHERE_MATERIAL = createTimelineNodeCoreMaterial();
+// Explicit font files determine glyph weight in Troika; fontWeight cannot restyle a loaded face.
 const GEIST_FONT_URL =
-    "https://fonts.gstatic.com/s/geist/v5/gyBhhwUxId8gMGYQMKR3pzfaWI_Re-Q4nQ.ttf";
+    "https://fonts.gstatic.com/s/geist/v5/gyBhhwUxId8gMGYQMKR3pzfaWI_RnOM4nQ.ttf";
+const GEIST_MEDIUM_FONT_URL =
+    "https://fonts.gstatic.com/s/geist/v5/gyBhhwUxId8gMGYQMKR3pzfaWI_RruM4nQ.ttf";
+const GEIST_SEMIBOLD_FONT_URL =
+    "https://fonts.gstatic.com/s/geist/v5/gyBhhwUxId8gMGYQMKR3pzfaWI_RQuQ4nQ.ttf";
 const GEIST_MONO_FONT_URL =
     "https://fonts.gstatic.com/s/geistmono/v6/or3yQ6H-1_WfwkMZI_qYPLs1a-t7PU0AbeE9KJ5T.ttf";
 const CARD_TITLE_CHARACTERS =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789&'*():-.,/!? ";
-const CARD_META_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&'():-.,/ ";
+const CARD_META_CHARACTERS = `${CARD_TITLE_CHARACTERS}•`;
 const NARROW_TITLE_CHARACTER_PATTERN = /[ilI1'.,:]/;
 const WIDE_TITLE_CHARACTER_PATTERN = /[MW@%]/;
 const WHITESPACE_CHARACTER_PATTERN = /\s/;
 const UPPERCASE_CHARACTER_PATTERN = /[A-Z]/;
-const TITLE_WORD_SEPARATOR_PATTERN = /\s+/;
 
 const contentTypeNames: Record<TimelineEntry["contentType"], string> = {
     film: "Film",
@@ -227,9 +236,7 @@ const cardPanelFragmentShader = /* glsl */ `
     uniform vec3 uAccentColour;
     uniform vec3 uBorderColour;
     uniform vec3 uSurfaceColour;
-    uniform float uAccentStrength;
     uniform float uBorderOpacity;
-    uniform float uEdgeAccentOpacity;
     uniform float uHighlighted;
     uniform float uSurfaceOpacity;
     varying vec2 vPanelUv;
@@ -255,90 +262,43 @@ const cardPanelFragmentShader = /* glsl */ `
     void main() {
         vec2 panelSize = max(vPanelSize, vec2(0.0001));
         vec2 point = (vPanelUv - 0.5) * panelSize;
-        float unitScale = panelSize.x / ${CARD_WIDTH + 0.12};
-        vec2 cardSize = panelSize - vec2(0.12, 0.22) * unitScale;
+        float unitScale = panelSize.x / ${CARD_WIDTH + 0.08};
+        vec2 cardSize = panelSize - vec2(0.08, 0.10) * unitScale;
         vec2 cardBounds = cardSize * 0.5;
         float cardRadius = ${CARD_RADIUS} * unitScale;
-        float borderWidth = 0.011 * unitScale;
+        float borderWidth = 0.0065 * unitScale;
 
+        // A soft shadow separates overlapping cards from the background.
         float shadowDistance = roundedBoxDistance(
-            point - vec2(0.0, -0.055 * unitScale),
-            cardBounds + vec2(0.04) * unitScale,
-            (${CARD_RADIUS} + 0.04) * unitScale
+            point - vec2(0.0, -0.035 * unitScale),
+            cardBounds + vec2(0.028) * unitScale,
+            (${CARD_RADIUS} + 0.035) * unitScale
         );
-        float shadowAntialias = max(fwidth(shadowDistance), 0.0008);
-        vec4 result = vec4(
-            0.0,
-            0.0,
-            0.0,
-            shapeMask(shadowDistance, shadowAntialias) * 0.32
-        );
+        float shadowAa = max(fwidth(shadowDistance), 0.0008);
+        vec4 result = vec4(0.0, 0.0, 0.0, shapeMask(shadowDistance, shadowAa) * 0.34);
 
+        // A thin accent halo identifies the focused card.
         float glowDistance = roundedBoxDistance(
             point,
-            cardBounds + vec2(0.03) * unitScale,
-            (${CARD_RADIUS} + 0.04) * unitScale
+            cardBounds + vec2(0.022) * unitScale,
+            (${CARD_RADIUS} + 0.028) * unitScale
         );
-        float glowAntialias = max(fwidth(glowDistance), 0.0008);
-        float glowOuter = shapeMask(glowDistance, glowAntialias);
-        float glowInner = shapeMask(glowDistance + 0.028 * unitScale, glowAntialias);
-        float glowBorder = max(glowOuter - glowInner, 0.0);
-        float glowAlpha = (glowInner * 0.025 + glowBorder * 0.14) * uHighlighted;
-        result = composite(result, vec4(uAccentColour, glowAlpha));
+        float glowAa = max(fwidth(glowDistance), 0.0008);
+        float glowOuter = shapeMask(glowDistance, glowAa);
+        float glowInner = shapeMask(glowDistance + 0.018 * unitScale, glowAa);
+        float glowRing = max(glowOuter - glowInner, 0.0);
+        result = composite(result, vec4(uAccentColour, glowRing * 0.18 * uHighlighted));
 
         float distanceToEdge = roundedBoxDistance(point, cardBounds, cardRadius);
-        float antialiasWidth = max(fwidth(distanceToEdge), 0.0008);
-        float outerMask = shapeMask(distanceToEdge, antialiasWidth);
-        float innerMask = shapeMask(distanceToEdge + borderWidth, antialiasWidth);
+        float aa = max(fwidth(distanceToEdge), 0.0008);
+        float outerMask = shapeMask(distanceToEdge, aa);
+        float innerMask = shapeMask(distanceToEdge + borderWidth, aa);
         float borderMask = max(outerMask - innerMask, 0.0);
-        float topEdgeWidth = max(borderWidth * 2.5, 0.001);
-        float topEdgeMask = smoothstep(
-            cardBounds.y - topEdgeWidth,
-            cardBounds.y + antialiasWidth,
-            point.y
-        );
-        float horizontalEdgeFade = 1.0 - smoothstep(
-            -cardSize.x * 0.48,
-            cardSize.x * 0.32,
-            point.x
-        );
-        float edgeAccentMask = borderMask
-            * topEdgeMask
-            * horizontalEdgeFade
-            * uEdgeAccentOpacity;
-        vec2 cardUv = point / cardSize + 0.5;
-        float accentGlow = 1.0 - smoothstep(
-            0.0,
-            0.92,
-            distance(cardUv, vec2(0.04, 0.98))
-        );
-        vec3 surfaceColour = mix(
-            uSurfaceColour,
-            uAccentColour,
-            accentGlow * uAccentStrength
-        );
-        vec3 colour = mix(uBorderColour, surfaceColour, innerMask);
-        colour = mix(colour, uAccentColour, edgeAccentMask);
-        float alpha = innerMask * uSurfaceOpacity + borderMask * uBorderOpacity;
-        alpha = min(1.0, alpha + edgeAccentMask * (1.0 - alpha));
-        result = composite(result, vec4(colour, alpha * outerMask));
 
-        vec2 posterSize = vec2(${POSTER_WIDTH}, ${POSTER_HEIGHT}) * unitScale;
-        vec2 posterCentre = vec2(
-            0.0,
-            cardBounds.y - (${CARD_PADDING} + ${POSTER_HEIGHT / 2}) * unitScale
-        );
-        float posterDistance = roundedBoxDistance(
-            point - posterCentre,
-            posterSize * 0.5,
-            0.058 * unitScale
-        );
-        float posterAntialias = max(fwidth(posterDistance), 0.0008);
-        float posterOuter = shapeMask(posterDistance, posterAntialias);
-        float posterInner = shapeMask(posterDistance + 0.012 * unitScale, posterAntialias);
-        float posterBorder = max(posterOuter - posterInner, 0.0);
-        float posterAlpha = posterInner * 0.03 + posterBorder * 0.08;
-        result = composite(result, vec4(vec3(1.0), posterAlpha));
+        vec3 borderColour = mix(uBorderColour, uAccentColour, uHighlighted);
+        vec3 colour = mix(borderColour, uSurfaceColour, innerMask);
+        float alpha = innerMask * uSurfaceOpacity + borderMask * uBorderOpacity;
+        result = composite(result, vec4(colour, alpha * outerMask));
 
         gl_FragColor = result;
         #include <tonemapping_fragment>
@@ -350,8 +310,22 @@ const posterShadeFragmentShader = /* glsl */ `
     varying vec2 vPanelUv;
 
     void main() {
-        float shade = smoothstep(0.35, 0.0, vPanelUv.y) * 0.22;
-        gl_FragColor = vec4(0.012, 0.012, 0.02, shade);
+        // Keep the artwork visible above a solid, readable footer, including long titles.
+        float bottomShade = 1.0 - smoothstep(0.12, 0.62, vPanelUv.y);
+        float edgeShade = smoothstep(0.30, 0.5, abs(vPanelUv.x - 0.5)) * 0.14;
+        float topShade = smoothstep(0.72, 1.0, vPanelUv.y) * 0.18;
+        float alpha = clamp(bottomShade + edgeShade + topShade, 0.0, 1.0);
+
+        // Match the artwork's rounded corners so the fade cannot square off the frame.
+        vec2 size = vec2(${POSTER_WIDTH}, ${POSTER_HEIGHT});
+        float radius = ${CARD_RADIUS - CARD_PADDING};
+        vec2 offset = abs((vPanelUv - 0.5) * size) - size * 0.5 + radius;
+        float distanceToEdge = length(max(offset, 0.0))
+            + min(max(offset.x, offset.y), 0.0) - radius;
+        float aa = max(fwidth(distanceToEdge), 0.0008);
+        float mask = 1.0 - smoothstep(-aa, aa, distanceToEdge);
+
+        gl_FragColor = vec4(0.002, 0.003, 0.004, alpha * mask);
         #include <colorspace_fragment>
     }
 `;
@@ -361,10 +335,9 @@ function createCardSurfaceMaterial(
     highlighted: boolean,
     watched = false
 ): ShaderMaterial {
-    const idleBorderColour = watched ? "#be7852" : "#ffffff";
-    const idleBorderOpacity = watched ? 0.24 : 0.11;
+    const idleBorderOpacity = watched ? 0.64 : 0.58;
     return new ShaderMaterial({
-        // Respect the stream's depth while preserving the card's transparent layer ordering.
+        // Respect scene depth while preserving transparent layer ordering.
         depthTest: true,
         depthWrite: false,
         fragmentShader: cardPanelFragmentShader,
@@ -372,15 +345,11 @@ function createCardSurfaceMaterial(
         transparent: true,
         uniforms: {
             uAccentColour: { value: new Color(accentColour) },
-            uAccentStrength: { value: highlighted ? 0.13 : 0.07 },
-            uBorderColour: {
-                value: new Color(highlighted ? accentColour : idleBorderColour),
-            },
-            uBorderOpacity: { value: highlighted ? 0.42 : idleBorderOpacity },
-            uEdgeAccentOpacity: { value: highlighted ? 1 : 0.65 },
+            uBorderColour: { value: new Color("#a8afb8") },
+            uBorderOpacity: { value: highlighted ? 0.9 : idleBorderOpacity },
             uHighlighted: { value: highlighted ? 1 : 0 },
-            uSurfaceColour: { value: new Color(highlighted ? "#08080b" : "#060709") },
-            uSurfaceOpacity: { value: highlighted ? 0.92 : 0.82 },
+            uSurfaceColour: { value: new Color("#05070a") },
+            uSurfaceOpacity: { value: 0.6 },
         },
         vertexShader: panelVertexShader,
     });
@@ -444,27 +413,6 @@ function getPosterTextureUrl(url: string): string {
     return `/_next/image?url=${encodeURIComponent(url)}&w=${POSTER_TEXTURE_WIDTH}&q=75`;
 }
 
-function formatCardPlacement(placement: string): string {
-    const maximumCharactersPerLine = 13;
-    const words = placement.toUpperCase().split(TITLE_WORD_SEPARATOR_PATTERN);
-    const lines: string[] = [];
-    let currentLine = "";
-
-    for (const word of words) {
-        const candidate = currentLine ? `${currentLine} ${word}` : word;
-        if (currentLine && candidate.length > maximumCharactersPerLine) {
-            lines.push(currentLine);
-            currentLine = word;
-        } else {
-            currentLine = candidate;
-        }
-    }
-    if (currentLine) {
-        lines.push(currentLine);
-    }
-    return lines.join("\n");
-}
-
 function titleWidthUnits(value: string): number {
     let width = 0;
     for (const character of value) {
@@ -481,27 +429,6 @@ function titleWidthUnits(value: string): number {
         }
     }
     return width;
-}
-
-function formatCardTitle(title: string): string {
-    const maximumLineWidth = 7.3;
-    const words = title.split(TITLE_WORD_SEPARATOR_PATTERN);
-    const lines: string[] = [];
-    let currentLine = "";
-
-    for (const word of words) {
-        const candidate = currentLine ? `${currentLine} ${word}` : word;
-        if (currentLine && titleWidthUnits(candidate) > maximumLineWidth) {
-            lines.push(currentLine);
-            currentLine = word;
-        } else {
-            currentLine = candidate;
-        }
-    }
-    if (currentLine) {
-        lines.push(currentLine);
-    }
-    return lines.join("\n");
 }
 
 interface TimelineOrbitProps {
@@ -550,11 +477,12 @@ function PosterArtwork({
         return (
             <DreiImage
                 frustumCulled={false}
-                position={[0, posterPositionY, 0.018]}
-                radius={0.052}
+                opacity={0.9}
+                position={[0, posterPositionY, 0]}
+                radius={CARD_RADIUS - CARD_PADDING}
                 ref={configureOverlayMesh}
                 renderOrder={renderOrder}
-                scale={[POSTER_WIDTH - 0.018, POSTER_HEIGHT - 0.018]}
+                scale={[POSTER_WIDTH, POSTER_HEIGHT]}
                 toneMapped={false}
                 transparent
                 url={getPosterTextureUrl(entry.posterUrl)}
@@ -585,7 +513,7 @@ function PosterFallback({
             font={GEIST_MONO_FONT_URL}
             fontSize={0.4}
             frustumCulled={false}
-            position={[0, posterPositionY, 0.018]}
+            position={[0, posterPositionY, 0]}
             ref={configureOverlayMesh}
             renderOrder={renderOrder}
         >
@@ -604,19 +532,25 @@ function TimelinePosterCard({
     onSelect,
     watched,
 }: TimelinePosterCardProps) {
-    const formattedPlacement = formatCardPlacement(entry.placement);
-    const formattedTitle = formatCardTitle(entry.title);
-    const placementLineCount = formattedPlacement.split("\n").length;
-    const titleLineCount = formattedTitle.split("\n").length;
-    const additionalPlacementHeight = (placementLineCount - 1) * META_LINE_HEIGHT;
-    const additionalTitleHeight = (titleLineCount - 1) * TITLE_LINE_HEIGHT;
-    const cardHeight = CARD_BASE_HEIGHT + additionalPlacementHeight + additionalTitleHeight;
-    const posterPositionY = cardHeight / 2 - CARD_PADDING - POSTER_HEIGHT / 2;
-    const metaTop = posterPositionY - POSTER_HEIGHT / 2 - POSTER_META_GAP;
-    const placementTop = metaTop - META_ROW_STEP;
-    const titleTop = placementTop - TITLE_ROW_STEP - additionalPlacementHeight;
+    const cardMeta = [entry.placement, contentTypeNames[entry.contentType], entry.runtime]
+        .filter(Boolean)
+        .join("  •  ");
+    // Keep chronology ranges and episode runtimes inside the same compact metadata row.
+    const metaFontSize = Math.min(
+        META_FONT_SIZE,
+        CARD_TEXT_WIDTH / (titleWidthUnits(cardMeta) + 1)
+    );
+    const cardHeight = CARD_BASE_HEIGHT;
+    const posterPositionY = 0;
+    const metaBottom = -cardHeight / 2 + CARD_BOTTOM_INSET;
+    const titleBottom = metaBottom + CARD_META_GAP;
+    // Coplanar artwork, frame and text stay aligned off-axis. Transparent materials
+    // disable depth writes, so renderOrder alone controls their stacking.
     const renderOrder = 100;
     const idleSurface = watched ? "watched" : "idle";
+    const watchedBadgeX = META_LEFT + 0.225;
+    const watchedBadgeY = CARD_BASE_HEIGHT / 2 - 0.16;
+
     return (
         <group position={[0, cardHeight / 2 + CARD_GAP_FROM_ORB, 0]} ref={billboardRef}>
             <group ref={cardRef} renderOrder={CARD_RENDER_ORDER_BASE}>
@@ -633,10 +567,11 @@ function TimelinePosterCard({
                     <primitive attach="geometry" object={CARD_PLANE_GEOMETRY} />
                     <primitive attach="material" object={CARD_HIT_MATERIAL} />
                 </mesh>
+
                 <mesh
                     frustumCulled={false}
                     renderOrder={renderOrder + 2}
-                    scale={[CARD_WIDTH + 0.12, cardHeight + 0.22, 1]}
+                    scale={[CARD_WIDTH + 0.08, cardHeight + 0.1, 1]}
                 >
                     <primitive attach="geometry" object={CARD_PLANE_GEOMETRY} />
                     <primitive
@@ -648,6 +583,7 @@ function TimelinePosterCard({
                         }
                     />
                 </mesh>
+
                 <Suspense
                     fallback={
                         <PosterFallback
@@ -663,85 +599,86 @@ function TimelinePosterCard({
                         renderOrder={renderOrder + 5}
                     />
                 </Suspense>
+
+                {/* Full-poster cinematic fade: keeps text readable without a separate black info box. */}
                 <mesh
                     frustumCulled={false}
-                    position={[0, posterPositionY, 0.022]}
+                    position={[0, posterPositionY, 0]}
                     renderOrder={renderOrder + 6}
-                    scale={[POSTER_WIDTH - 0.018, POSTER_HEIGHT - 0.018, 1]}
+                    scale={[POSTER_WIDTH, POSTER_HEIGHT, 1]}
                 >
                     <primitive attach="geometry" object={CARD_PLANE_GEOMETRY} />
                     <primitive attach="material" object={posterShadeMaterial} />
                 </mesh>
+
                 {watched ? (
-                    <mesh
-                        geometry={CARD_PLANE_GEOMETRY}
-                        material={WATCHED_BADGE_MATERIAL}
-                        position={[
-                            POSTER_WIDTH / 2 - 0.095,
-                            posterPositionY - POSTER_HEIGHT / 2,
-                            0.032,
-                        ]}
-                        renderOrder={renderOrder + 8}
-                        scale={[0.23, 0.23, 1]}
-                    />
+                    <>
+                        <mesh
+                            geometry={CARD_PLANE_GEOMETRY}
+                            material={WATCHED_BADGE_MATERIAL}
+                            position={[watchedBadgeX, watchedBadgeY, 0]}
+                            renderOrder={renderOrder + 8}
+                            scale={[0.45, 0.17, 1]}
+                        />
+                        <Text
+                            anchorX="center"
+                            anchorY="middle"
+                            characters={CARD_META_CHARACTERS}
+                            color="#f4f1e8"
+                            fillOpacity={0.94}
+                            font={GEIST_MEDIUM_FONT_URL}
+                            fontSize={0.059}
+                            frustumCulled={false}
+                            letterSpacing={0}
+                            position={[watchedBadgeX + 0.035, watchedBadgeY, 0]}
+                            ref={configureOverlayMesh}
+                            renderOrder={renderOrder + 9}
+                            whiteSpace="nowrap"
+                        >
+                            Watched
+                        </Text>
+                    </>
                 ) : null}
+
                 <Text
                     anchorX="left"
-                    anchorY="top"
-                    characters={CARD_META_CHARACTERS}
-                    color={cardAccentColours[entry.contentType]}
-                    fillOpacity={highlighted ? 1 : 0.9}
-                    font={GEIST_MONO_FONT_URL}
-                    fontSize={META_FONT_SIZE}
-                    frustumCulled={false}
-                    letterSpacing={0.1}
-                    maxWidth={CARD_TEXT_WIDTH}
-                    position={[META_LEFT, metaTop, 0.026]}
-                    ref={configureOverlayMesh}
-                    renderOrder={renderOrder + 7}
-                    whiteSpace="nowrap"
-                >
-                    {contentTypeNames[entry.contentType].toUpperCase()}
-                </Text>
-                <Text
-                    anchorX="left"
-                    anchorY="top"
-                    characters={CARD_META_CHARACTERS}
-                    color="#f4f1e8"
-                    fillOpacity={0.34}
-                    font={GEIST_MONO_FONT_URL}
-                    fontSize={META_FONT_SIZE}
-                    frustumCulled={false}
-                    letterSpacing={0.1}
-                    lineHeight={1.3}
-                    maxWidth={CARD_TEXT_WIDTH}
-                    position={[META_LEFT, placementTop, 0.026]}
-                    ref={configureOverlayMesh}
-                    renderOrder={renderOrder + 7}
-                    whiteSpace="nowrap"
-                >
-                    {formattedPlacement}
-                </Text>
-                <Text
-                    anchorX="left"
-                    anchorY="top"
+                    anchorY="bottom"
                     characters={CARD_TITLE_CHARACTERS}
-                    color="#f4f1e8"
-                    fillOpacity={highlighted ? 1 : 0.7}
-                    font={GEIST_FONT_URL}
+                    color="#f3f4f5"
+                    fillOpacity={1}
+                    font={GEIST_SEMIBOLD_FONT_URL}
                     fontSize={TITLE_FONT_SIZE}
-                    fontWeight={700}
+                    fontWeight={600}
                     frustumCulled={false}
-                    letterSpacing={-0.01}
-                    lineHeight={1.3}
+                    letterSpacing={-0.018}
+                    lineHeight={1.16}
                     maxWidth={CARD_TEXT_WIDTH}
                     overflowWrap="normal"
-                    position={[META_LEFT, titleTop, 0.026]}
+                    position={[META_LEFT, titleBottom, 0]}
                     ref={configureOverlayMesh}
-                    renderOrder={renderOrder + 7}
+                    renderOrder={renderOrder + 8}
+                    whiteSpace="normal"
+                >
+                    {entry.title}
+                </Text>
+
+                <Text
+                    anchorX="left"
+                    anchorY="bottom"
+                    characters={CARD_META_CHARACTERS}
+                    color="#a6adb5"
+                    fillOpacity={1}
+                    font={GEIST_FONT_URL}
+                    fontSize={metaFontSize}
+                    frustumCulled={false}
+                    letterSpacing={0}
+                    maxWidth={CARD_TEXT_WIDTH}
+                    position={[META_LEFT, metaBottom, 0]}
+                    ref={configureOverlayMesh}
+                    renderOrder={renderOrder + 8}
                     whiteSpace="nowrap"
                 >
-                    {formattedTitle}
+                    {cardMeta}
                 </Text>
             </group>
         </group>
@@ -1212,13 +1149,9 @@ interface TimelineCardsProps {
     watchedSlugs: readonly string[];
 }
 
-function getTimelineCardRenderOrder(cardDepth: number, anchorDepth: number, selected: boolean) {
-    // Draw a card before the energy only when its anchor is physically closer to the camera.
-    const energyOrderOffset = anchorDepth > cardDepth ? -3000 : 0;
-    return (
-        energyOrderOffset +
-        (selected ? SELECTED_CARD_RENDER_ORDER : CARD_RENDER_ORDER_BASE + cardDepth)
-    );
+function getTimelineCardRenderOrder(cardDepth: number, selected: boolean) {
+    // Keep cards above the background at every camera angle; depth only sorts cards.
+    return selected ? SELECTED_CARD_RENDER_ORDER : CARD_RENDER_ORDER_BASE + cardDepth;
 }
 
 function TimelineCards({
@@ -1232,7 +1165,6 @@ function TimelineCards({
     const [hoveredSlug, setHoveredSlug] = useState<string>();
     const billboardRefs = useRef<Array<Group | null>>([]);
     const cardRefs = useRef<Array<Group | null>>([]);
-    const anchorViewPosition = useMemo(() => new Vector3(), []);
     const connectionRef = useRef<InstancedMesh>(null);
     const connectionMaterial = useMemo(CONNECTOR_EFFECT.card.createMaterial, []);
     useEffect(() => () => connectionMaterial.dispose(), [connectionMaterial]);
@@ -1343,22 +1275,19 @@ function TimelineCards({
             const highlighted = selected || focusIndex === index || hoveredSlug === entry.slug;
             let targetScale = 1;
             if (selected) {
-                targetScale = 1.07;
+                targetScale = 1.055;
             } else if (highlighted) {
-                targetScale = 1.04;
+                targetScale = 1.025;
             }
-            const targetOffsetY = highlighted ? 0.04 : 0;
+            const targetOffsetY = highlighted ? 0.035 : 0;
             const nextScale = MathUtils.damp(card.scale.x, targetScale, 14, delta);
             const nextOffsetY = MathUtils.damp(card.position.y, targetOffsetY, 14, delta);
             card.scale.setScalar(nextScale);
             card.position.y = nextOffsetY;
             card.getWorldPosition(registrations[index].worldPosition);
             registrations[index].worldPosition.applyMatrix4(camera.matrixWorldInverse);
-            billboard.parent?.getWorldPosition(anchorViewPosition);
-            anchorViewPosition.applyMatrix4(camera.matrixWorldInverse);
             card.renderOrder = getTimelineCardRenderOrder(
                 registrations[index].worldPosition.z,
-                anchorViewPosition.z,
                 selected
             );
             updateConnection(billboard, card, index);
