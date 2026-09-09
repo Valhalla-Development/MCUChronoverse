@@ -1149,9 +1149,13 @@ interface TimelineCardsProps {
     watchedSlugs: readonly string[];
 }
 
-function getTimelineCardRenderOrder(cardDepth: number, selected: boolean) {
-    // Keep cards above the background at every camera angle; depth only sorts cards.
-    return selected ? SELECTED_CARD_RENDER_ORDER : CARD_RENDER_ORDER_BASE + cardDepth;
+function getTimelineCardRenderOrder(cardDepth: number, anchorDepth: number, selected: boolean) {
+    // Let the stream and its particles cover cards when their anchor is closer to the camera.
+    const energyOrderOffset = anchorDepth > cardDepth ? -3000 : 0;
+    return (
+        energyOrderOffset +
+        (selected ? SELECTED_CARD_RENDER_ORDER : CARD_RENDER_ORDER_BASE + cardDepth)
+    );
 }
 
 function TimelineCards({
@@ -1165,6 +1169,7 @@ function TimelineCards({
     const [hoveredSlug, setHoveredSlug] = useState<string>();
     const billboardRefs = useRef<Array<Group | null>>([]);
     const cardRefs = useRef<Array<Group | null>>([]);
+    const anchorViewPosition = useMemo(() => new Vector3(), []);
     const connectionRef = useRef<InstancedMesh>(null);
     const connectionMaterial = useMemo(CONNECTOR_EFFECT.card.createMaterial, []);
     useEffect(() => () => connectionMaterial.dispose(), [connectionMaterial]);
@@ -1286,8 +1291,11 @@ function TimelineCards({
             card.position.y = nextOffsetY;
             card.getWorldPosition(registrations[index].worldPosition);
             registrations[index].worldPosition.applyMatrix4(camera.matrixWorldInverse);
+            billboard.parent?.getWorldPosition(anchorViewPosition);
+            anchorViewPosition.applyMatrix4(camera.matrixWorldInverse);
             card.renderOrder = getTimelineCardRenderOrder(
                 registrations[index].worldPosition.z,
+                anchorViewPosition.z,
                 selected
             );
             updateConnection(billboard, card, index);
@@ -1564,7 +1572,10 @@ function TimelineScene({
             <ambientLight intensity={0.45} />
             <pointLight color="#ff782d" intensity={28} position={[0, 4, 6]} />
             <pointLight color="#444cff" intensity={8} position={[0, -5, -3]} />
-            <CosmicBackground nodes={points} reducedMotion={reducedMotion} />
+            {/* Group ordering keeps the background behind cards on either side of the stream. */}
+            <group renderOrder={-10_000}>
+                <CosmicBackground nodes={points} reducedMotion={reducedMotion} />
+            </group>
             <TimelineEnergy
                 compact={compact}
                 curve={curve}
