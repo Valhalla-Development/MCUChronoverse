@@ -80,6 +80,17 @@ export function createTimelineConnectorVolume(curve: Curve<Vector3>, cardConnect
                         * 0.012 * uMotion;
                     curveSample.y += envelope * (bend * (0.045 + vSeed * 0.045) + drift) / ${EFFECT_SCALE};
                     curveSample.z += envelope * cos(progress * 4.7 + phase) * (0.015 + vSeed * 0.02) / ${EFFECT_SCALE};
+
+                    // Arms keep exact endpoints while varying their crest, sweep, and depth.
+                    float armEnvelope = pow(sin(progress * 3.141593), 1.35)
+                        * (1.0 - uConnection);
+                    float crest = mix(-0.09, 0.085, vSeed)
+                        + sin(progress * 3.141593 * mix(1.1, 1.95, vSeed) + phase) * 0.035;
+                    float sweep = sin(progress * 6.283185 + phase) * mix(0.012, 0.045, vSeed);
+                    float crestShift = (vSeed - 0.5) * 0.13;
+                    curveSample.x += armEnvelope * crestShift / ${EFFECT_SCALE};
+                    curveSample.y += armEnvelope * crest / ${EFFECT_SCALE};
+                    curveSample.z += armEnvelope * sweep / ${EFFECT_SCALE};
                 `,
                     declarations: /* glsl */ `
                     uniform float uConnection;
@@ -136,7 +147,11 @@ export function createTimelineConnectorVolume(curve: Curve<Vector3>, cardConnect
                     vSurface = volumePoint(position);
                     vLength = length(instanceMatrix[1].xyz);
                     vec3 anchor = (instanceMatrix * vec4(0.0, -0.5 * uConnection, 0.0, 1.0)).xyz;
-                    vSeed = fract(sin(floor(anchor.x * 10.0 + 0.5) * 12.9898) * 43758.5453);
+                    float sideSeed = step(0.0, instanceMatrix[0][0]) * 0.431;
+                    vSeed = fract(
+                        sin(floor(anchor.x * 10.0 + 0.5) * 12.9898) * 43758.5453
+                        + sideSeed
+                    );
                     vAccent = vec3(1.0, 0.26, 0.034);
                     #ifdef USE_INSTANCING_COLOR
                         vAccent = instanceColor;

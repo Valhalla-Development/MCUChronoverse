@@ -995,7 +995,11 @@ function TimelineNodeGlow({ instances, reducedMotion, selected }: InstancedTimel
     );
 }
 
-function TimelineNodeFilaments({ instances, reducedMotion }: InstancedTimelineRingsProps) {
+interface TimelineNodeFilamentsProps extends InstancedTimelineRingsProps {
+    curve: Curve<Vector3>;
+}
+
+function TimelineNodeFilaments({ curve, instances, reducedMotion }: TimelineNodeFilamentsProps) {
     const meshRef = useRef<InstancedMesh>(null);
     const material = useMemo(CONNECTOR_EFFECT.arm.createMaterial, []);
     useEffect(() => () => material.dispose(), [material]);
@@ -1003,6 +1007,15 @@ function TimelineNodeFilaments({ instances, reducedMotion }: InstancedTimelineRi
         const mesh = meshRef.current as InstancedMesh;
         const matrix = new Matrix4();
         const colour = new Color();
+        const rotation = new Quaternion();
+        const scale = new Vector3();
+        const target = new Vector3();
+        const armVector = new Vector3();
+        const sourceVector = new Vector3();
+        const targetDirection = new Vector3();
+        const armReach = NODE_FILAMENT_CURVE.getPoint(1).length();
+        const segmentFraction = 0.82 / 2.2;
+        const finalIndex = Math.max(instances.length - 1, 1);
         let armIndex = 0;
         instances.forEach(({ entry, position }, index) => {
             for (const direction of [-1, 1]) {
@@ -1013,7 +1026,18 @@ function TimelineNodeFilaments({ instances, reducedMotion }: InstancedTimelineRi
                 ) {
                     continue;
                 }
-                matrix.makeScale(direction, 1, direction).setPosition(position);
+                const curveProgress = MathUtils.clamp(
+                    (index + direction * segmentFraction) / finalIndex,
+                    0,
+                    1
+                );
+                curve.getPoint(curveProgress, target);
+                armVector.copy(target).sub(position);
+                sourceVector.set(0.82, -NODE_LIFT, 0);
+                targetDirection.copy(armVector).normalize();
+                rotation.setFromUnitVectors(sourceVector.normalize(), targetDirection);
+                scale.setScalar(armVector.length() / armReach);
+                matrix.compose(position, rotation, scale);
                 mesh.setMatrixAt(armIndex, matrix);
                 mesh.setColorAt(armIndex, colour.set(getTimelineNodeAccent(entry)));
                 armIndex += 1;
@@ -1024,7 +1048,7 @@ function TimelineNodeFilaments({ instances, reducedMotion }: InstancedTimelineRi
         if (mesh.instanceColor) {
             mesh.instanceColor.needsUpdate = true;
         }
-    }, [instances]);
+    }, [curve, instances]);
     useFrame(({ clock }) => {
         material.uniforms.uTime.value = reducedMotion ? 0 : clock.elapsedTime;
         material.uniforms.uMotion.value = reducedMotion ? 0 : 1;
@@ -1041,6 +1065,7 @@ function TimelineNodeFilaments({ instances, reducedMotion }: InstancedTimelineRi
 
 interface InstancedTimelineNodesProps {
     count: number;
+    curve: Curve<Vector3>;
     entries: readonly TimelineEntry[];
     onSelect: (slug: string) => void;
     reducedMotion: boolean;
@@ -1049,6 +1074,7 @@ interface InstancedTimelineNodesProps {
 
 function InstancedTimelineNodes({
     count,
+    curve,
     entries,
     onSelect,
     selectedSlug,
@@ -1101,7 +1127,11 @@ function InstancedTimelineNodes({
 
     return (
         <>
-            <TimelineNodeFilaments instances={instances} reducedMotion={reducedMotion} />
+            <TimelineNodeFilaments
+                curve={curve}
+                instances={instances}
+                reducedMotion={reducedMotion}
+            />
             <TimelineNodeGlow
                 instances={instances}
                 reducedMotion={reducedMotion}
@@ -1615,6 +1645,7 @@ function TimelineScene({
             />
             <InstancedTimelineNodes
                 count={entries.length}
+                curve={curve}
                 entries={entries}
                 onSelect={onSelect}
                 reducedMotion={reducedMotion}
