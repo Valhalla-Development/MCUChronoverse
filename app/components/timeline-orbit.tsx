@@ -33,7 +33,6 @@ import {
     Matrix4,
     type Mesh,
     MeshBasicMaterial,
-    MeshStandardMaterial,
     PlaneGeometry,
     Quaternion,
     ShaderMaterial,
@@ -44,6 +43,11 @@ import {
 import { configureTextBuilder } from "troika-three-text";
 import type { TimelineEntry } from "../data/types";
 import { timelineNodePosition } from "../lib/timeline";
+import { getTimelineNodeAccent } from "../lib/timeline-node-accent";
+import {
+    createTimelineNodeCoreMaterial,
+    createTimelineNodeMaterial,
+} from "../lib/timeline-node-material";
 import { createTimelineRingMaterial } from "../lib/timeline-ring-material";
 import { CosmicBackground } from "./cosmic-background";
 import { TimelineEnergy } from "./timeline-energy";
@@ -52,13 +56,6 @@ import { TimelineEnergy } from "./timeline-energy";
 // Main-thread typesetting remains asynchronous and only runs when card text changes.
 configureTextBuilder({ useWorker: false });
 
-const coreColours: Record<TimelineEntry["contentType"], string> = {
-    film: "#ff5a4f",
-    "one-shot": "#b88cff",
-    series: "#5dc9ff",
-    short: "#61e4a8",
-    special: "#ffe08a",
-};
 const cardAccentColours: Record<TimelineEntry["contentType"], string> = {
     film: "#d98a7d",
     "one-shot": "#b88cff",
@@ -89,12 +86,11 @@ const SELECTED_CARD_RENDER_ORDER = 2000;
 const CARD_PLANE_GEOMETRY = new PlaneGeometry(1, 1);
 const CARD_HIT_MATERIAL = new MeshBasicMaterial({ visible: false });
 const POSTER_TEXTURE_WIDTH = 640;
-const CONTENT_TYPES = ["film", "one-shot", "series", "short", "special"] as const;
 const NODE_SPHERE_GEOMETRY = new SphereGeometry(0.11, 24, 24);
-const NORMAL_OUTER_RING_GEOMETRY = new TorusGeometry(0.32, 0.012, 8, 48);
-const SELECTED_OUTER_RING_GEOMETRY = new TorusGeometry(0.45, 0.012, 8, 48);
-const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.24, 0.008, 8, 40);
-const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.34, 0.008, 8, 40);
+const NORMAL_OUTER_RING_GEOMETRY = new TorusGeometry(0.32, 0.004, 8, 48);
+const SELECTED_OUTER_RING_GEOMETRY = new TorusGeometry(0.45, 0.005, 8, 48);
+const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.24, 0.003, 8, 40);
+const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.34, 0.004, 8, 40);
 // Draw the tick locally so the status never needs a remote fallback font.
 const WATCHED_BADGE_MATERIAL = new ShaderMaterial({
     depthTest: false,
@@ -143,39 +139,19 @@ const WATCHED_BADGE_MATERIAL = new ShaderMaterial({
     `,
 });
 const NORMAL_OUTER_RING_MATERIAL = createTimelineRingMaterial({
-    colour: "#ffad52",
+    colour: "#ffffff",
     opacity: 0.45,
 });
 const SELECTED_OUTER_RING_MATERIAL = createTimelineRingMaterial({
-    colour: "#ffad52",
+    colour: "#ffffff",
     opacity: 0.9,
 });
 const INNER_RING_MATERIAL = createTimelineRingMaterial({
-    colour: "#ffe0a3",
+    colour: "#ffffff",
     opacity: 0.32,
 });
-const NODE_SPHERE_MATERIALS = Object.fromEntries(
-    CONTENT_TYPES.map((contentType) => [
-        contentType,
-        new MeshStandardMaterial({
-            color: coreColours[contentType],
-            emissive: coreColours[contentType],
-            emissiveIntensity: 2.8,
-            roughness: 0.2,
-        }),
-    ])
-) as Record<TimelineEntry["contentType"], MeshStandardMaterial>;
-const SELECTED_NODE_SPHERE_MATERIALS = Object.fromEntries(
-    CONTENT_TYPES.map((contentType) => [
-        contentType,
-        new MeshStandardMaterial({
-            color: coreColours[contentType],
-            emissive: coreColours[contentType],
-            emissiveIntensity: 5,
-            roughness: 0.2,
-        }),
-    ])
-) as Record<TimelineEntry["contentType"], MeshStandardMaterial>;
+const NODE_SPHERE_MATERIAL = createTimelineNodeCoreMaterial();
+const SELECTED_NODE_SPHERE_MATERIAL = createTimelineNodeCoreMaterial();
 const GEIST_FONT_URL =
     "https://fonts.gstatic.com/s/geist/v5/gyBhhwUxId8gMGYQMKR3pzfaWI_Re-Q4nQ.ttf";
 const GEIST_MONO_FONT_URL =
@@ -747,7 +723,7 @@ interface TimelineNodeInstance {
 
 interface InstancedNodeSphereGroupProps {
     instances: readonly TimelineNodeInstance[];
-    material: MeshStandardMaterial;
+    material: ShaderMaterial;
     onHoverChange: (hovered: boolean) => void;
     onSelect: (slug: string) => void;
 }
@@ -763,11 +739,16 @@ function InstancedNodeSphereGroup({
 
     useLayoutEffect(() => {
         const mesh = meshRef.current as InstancedMesh;
-        instances.forEach(({ position }, instanceId) => {
+        const colour = new Color();
+        instances.forEach(({ entry, position }, instanceId) => {
             matrix.makeTranslation(position.x, position.y, position.z);
             mesh.setMatrixAt(instanceId, matrix);
+            mesh.setColorAt(instanceId, colour.set(getTimelineNodeAccent(entry)));
         });
         mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor) {
+            mesh.instanceColor.needsUpdate = true;
+        }
     }, [instances, matrix]);
 
     const handleSelect = useCallback(
@@ -842,12 +823,35 @@ function InstancedTimelineRings({
         }
     }, []);
 
+    useLayoutEffect(() => {
+        const colour = new Color();
+        for (const mesh of [normalOuterRef.current, normalInnerRef.current]) {
+            if (!mesh) {
+                continue;
+            }
+            instances.forEach(({ entry }, index) => {
+                mesh.setColorAt(index, colour.set(getTimelineNodeAccent(entry)));
+            });
+            if (mesh.instanceColor) {
+                mesh.instanceColor.needsUpdate = true;
+            }
+        }
+        for (const mesh of [selectedOuterRef.current, selectedInnerRef.current]) {
+            if (mesh && selected) {
+                mesh.setColorAt(0, colour.set(getTimelineNodeAccent(selected.entry)));
+                if (mesh.instanceColor) {
+                    mesh.instanceColor.needsUpdate = true;
+                }
+            }
+        }
+    }, [instances, selected]);
+
     useFrame(({ clock }) => {
         const elapsed = reducedMotion ? 0 : clock.elapsedTime;
         NORMAL_OUTER_RING_MATERIAL.uniforms.uTime.value = elapsed;
         SELECTED_OUTER_RING_MATERIAL.uniforms.uTime.value = elapsed;
         INNER_RING_MATERIAL.uniforms.uTime.value = elapsed;
-        groupEuler.set(clock.elapsedTime * 0.11, Math.PI / 2, 0);
+        groupEuler.set(elapsed * 0.055, 1.05, 0);
         groupQuaternion.setFromEuler(groupEuler);
 
         const writeInstances = (mesh: InstancedMesh | null, inner: boolean) => {
@@ -911,6 +915,40 @@ function InstancedTimelineRings({
     );
 }
 
+function TimelineNodeGlow({ instances, reducedMotion, selected }: InstancedTimelineRingsProps) {
+    const meshRef = useRef<InstancedMesh>(null);
+    const material = useMemo(createTimelineNodeMaterial, []);
+    useEffect(() => () => material.dispose(), [material]);
+    useLayoutEffect(() => {
+        const mesh = meshRef.current as InstancedMesh;
+        const matrix = new Matrix4();
+        const colour = new Color();
+        instances.forEach(({ entry, position }, index) => {
+            const focused = entry.slug === selected?.entry.slug;
+            // Scale encodes focus for the shader; translation remains the original anchor.
+            matrix.makeScale(focused ? 2 : 1, 1, 1).setPosition(position);
+            mesh.setMatrixAt(index, matrix);
+            mesh.setColorAt(index, colour.set(getTimelineNodeAccent(entry)));
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor) {
+            mesh.instanceColor.needsUpdate = true;
+        }
+    }, [instances, selected]);
+    useFrame(({ clock }) => {
+        material.uniforms.uTime.value = reducedMotion ? 0 : clock.elapsedTime;
+        material.uniforms.uMotion.value = reducedMotion ? 0 : 1;
+    });
+    return (
+        <instancedMesh
+            args={[CARD_PLANE_GEOMETRY, material, instances.length]}
+            frustumCulled={false}
+            ref={meshRef}
+            renderOrder={3}
+        />
+    );
+}
+
 interface InstancedTimelineNodesProps {
     count: number;
     entries: readonly TimelineEntry[];
@@ -940,20 +978,17 @@ function InstancedTimelineNodes({
         [count, entries]
     );
     const selected = instances.find(({ entry }) => entry.slug === selectedSlug);
+    useLayoutEffect(() => {
+        if (selected) {
+            SELECTED_NODE_SPHERE_MATERIAL.uniforms.uAccent.value = new Color(
+                getTimelineNodeAccent(selected.entry)
+            );
+        }
+    }, [selected]);
     const normalInstances = useMemo(
         () =>
             selectedSlug ? instances.filter(({ entry }) => entry.slug !== selectedSlug) : instances,
         [instances, selectedSlug]
-    );
-    const instancesByContentType = useMemo(
-        () => ({
-            film: normalInstances.filter(({ entry }) => entry.contentType === "film"),
-            "one-shot": normalInstances.filter(({ entry }) => entry.contentType === "one-shot"),
-            series: normalInstances.filter(({ entry }) => entry.contentType === "series"),
-            short: normalInstances.filter(({ entry }) => entry.contentType === "short"),
-            special: normalInstances.filter(({ entry }) => entry.contentType === "special"),
-        }),
-        [normalInstances]
     );
     const handleSelectedSelect = useCallback(
         (event: ThreeEvent<MouseEvent>) => {
@@ -976,23 +1011,22 @@ function InstancedTimelineNodes({
 
     return (
         <>
+            <TimelineNodeGlow
+                instances={instances}
+                reducedMotion={reducedMotion}
+                selected={selected}
+            />
             <InstancedTimelineRings
                 instances={normalInstances}
                 reducedMotion={reducedMotion}
                 selected={selected}
             />
-            {CONTENT_TYPES.map((contentType) => {
-                const contentInstances = instancesByContentType[contentType];
-                return contentInstances.length > 0 ? (
-                    <InstancedNodeSphereGroup
-                        instances={contentInstances}
-                        key={contentType}
-                        material={NODE_SPHERE_MATERIALS[contentType]}
-                        onHoverChange={setHovered}
-                        onSelect={onSelect}
-                    />
-                ) : null;
-            })}
+            <InstancedNodeSphereGroup
+                instances={normalInstances}
+                material={NODE_SPHERE_MATERIAL}
+                onHoverChange={setHovered}
+                onSelect={onSelect}
+            />
             {selected ? (
                 // biome-ignore lint/a11y/noStaticElementInteractions: The selected orb is a scene control.
                 <mesh
@@ -1004,10 +1038,7 @@ function InstancedTimelineNodes({
                     scale={1.55}
                 >
                     <primitive attach="geometry" object={NODE_SPHERE_GEOMETRY} />
-                    <primitive
-                        attach="material"
-                        object={SELECTED_NODE_SPHERE_MATERIALS[selected.entry.contentType]}
-                    />
+                    <primitive attach="material" object={SELECTED_NODE_SPHERE_MATERIAL} />
                 </mesh>
             ) : null}
         </>
@@ -1414,7 +1445,7 @@ function TimelineScene({
                 entries={entries}
                 onSelect={onSelect}
                 reducedMotion={reducedMotion}
-                selectedSlug={selectedSlug}
+                selectedSlug={selectedSlug ?? entries[focusIndex]?.slug}
             />
             <TimelineCards
                 entries={entries}

@@ -1,6 +1,7 @@
 import { AdditiveBlending, Color, ShaderMaterial } from "three";
 
 const ringVertexShader = /* glsl */ `
+    varying vec3 vAccent;
     varying vec3 vRingOffset;
     varying float vNodeSeed;
     varying vec2 vRingUv;
@@ -18,6 +19,10 @@ const ringVertexShader = /* glsl */ `
         vNodeSeed = fract(
             sin(dot(worldCentre, vec3(12.9898, 78.233, 43.271))) * 43758.5453
         );
+        vAccent = vec3(1.0);
+        #ifdef USE_INSTANCING_COLOR
+            vAccent = instanceColor;
+        #endif
         vRingUv = uv;
         gl_Position = projectionMatrix * viewMatrix * worldPosition;
     }
@@ -27,6 +32,7 @@ const ringFragmentShader = /* glsl */ `
     uniform vec3 uColour;
     uniform float uOpacity;
     uniform float uTime;
+    varying vec3 vAccent;
     varying vec3 vRingOffset;
     varying float vNodeSeed;
     varying vec2 vRingUv;
@@ -41,8 +47,8 @@ const ringFragmentShader = /* glsl */ `
         float distanceToStream = length(vRingOffset.yz);
         float streamHeat = exp(-distanceToStream * distanceToStream * 22.0);
         float localHeat = streamHeat * (0.82 + sin(uTime * 0.43 + phase) * 0.08);
-        vec3 gold = vec3(1.0, 0.79, 0.4);
-        vec3 colour = mix(uColour, gold, localHeat * 0.18);
+        vec3 heatedAccent = mix(vAccent, vec3(1.0), 0.3);
+        vec3 colour = mix(uColour * vAccent, heatedAccent, localHeat * 0.18);
         colour *= 0.97 + variation + localHeat * 0.18;
 
         gl_FragColor = vec4(colour, uOpacity * (0.96 + variation * 0.35));
