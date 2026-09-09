@@ -1102,19 +1102,16 @@ function InstancedTimelineNodes({
     return (
         <>
             <TimelineNodeFilaments instances={instances} reducedMotion={reducedMotion} />
-            {/* Keep the transparent node details in one stable pass across camera angles. */}
-            <group renderOrder={SELECTED_CARD_RENDER_ORDER + 1}>
-                <TimelineNodeGlow
-                    instances={instances}
-                    reducedMotion={reducedMotion}
-                    selected={selected}
-                />
-                <InstancedTimelineRings
-                    instances={normalInstances}
-                    reducedMotion={reducedMotion}
-                    selected={selected}
-                />
-            </group>
+            <TimelineNodeGlow
+                instances={instances}
+                reducedMotion={reducedMotion}
+                selected={selected}
+            />
+            <InstancedTimelineRings
+                instances={normalInstances}
+                reducedMotion={reducedMotion}
+                selected={selected}
+            />
             <InstancedNodeSphereGroup
                 instances={normalInstances}
                 material={NODE_SPHERE_MATERIAL}
@@ -1186,8 +1183,7 @@ interface TimelineCardsProps {
 }
 
 function getTimelineCardRenderOrder(cardDepth: number, anchorDepth: number, selected: boolean) {
-    // Transparent bloom cannot write depth. Draw cards behind their anchor before
-    // the energy layers so the orange glow also remains visible when viewed below.
+    // Draw a card before the energy only when its anchor is physically closer to the camera.
     const energyOrderOffset = anchorDepth > cardDepth ? -3000 : 0;
     return (
         energyOrderOffset +
@@ -1348,13 +1344,12 @@ function TimelineCards({
 
     return (
         <>
-            <group renderOrder={SELECTED_CARD_RENDER_ORDER + 1}>
-                <instancedMesh
-                    args={[CONNECTOR_EFFECT.card.geometry, connectionMaterial, entries.length]}
-                    frustumCulled={false}
-                    ref={connectionRef}
-                />
-            </group>
+            <instancedMesh
+                args={[CONNECTOR_EFFECT.card.geometry, connectionMaterial, entries.length]}
+                frustumCulled={false}
+                ref={connectionRef}
+                renderOrder={3}
+            />
             {entries.map((entry, index) => {
                 const selected = selectedSlug === entry.slug;
                 const highlighted = selected || focusIndex === index || hoveredSlug === entry.slug;

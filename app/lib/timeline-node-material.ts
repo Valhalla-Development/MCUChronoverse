@@ -158,6 +158,7 @@ export function createTimelineNodeMaterial() {
 /** A white-hot centre falls off into the accent at the sphere's limb instead of a flat disk. */
 export function createTimelineNodeCoreMaterial() {
     return new ShaderMaterial({
+        depthWrite: false,
         fragmentShader: /* glsl */ `
             varying vec3 vNormal;
             varying vec3 vView;
@@ -171,6 +172,7 @@ export function createTimelineNodeCoreMaterial() {
             }
         `,
         toneMapped: false,
+        transparent: true,
         uniforms: { uAccent: { value: [1, 1, 1] } },
         vertexShader: /* glsl */ `
             uniform vec3 uAccent;
