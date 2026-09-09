@@ -93,7 +93,7 @@ const NORMAL_INNER_RING_GEOMETRY = new TorusGeometry(0.24, 0.003, 8, 40);
 const SELECTED_INNER_RING_GEOMETRY = new TorusGeometry(0.34, 0.004, 8, 40);
 // Draw the tick locally so the status never needs a remote fallback font.
 const WATCHED_BADGE_MATERIAL = new ShaderMaterial({
-    depthTest: false,
+    depthTest: true,
     depthWrite: false,
     fragmentShader: /* glsl */ `
         varying vec2 vUv;
@@ -333,7 +333,8 @@ function createCardSurfaceMaterial(
     const idleBorderColour = watched ? "#be7852" : "#ffffff";
     const idleBorderOpacity = watched ? 0.24 : 0.11;
     return new ShaderMaterial({
-        depthTest: false,
+        // Respect the stream's depth while preserving the card's transparent layer ordering.
+        depthTest: true,
         depthWrite: false,
         fragmentShader: cardPanelFragmentShader,
         toneMapped: false,
@@ -388,7 +389,7 @@ const cardSurfaceMaterials = {
 } satisfies CardSurfaceMaterialSet;
 
 const posterShadeMaterial = new ShaderMaterial({
-    depthTest: false,
+    depthTest: true,
     depthWrite: false,
     fragmentShader: posterShadeFragmentShader,
     toneMapped: false,
@@ -402,7 +403,7 @@ function configureOverlayMesh(mesh: Mesh | null): void {
     }
     const materials: Material[] = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const material of materials) {
-        material.depthTest = false;
+        material.depthTest = true;
         material.depthWrite = false;
         material.toneMapped = false;
     }
@@ -1090,6 +1091,16 @@ interface TimelineCardsProps {
     watchedSlugs: readonly string[];
 }
 
+function getTimelineCardRenderOrder(cardDepth: number, anchorDepth: number, selected: boolean) {
+    // Transparent bloom cannot write depth. Draw cards behind their anchor before
+    // the energy layers so the orange glow also remains visible when viewed below.
+    const energyOrderOffset = anchorDepth > cardDepth ? -3000 : 0;
+    return (
+        energyOrderOffset +
+        (selected ? SELECTED_CARD_RENDER_ORDER : CARD_RENDER_ORDER_BASE + cardDepth)
+    );
+}
+
 function TimelineCards({
     entries,
     focusIndex,
@@ -1100,6 +1111,7 @@ function TimelineCards({
     const [hoveredSlug, setHoveredSlug] = useState<string>();
     const billboardRefs = useRef<Array<Group | null>>([]);
     const cardRefs = useRef<Array<Group | null>>([]);
+    const anchorViewPosition = useMemo(() => new Vector3(), []);
     const watchedSlugSet = useMemo(() => new Set(watchedSlugs), [watchedSlugs]);
     useCursor(Boolean(hoveredSlug));
     const registrations = useMemo<TimelineCardRegistration[]>(
@@ -1167,9 +1179,13 @@ function TimelineCards({
             card.position.y = nextOffsetY;
             card.getWorldPosition(registrations[index].worldPosition);
             registrations[index].worldPosition.applyMatrix4(camera.matrixWorldInverse);
-            card.renderOrder = selected
-                ? SELECTED_CARD_RENDER_ORDER
-                : CARD_RENDER_ORDER_BASE + registrations[index].worldPosition.z;
+            billboard.parent?.getWorldPosition(anchorViewPosition);
+            anchorViewPosition.applyMatrix4(camera.matrixWorldInverse);
+            card.renderOrder = getTimelineCardRenderOrder(
+                registrations[index].worldPosition.z,
+                anchorViewPosition.z,
+                selected
+            );
             animationMoving ||=
                 Math.abs(nextScale - targetScale) > 0.001 ||
                 Math.abs(nextOffsetY - targetOffsetY) > 0.001;
