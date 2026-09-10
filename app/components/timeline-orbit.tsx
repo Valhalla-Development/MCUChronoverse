@@ -1622,28 +1622,19 @@ function TimelineScene({
     );
 }
 
-function DemandFrameLoop({ framesPerSecond }: { framesPerSecond?: number }) {
+function DemandFrameLoop() {
     const invalidate = useThree((state) => state.invalidate);
 
     useEffect(() => {
-        if (framesPerSecond !== undefined && framesPerSecond <= 0) {
-            return;
-        }
-        // Keep one R3F frame mode so adapting the cadence never resets its animation clock.
-        const frameInterval = framesPerSecond === undefined ? 0 : 1000 / framesPerSecond;
+        // Adapt rendering cost without permanently throttling animation or resetting its clock.
         let animationFrame = 0;
-        let lastFrameTime = 0;
-        const requestFrame = (time: number) => {
-            if (time - lastFrameTime >= frameInterval) {
-                lastFrameTime =
-                    frameInterval === 0 ? time : time - ((time - lastFrameTime) % frameInterval);
-                invalidate();
-            }
+        const requestFrame = () => {
+            invalidate();
             animationFrame = window.requestAnimationFrame(requestFrame);
         };
         animationFrame = window.requestAnimationFrame(requestFrame);
         return () => window.cancelAnimationFrame(animationFrame);
-    }, [framesPerSecond, invalidate]);
+    }, [invalidate]);
 
     return null;
 }
@@ -1669,7 +1660,6 @@ export function TimelineOrbit({
     const [reducedMotion, setReducedMotion] = useState(false);
     const [compact, setCompact] = useState(false);
     const [qualityFactor, setQualityFactor] = useState(1);
-    const [performanceFallback, setPerformanceFallback] = useState(false);
     const [zoomDistance, setZoomDistance] = useState(DEFAULT_ZOOM_DISTANCE);
     const [zoomStorageReady, setZoomStorageReady] = useState(false);
     const cameraSettings = useMemo(
@@ -1693,12 +1683,8 @@ export function TimelineOrbit({
         );
     }, []);
     const handlePerformanceChange = useCallback(({ factor }: { factor: number }) => {
-        const nextFactor = Math.round(factor * 2) / 2;
+        const nextFactor = Math.round(factor * 4) / 4;
         setQualityFactor((current) => (current === nextFactor ? current : nextFactor));
-    }, []);
-    const handlePerformanceFallback = useCallback(() => {
-        setQualityFactor(0);
-        setPerformanceFallback(true);
     }, []);
 
     useEffect(() => {
@@ -1773,16 +1759,12 @@ export function TimelineOrbit({
         <div className="relative h-full w-full">
             <Canvas
                 camera={cameraSettings}
-                dpr={2}
+                dpr={[1, 1.25 + qualityFactor * 0.75]}
                 frameloop="demand"
                 gl={{ alpha: false, powerPreference: "high-performance", stencil: false }}
             >
                 <Suspense fallback={null}>
-                    <PerformanceMonitor
-                        flipflops={2}
-                        onChange={handlePerformanceChange}
-                        onFallback={handlePerformanceFallback}
-                    >
+                    <PerformanceMonitor factor={1} onChange={handlePerformanceChange} step={0.25}>
                         <TimelineScene
                             compact={compact}
                             entries={entries}
@@ -1798,11 +1780,7 @@ export function TimelineOrbit({
                             watchedSlugs={watchedSlugs}
                             zoomDistance={zoomDistance}
                         />
-                        {reducedMotion ? null : (
-                            <DemandFrameLoop
-                                framesPerSecond={performanceFallback ? 30 : undefined}
-                            />
-                        )}
+                        {reducedMotion ? null : <DemandFrameLoop />}
                     </PerformanceMonitor>
                 </Suspense>
             </Canvas>
