@@ -9,6 +9,7 @@ import {
 } from "@react-three/drei";
 import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import {
+    memo,
     type RefCallback,
     Suspense,
     useCallback,
@@ -25,6 +26,7 @@ import {
     type Curve,
     DynamicDrawUsage,
     Euler,
+    Frustum,
     type Group,
     type InstancedMesh,
     LineCurve3,
@@ -36,6 +38,7 @@ import {
     PlaneGeometry,
     Quaternion,
     ShaderMaterial,
+    Sphere,
     SphereGeometry,
     TorusGeometry,
     TubeGeometry,
@@ -1104,7 +1107,7 @@ function InstancedTimelineNodes({
 }
 
 // Cards remain individual GPU layers while one controller batches their billboard transforms.
-function TimelineNode({
+const TimelineNode = memo(function TimelineNodeView({
     billboardRef,
     cardRef,
     count,
@@ -1132,7 +1135,7 @@ function TimelineNode({
             />
         </group>
     );
-}
+});
 
 interface TimelineCardRegistration {
     billboardRef: RefCallback<Group>;
@@ -1170,6 +1173,10 @@ function TimelineCards({
     const billboardRefs = useRef<Array<Group | null>>([]);
     const cardRefs = useRef<Array<Group | null>>([]);
     const anchorViewPosition = useMemo(() => new Vector3(), []);
+    const culling = useMemo(
+        () => ({ frustum: new Frustum(), projection: new Matrix4(), sphere: new Sphere() }),
+        []
+    );
     const connectionRef = useRef<InstancedMesh>(null);
     const connectionMaterial = useMemo(CONNECTOR_EFFECT.card.createMaterial, []);
     useEffect(() => () => connectionMaterial.dispose(), [connectionMaterial]);
@@ -1268,6 +1275,8 @@ function TimelineCards({
     useFrame(({ camera, clock, invalidate }, delta) => {
         connectionMaterial.uniforms.uTime.value = reducedMotion ? 0 : clock.elapsedTime;
         connectionMaterial.uniforms.uMotion.value = reducedMotion ? 0 : 1;
+        culling.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        culling.frustum.setFromProjectionMatrix(culling.projection);
         let animationMoving = false;
         entries.forEach((entry, index) => {
             const billboard = billboardRefs.current[index];
@@ -1290,6 +1299,14 @@ function TimelineCards({
             card.scale.setScalar(nextScale);
             card.position.y = nextOffsetY;
             card.getWorldPosition(registrations[index].worldPosition);
+            // Cull the whole layered card with room for its border and halo. Individual text
+            // and shader planes have custom bounds, so their own culling remains disabled.
+            culling.sphere.center.copy(registrations[index].worldPosition);
+            culling.sphere.radius =
+                Math.hypot(CARD_WIDTH + 0.12, CARD_BASE_HEIGHT + 0.14) *
+                0.5 *
+                card.matrixWorld.getMaxScaleOnAxis();
+            card.visible = culling.frustum.intersectsSphere(culling.sphere);
             registrations[index].worldPosition.applyMatrix4(camera.matrixWorldInverse);
             billboard.parent?.getWorldPosition(anchorViewPosition);
             anchorViewPosition.applyMatrix4(camera.matrixWorldInverse);
