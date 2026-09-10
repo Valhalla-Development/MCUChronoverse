@@ -1250,5 +1250,47 @@
       "traktUrl": "https://app.trakt.tv/movies/werewolf-by-night-2022"
     },
     "status": "resolved"
+  },
+  "spider-man-2002": {
+    "fetchedAt": "2026-09-10T15:55:48.259Z",
+    "requestedTitle": "Spider-Man",
+    "source": {
+      "description": "After being bitten by a genetically altered spider at Oscorp, nerdy but endearing high school student Peter Parker is endowed with amazing powers to become the superhero known as Spider-Man.",
+      "genres": ["Action", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0145487/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/or6XJBVpcEbIkma0V9zshnbEtx4.jpg",
+      "rating": 7.353,
+      "runtime": "2h 1m",
+      "traktUrl": "https://app.trakt.tv/movies/spider-man-2002"
+    },
+    "status": "resolved"
+  },
+  "spider-man-2-2004": {
+    "fetchedAt": "2026-09-10T15:55:49.347Z",
+    "requestedTitle": "Spider-Man 2",
+    "source": {
+      "description": "Peter Parker is going through a major identity crisis. Burned out from being Spider-Man, he decides to shelve his superhero alter ego, which leaves the city suffering in the wake of carnage left by the evil Doc Ock. In the meantime, Parker still can't act on his feelings for Mary Jane Watson, a girl he's loved since childhood. A certain anger begins to brew in his best friend Harry Osborn as well...",
+      "genres": ["Action", "Adventure", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0316654/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/aGuvNAaaZuWXYQQ6N2v7DeuP6mB.jpg",
+      "rating": 7.329,
+      "runtime": "2h 7m",
+      "traktUrl": "https://app.trakt.tv/movies/spider-man-2-2004"
+    },
+    "status": "resolved"
+  },
+  "spider-man-3-2007": {
+    "fetchedAt": "2026-09-10T15:55:50.425Z",
+    "requestedTitle": "Spider-Man 3",
+    "source": {
+      "description": "The seemingly invincible Spider-Man goes up against an all-new crop of villains—including the shape-shifting Sandman. While Spider-Man’s superpowers are altered by an alien organism, his alter ego, Peter Parker, deals with nemesis Eddie Brock and also gets caught up in a love triangle.",
+      "genres": ["Action", "Adventure", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0413300/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/qFmwhVUoUSXjkKRmca5yGDEXBIj.jpg",
+      "rating": 6.48,
+      "runtime": "2h 19m",
+      "traktUrl": "https://app.trakt.tv/movies/spider-man-3-2007"
+    },
+    "status": "resolved"
   }
 }

@@ -17,8 +17,6 @@ import {
     type ContentType,
     contentTypeLabels,
     contentTypes,
-    type McuPhase,
-    phases,
     type TimelineEntry,
 } from "../data/types";
 import { useWatchProgress } from "../hooks/use-watch-progress";
@@ -27,9 +25,11 @@ import {
     filterTimeline,
     isWatchable,
     parseTimelineFilters,
+    phaseFilters,
     serializeTimelineFilters,
     type TimelineFilters,
     type TimelineOrder,
+    type TimelinePhaseFilter,
     timelineOrders,
 } from "../lib/timeline";
 import { AuthMenu } from "./auth-menu";
@@ -74,8 +74,8 @@ function isContentType(value: string | undefined): value is ContentType {
     return contentTypes.some((type) => type === value);
 }
 
-function isMcuPhase(value: string | undefined): value is McuPhase {
-    return phases.some((phase) => phase === value);
+function isTimelinePhaseFilter(value: string | undefined): value is TimelinePhaseFilter {
+    return phaseFilters.some((phase) => phase === value);
 }
 
 const contentTypeNames: Record<ContentType, string> = {
@@ -195,7 +195,7 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
                             </div>
                         )}
                         <span>{entry.runtime}</span>
-                        {entry.phase ? <span>{entry.phase}</span> : null}
+                        <span>{entry.phase ?? "Outside MCU phases"}</span>
                         <span>{entry.releaseDate.slice(0, 4)}</span>
                     </div>
 
@@ -483,7 +483,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
     const handlePhaseToggle = useCallback(
         (event: MouseEvent<HTMLButtonElement>) => {
             const phase = event.currentTarget.dataset.value;
-            if (!isMcuPhase(phase)) {
+            if (!isTimelinePhaseFilter(phase)) {
                 return;
             }
             updateFilters({ ...filters, phases: toggleValue(filters.phases, phase) });
@@ -842,7 +842,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                                 <fieldset className="timeline-filter-group">
                                     <legend>Phase</legend>
                                     <div className="timeline-filter-phases">
-                                        {phases.map((phase, index) => {
+                                        {phaseFilters.map((phase, index) => {
                                             const active = filters.phases.includes(phase);
                                             return (
                                                 <button
@@ -854,7 +854,9 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                                                     type="button"
                                                 >
                                                     <span>
-                                                        {String(index + 1).padStart(2, "0")}
+                                                        {phase === "Outside MCU phases"
+                                                            ? "ALT"
+                                                            : String(index + 1).padStart(2, "0")}
                                                     </span>
                                                     {phase}
                                                 </button>

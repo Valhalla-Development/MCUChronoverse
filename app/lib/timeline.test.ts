@@ -22,6 +22,60 @@ describe("chronology", () => {
     });
 });
 
+describe("Sony chronology", () => {
+    test("places the seeded trilogy between Captain Marvel and Iron Man without MCU membership", () => {
+        const sony = chronology.filter((entry) => entry.universe === "Earth-96283");
+        expect(
+            sony.map((entry) => [entry.slug, entry.placement, entry.releaseDate, entry.imdbUrl])
+        ).toEqual([
+            ["spider-man-2002", "2002", "2002-05-03", "https://www.imdb.com/title/tt0145487/"],
+            ["spider-man-2-2004", "2004", "2004-06-30", "https://www.imdb.com/title/tt0316654/"],
+            ["spider-man-3-2007", "2007", "2007-05-04", "https://www.imdb.com/title/tt0413300/"],
+        ]);
+        expect(chronology.slice(4, 9).map((entry) => entry.slug)).toEqual([
+            "captain-marvel",
+            ...sony.map((entry) => entry.slug),
+            "iron-man",
+        ]);
+        for (const entry of sony) {
+            expect(entry.phase).toBeUndefined();
+            expect(entry.saga).toBe("Sony Spider-Man Universe");
+            expect(entry.description.length).toBeGreaterThan(30);
+            expect(entry.genres?.length).toBeGreaterThan(0);
+            expect(entry.posterUrl?.startsWith("https://image.tmdb.org/t/p/")).toBe(true);
+            expect(entry.rating).toBeGreaterThan(0);
+            expect(entry.runtime.length).toBeGreaterThan(0);
+            expect(entry.traktUrl).toBe(`https://app.trakt.tv/movies/${entry.slug}`);
+            expect(isWatchable(entry)).toBe(true);
+        }
+    });
+
+    test("supports universe search and an explicit non-MCU phase filter", () => {
+        const filters = { ...emptyTimelineFilters, query: "Earth-96283" };
+        expect(filterTimeline(chronology, filters)).toHaveLength(3);
+        expect(filterTimeline(chronology, { ...filters, phases: ["Phase One"] })).toHaveLength(0);
+        const outside = { ...emptyTimelineFilters, phases: ["Outside MCU phases"] as const };
+        const parsed = parseTimelineFilters(
+            serializeTimelineFilters({ ...outside, phases: [...outside.phases] })
+        );
+        expect(parsed.phases).toEqual([...outside.phases]);
+        expect(filterTimeline(chronology, parsed)).toHaveLength(3);
+        expect(
+            filterTimeline(chronology, { ...filters, order: "release" }).map(
+                (entry) => entry.placement
+            )
+        ).toEqual(["2002", "2004", "2007"]);
+    });
+
+    test("still rejects duplicate ordering and invalid dates", () => {
+        expect(
+            validateChronology([chronology[0], { ...chronology[0], releaseDate: "invalid" }]).map(
+                (issue) => issue.message
+            )
+        ).toEqual(["Duplicate chronology order 10", "Duplicate slug", "Invalid release date"]);
+    });
+});
+
 describe("timeline filters", () => {
     test("filters by search, type, and phase", () => {
         const entries = filterTimeline(chronology, {

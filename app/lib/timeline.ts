@@ -10,9 +10,12 @@ export const timelineOrders = ["chronology", "release"] as const;
 
 export type TimelineOrder = (typeof timelineOrders)[number];
 
+export const phaseFilters = [...phases, "Outside MCU phases"] as const;
+export type TimelinePhaseFilter = McuPhase | "Outside MCU phases";
+
 export interface TimelineFilters {
     order: TimelineOrder;
-    phases: McuPhase[];
+    phases: TimelinePhaseFilter[];
     query: string;
     types: ContentType[];
 }
@@ -44,7 +47,7 @@ export function parseTimelineFilters(params: SearchParamsReader): TimelineFilter
     const order = params.get("order");
     return {
         order: order === "release" ? order : "chronology",
-        phases: parseList(params.get("phases"), phases),
+        phases: parseList(params.get("phases"), phaseFilters),
         query: params.get("q")?.trim() ?? "",
         types: parseList(params.get("types"), contentTypes),
     };
@@ -77,12 +80,14 @@ export function filterTimeline(
             const matchesQuery =
                 query.length === 0 ||
                 entry.title.toLocaleLowerCase("en-GB").includes(query) ||
-                entry.description.toLocaleLowerCase("en-GB").includes(query);
+                entry.description.toLocaleLowerCase("en-GB").includes(query) ||
+                entry.universe.toLocaleLowerCase("en-GB").includes(query) ||
+                entry.saga.toLocaleLowerCase("en-GB").includes(query);
             const matchesType =
                 filters.types.length === 0 || filters.types.includes(entry.contentType);
             const matchesPhase =
                 filters.phases.length === 0 ||
-                (entry.phase !== undefined && filters.phases.includes(entry.phase));
+                filters.phases.includes(entry.phase ?? "Outside MCU phases");
             return matchesQuery && matchesType && matchesPhase;
         })
         .sort((left, right) => {
