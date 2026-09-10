@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useState } from "react";
-import { Vector3 } from "three";
+import { Vector2, Vector3 } from "three";
 
 let pageSeed: number | undefined;
 
@@ -25,6 +25,7 @@ const vertexShader = /* glsl */ `
     attribute vec4 aStyle;
     uniform float uTime;
     uniform float uPixelRatio;
+    uniform vec2 uViewportSize;
     uniform float uVolume;
     uniform float uDust;
     uniform vec3 uNodes[6];
@@ -39,28 +40,45 @@ const vertexShader = /* glsl */ `
             - uVolume * 0.5;
         vec3 world = relative + cameraPosition;
         vec4 view = viewMatrix * vec4(world, 1.0);
-        float distanceToCamera = length(relative);
-        float edgeFade = 1.0 - smoothstep(uVolume * 0.34, uVolume * 0.49, distanceToCamera);
-        float nearFade = smoothstep(3.0, 8.0, distanceToCamera);
-        float illumination = 0.0;
-        for (int i = 0; i < 6; i++) {
-            vec3 offset = world - uNodes[i];
-            illumination = max(illumination, exp(-dot(offset, offset) / 5.0));
-        }
-        // Only a small minority shimmer, with a soft crest about once a minute.
-        float shimmer = pow(max(0.0, sin(uTime * 0.105 + aStyle.w)), 48.0)
-            * step(0.975, aStyle.z) * 0.12 * (1.0 - uDust);
-        float palette = fract(aStyle.w * 7.13);
-        vWarmth = mix(palette, 0.3 + palette * 0.65 + illumination * 0.05, uDust);
+        gl_Position = projectionMatrix * view;
+        vAlpha = 0.0;
+        vWarmth = 0.0;
         vGlint = step(0.97, aStyle.z) * (1.0 - uDust);
-        vAlpha = (aStyle.y + shimmer) * edgeFade * nearFade;
-        vAlpha *= mix(1.0, 0.85 + illumination * 1.5, uDust);
         float perspective = clamp(42.0 / max(1.0, -view.z), 0.65, 1.8);
         float size = aStyle.x * perspective;
         // Nearby dust stays pin-sized instead of growing into foreground blobs.
         size = mix(size, min(size, 3.0), uDust);
         gl_PointSize = size * uPixelRatio * mix(1.0, 4.5, vGlint);
-        gl_Position = projectionMatrix * view;
+        // Include the entire sprite in the clip margin so large glints at screen edges remain.
+        vec2 clipMargin = gl_PointSize / uViewportSize * gl_Position.w;
+        if (gl_Position.w <= 0.0 || abs(gl_Position.z) > gl_Position.w
+            || any(greaterThan(abs(gl_Position.xy), vec2(gl_Position.w) + clipMargin))) {
+            return;
+        }
+        float distanceToCamera = length(relative);
+        float edgeFade = 1.0 - smoothstep(uVolume * 0.34, uVolume * 0.49, distanceToCamera);
+        float nearFade = smoothstep(3.0, 8.0, distanceToCamera);
+        if (edgeFade * nearFade == 0.0) {
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            return;
+        }
+        float illumination = 0.0;
+        // Only dust uses node illumination; stars retain their own palette and brightness.
+        if (uDust > 0.5) {
+            for (int i = 0; i < 6; i++) {
+                vec3 offset = world - uNodes[i];
+                illumination = max(illumination, exp(-dot(offset, offset) / 5.0));
+            }
+        }
+        // Only a small minority shimmer, with a soft crest about once a minute.
+        float shimmer = 0.0;
+        if (uDust < 0.5 && aStyle.z >= 0.975) {
+            shimmer = pow(max(0.0, sin(uTime * 0.105 + aStyle.w)), 48.0) * 0.12;
+        }
+        float palette = fract(aStyle.w * 7.13);
+        vWarmth = mix(palette, 0.3 + palette * 0.65 + illumination * 0.05, uDust);
+        vAlpha = (aStyle.y + shimmer) * edgeFade * nearFade;
+        vAlpha *= mix(1.0, 0.85 + illumination * 1.5, uDust);
     }
 `;
 
@@ -72,11 +90,15 @@ const fragmentShader = /* glsl */ `
     void main() {
         vec2 p = (gl_PointCoord - 0.5) * 2.0;
         float radius = length(p);
+        // The original edge function is exactly zero outside the sprite's circle.
+        if (radius >= 1.0 || vAlpha == 0.0) discard;
         float core = exp(-radius * radius * mix(3.5, 45.0, vGlint));
-        float halo = exp(-radius * radius * 12.0) * 0.12;
-        float rays = (exp(-abs(p.x) * 95.0 - abs(p.y) * 5.0)
-            + exp(-abs(p.y) * 95.0 - abs(p.x) * 5.0)) * 0.23;
-        core += vGlint * (halo + rays);
+        if (vGlint > 0.5) {
+            float halo = exp(-radius * radius * 12.0) * 0.12;
+            float rays = (exp(-abs(p.x) * 95.0 - abs(p.y) * 5.0)
+                + exp(-abs(p.y) * 95.0 - abs(p.x) * 5.0)) * 0.23;
+            core += vGlint * (halo + rays);
+        }
         float edge = 1.0 - smoothstep(0.65, 1.0, radius);
         // Distinct ivory, gold, amber and copper populations keep the warm
         // colour visible in tiny points instead of diluting every hue with white.
@@ -103,13 +125,19 @@ const cloudVertexShader = /* glsl */ `
         float distanceToCamera = length(relative);
         vFade = smoothstep(10.0, 19.0, distanceToCamera)
             * (1.0 - smoothstep(uVolume * 0.34, uVolume * 0.48, distanceToCamera));
+        vUv = uv;
+        vSeed = aCloudStyle.z * 13.0;
+        // Fully faded panels can otherwise cover the screen with invisible procedural noise.
+        // All vertices share the centre and fade, so the entire instance is rejected together.
+        if (vFade == 0.0) {
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            return;
+        }
         vec4 view = viewMatrix * vec4(relative + cameraPosition, 1.0);
         float angle = aCloudStyle.z;
         vec2 local = position.xy * aCloudStyle.xy;
         view.xy += mat2(cos(angle), sin(angle), -sin(angle), cos(angle)) * local;
         gl_Position = projectionMatrix * view;
-        vUv = uv;
-        vSeed = angle * 13.0;
     }
 `;
 
@@ -138,13 +166,18 @@ const cloudFragmentShader = /* glsl */ `
         vec2 p = vUv * 2.0 - 1.0;
         vec2 seed = vec2(vSeed, vSeed * 0.37);
         vec2 warp = vec2(smoke(p * 1.8 + seed), smoke(p * 2.1 + seed + 31.0));
-        float density = smoke(p * 3.15 + warp * 2.45 + seed);
         float edge = 1.0 - smoothstep(0.25, 0.98, length(p + (warp - 0.5) * 0.34));
+        if (edge == 0.0) discard;
+        float density = smoke(p * 3.15 + warp * 2.45 + seed);
+        float bodyDensity = smoothstep(0.24, 0.69, density);
+        if (bodyDensity == 0.0) discard;
         // Eroded holes and a soft boundary produce isolated smoke, never a
         // rectangular overlay or a continuous bright band across the scene.
         float holes = smoothstep(0.3, 0.66, smoke(p * 2.55 + seed + 83.0));
-        float body = edge * holes * smoothstep(0.24, 0.69, density);
+        float body = edge * holes * bodyDensity;
         float alpha = body * vFade * mix(0.15, 0.23, density);
+        // Colour noise cannot contribute where the existing cloud shape is fully transparent.
+        if (alpha == 0.0) discard;
 
         vec3 shadowColour;
         vec3 bodyColour;
@@ -309,6 +342,7 @@ function CosmicLayer({
             uPalette: { value: field.palette },
             uPixelRatio: { value: 1 },
             uTime: { value: 0 },
+            uViewportSize: { value: new Vector2(1, 1) },
             uVolume: { value: volume },
             uWarmth: { value: field.warmth },
         }),
@@ -324,6 +358,7 @@ function CosmicLayer({
             uniforms.uTime.value += Math.min(delta, 0.05);
         }
         uniforms.uPixelRatio.value = Math.min(gl.getPixelRatio(), 2);
+        gl.getDrawingBufferSize(uniforms.uViewportSize.value);
         if (!dust) {
             return;
         }
