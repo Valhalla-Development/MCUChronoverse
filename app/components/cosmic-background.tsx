@@ -30,6 +30,7 @@ const vertexShader = /* glsl */ `
     uniform float uDust;
     uniform vec3 uNodes[6];
     varying float vAlpha;
+    varying float vDetail;
     varying float vWarmth;
     varying float vGlint;
     void main() {
@@ -42,6 +43,7 @@ const vertexShader = /* glsl */ `
         vec4 view = viewMatrix * vec4(world, 1.0);
         gl_Position = projectionMatrix * view;
         vAlpha = 0.0;
+        vDetail = 0.0;
         vWarmth = 0.0;
         vGlint = step(0.97, aStyle.z) * (1.0 - uDust);
         float perspective = clamp(42.0 / max(1.0, -view.z), 0.65, 1.8);
@@ -62,12 +64,24 @@ const vertexShader = /* glsl */ `
             gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
             return;
         }
+        // Thin only tiny, distant grains. Stable per-particle seeds prevent flicker while
+        // the retained points gain a little opacity so the background keeps its depth.
+        float farKeep = mix(1.0, mix(0.72, 0.52, uDust),
+            smoothstep(36.0, 68.0, distanceToCamera));
+        float lodSeed = fract(aStyle.w / 6.283185);
+        if (vGlint < 0.5 && lodSeed > farKeep) {
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            return;
+        }
         float illumination = 0.0;
         // Only dust uses node illumination; stars retain their own palette and brightness.
         if (uDust > 0.5) {
             for (int i = 0; i < 6; i++) {
                 vec3 offset = world - uNodes[i];
-                illumination = max(illumination, exp(-dot(offset, offset) / 5.0));
+                float distanceSquared = dot(offset, offset);
+                if (distanceSquared < 45.0) {
+                    illumination = max(illumination, exp(-distanceSquared / 5.0));
+                }
             }
         }
         // Only a small minority shimmer, with a soft crest about once a minute.
@@ -77,7 +91,8 @@ const vertexShader = /* glsl */ `
         }
         float palette = fract(aStyle.w * 7.13);
         vWarmth = mix(palette, 0.3 + palette * 0.65 + illumination * 0.05, uDust);
-        vAlpha = (aStyle.y + shimmer) * edgeFade * nearFade;
+        vDetail = max(vGlint, step(1.8, size));
+        vAlpha = (aStyle.y + shimmer) * edgeFade * nearFade * inversesqrt(farKeep);
         vAlpha *= mix(1.0, 0.85 + illumination * 1.5, uDust);
     }
 `;
@@ -85,21 +100,34 @@ const vertexShader = /* glsl */ `
 const fragmentShader = /* glsl */ `
     uniform float uDust;
     varying float vAlpha;
+    varying float vDetail;
     varying float vWarmth;
     varying float vGlint;
     void main() {
         vec2 p = (gl_PointCoord - 0.5) * 2.0;
-        float radius = length(p);
+        float radiusSquared = dot(p, p);
+        float radius = 0.0;
         // The original edge function is exactly zero outside the sprite's circle.
-        if (radius >= 1.0 || vAlpha == 0.0) discard;
-        float core = exp(-radius * radius * mix(3.5, 45.0, vGlint));
+        if (radiusSquared >= 1.0 || vAlpha == 0.0) discard;
+        float core;
+        float edge;
+        if (vDetail < 0.5) {
+            // Sub-two-pixel points cannot show the full radial profile. A cubic falloff
+            // preserves their apparent size without evaluating exponentials or a square root.
+            float falloff = 1.0 - radiusSquared;
+            core = falloff * falloff * falloff;
+            edge = 1.0;
+        } else {
+            radius = sqrt(radiusSquared);
+            core = exp(-radiusSquared * mix(3.5, 45.0, vGlint));
+            edge = 1.0 - smoothstep(0.65, 1.0, radius);
+        }
         if (vGlint > 0.5) {
             float halo = exp(-radius * radius * 12.0) * 0.12;
             float rays = (exp(-abs(p.x) * 95.0 - abs(p.y) * 5.0)
                 + exp(-abs(p.y) * 95.0 - abs(p.x) * 5.0)) * 0.23;
             core += vGlint * (halo + rays);
         }
-        float edge = 1.0 - smoothstep(0.65, 1.0, radius);
         // Distinct ivory, gold, amber and copper populations keep the warm
         // colour visible in tiny points instead of diluting every hue with white.
         vec3 colour = mix(vec3(0.82, 0.69, 0.48), vec3(0.92, 0.36, 0.035),
@@ -116,6 +144,7 @@ const cloudVertexShader = /* glsl */ `
     uniform float uTime;
     uniform float uVolume;
     varying vec2 vUv;
+    varying float vDetail;
     varying float vFade;
     varying float vSeed;
     void main() {
@@ -125,6 +154,7 @@ const cloudVertexShader = /* glsl */ `
         float distanceToCamera = length(relative);
         vFade = smoothstep(10.0, 19.0, distanceToCamera)
             * (1.0 - smoothstep(uVolume * 0.34, uVolume * 0.48, distanceToCamera));
+        vDetail = 1.0 - smoothstep(28.0, 58.0, distanceToCamera);
         vUv = uv;
         vSeed = aCloudStyle.z * 13.0;
         // Fully faded panels can otherwise cover the screen with invisible procedural noise.
@@ -146,6 +176,7 @@ const cloudFragmentShader = /* glsl */ `
     uniform float uCloudOpacity;
     uniform float uPalette;
     varying vec2 vUv;
+    varying float vDetail;
     varying float vFade;
     varying float vSeed;
     float hash(vec2 p) {
@@ -159,8 +190,15 @@ const cloudFragmentShader = /* glsl */ `
             mix(hash(cell + vec2(0, 1)), hash(cell + vec2(1, 1)), blend.x), blend.y);
     }
     float smoke(vec2 p) {
-        return noise(p) * 0.57 + noise(p * 2.13 + 7.1) * 0.28
-            + noise(p * 4.37 + 19.4) * 0.15;
+        // Preserve the average density as distant clouds drop their fine noise octaves.
+        float value = noise(p) * 0.57 + 0.215;
+        if (vDetail > 0.2) {
+            value += (noise(p * 2.13 + 7.1) - 0.5) * 0.28;
+        }
+        if (vDetail > 0.65) {
+            value += (noise(p * 4.37 + 19.4) - 0.5) * 0.15;
+        }
+        return value;
     }
     void main() {
         vec2 p = vUv * 2.0 - 1.0;

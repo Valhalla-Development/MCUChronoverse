@@ -1249,8 +1249,13 @@ function TimelineCards({
     }, [entries]);
 
     const updateConnection = useCallback(
-        (billboard: Group, card: Group, index: number) => {
+        (billboard: Group, card: Group, index: number, visible: boolean) => {
             const mesh = connectionRef.current as InstancedMesh;
+            if (!visible) {
+                connection.matrix.makeScale(0, 0, 0);
+                mesh.setMatrixAt(index, connection.matrix);
+                return;
+            }
             if (!billboard.parent) {
                 return;
             }
@@ -1306,7 +1311,15 @@ function TimelineCards({
                 Math.hypot(CARD_WIDTH + 0.12, CARD_BASE_HEIGHT + 0.14) *
                 0.5 *
                 card.matrixWorld.getMaxScaleOnAxis();
-            card.visible = culling.frustum.intersectsSphere(culling.sphere);
+            const visible = culling.frustum.intersectsSphere(culling.sphere);
+            card.visible = visible;
+            updateConnection(billboard, card, index, visible);
+            if (!visible) {
+                animationMoving ||=
+                    Math.abs(nextScale - targetScale) > 0.001 ||
+                    Math.abs(nextOffsetY - targetOffsetY) > 0.001;
+                return;
+            }
             registrations[index].worldPosition.applyMatrix4(camera.matrixWorldInverse);
             billboard.parent?.getWorldPosition(anchorViewPosition);
             anchorViewPosition.applyMatrix4(camera.matrixWorldInverse);
@@ -1315,7 +1328,6 @@ function TimelineCards({
                 anchorViewPosition.z,
                 selected
             );
-            updateConnection(billboard, card, index);
             animationMoving ||=
                 Math.abs(nextScale - targetScale) > 0.001 ||
                 Math.abs(nextOffsetY - targetOffsetY) > 0.001;

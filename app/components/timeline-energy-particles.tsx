@@ -46,6 +46,17 @@ const particleVertexShader = /* glsl */ `
         vec3 animatedPosition = position + radialOffset
             + aTangent * ((life - 0.5) * aLife.z);
         vec4 viewPosition = modelViewMatrix * vec4(animatedPosition, 1.0);
+        float distanceToCamera = length(viewPosition.xyz);
+        float farKeep = mix(1.0, 0.38, smoothstep(22.0, 52.0, distanceToCamera));
+        float lodSeed = fract(aIndex * 0.61803398875);
+        // Large escaping fragments remain intact. Only pin-sized distant grains are thinned.
+        if (aShape.w < 0.5 && lodSeed > farKeep) {
+            vStyle = vec4(0.0);
+            vFragment = aShape.w;
+            gl_PointSize = 0.0;
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            return;
+        }
         float projectedSize = aShape.z * uViewportHeight * projectionMatrix[1][1]
             / max(-viewPosition.z, 0.1);
         float minimumSize = 0.75 * uPixelRatio;
@@ -54,7 +65,11 @@ const particleVertexShader = /* glsl */ `
         // Subpixel grains retain their area instead of becoming equal-sized bright dots.
         float coverage = min(1.0, projectedSize * projectedSize / (minimumSize * minimumSize));
         float densityFade = 1.0 - smoothstep(uParticleCount, uParticleCount + uParticleFade, aIndex);
-        vStyle = vec4(aStyle.x * fadeIn * fadeOut * coverage * densityFade, aStyle.yz, life);
+        vStyle = vec4(
+            aStyle.x * fadeIn * fadeOut * coverage * densityFade * inversesqrt(farKeep),
+            aStyle.yz,
+            life
+        );
         vFragment = aShape.w;
         gl_Position = projectionMatrix * viewPosition;
     }
