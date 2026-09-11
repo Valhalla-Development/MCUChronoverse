@@ -23,7 +23,7 @@ describe("chronology", () => {
 });
 
 describe("Sony chronology", () => {
-    test("places the seeded trilogy between Captain Marvel and Iron Man without MCU membership", () => {
+    test("places the seeded trilogy between Eternals and No Way Home without MCU membership", () => {
         const sony = chronology.filter((entry) => entry.universe === "Earth-96283");
         expect(
             sony.map((entry) => [entry.slug, entry.placement, entry.releaseDate, entry.imdbUrl])
@@ -32,11 +32,15 @@ describe("Sony chronology", () => {
             ["spider-man-2-2004", "2004", "2004-06-30", "https://www.imdb.com/title/tt0316654/"],
             ["spider-man-3-2007", "2007", "2007-05-04", "https://www.imdb.com/title/tt0413300/"],
         ]);
-        expect(chronology.slice(4, 9).map((entry) => entry.slug)).toEqual([
-            "captain-marvel",
+        const ordered = filterTimeline(chronology, emptyTimelineFilters);
+        const eternalsIndex = ordered.findIndex((entry) => entry.slug === "eternals");
+        expect(ordered.slice(eternalsIndex, eternalsIndex + 5).map((entry) => entry.slug)).toEqual([
+            "eternals",
             ...sony.map((entry) => entry.slug),
-            "iron-man",
+            "spider-man-no-way-home",
         ]);
+        const captainIndex = ordered.findIndex((entry) => entry.slug === "captain-marvel");
+        expect(ordered[captainIndex + 1].slug).toBe("iron-man");
         for (const entry of sony) {
             expect(entry.phase).toBeUndefined();
             expect(entry.saga).toBe("Sony Spider-Man Universe");
