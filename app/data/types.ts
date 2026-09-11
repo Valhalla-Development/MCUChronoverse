@@ -23,7 +23,11 @@ export type McuPhase = (typeof phases)[number];
 
 export type ContentStatus = "released" | "announced";
 
-export type Saga = "Infinity Saga" | "Multiverse Saga" | "Sony Spider-Man Universe";
+export type Saga =
+    | "Infinity Saga"
+    | "Multiverse Saga"
+    | "Sony Spider-Man Universe"
+    | "Fox X-Men Universe";
 
 export interface CreditScenesInfo {
     after: boolean;

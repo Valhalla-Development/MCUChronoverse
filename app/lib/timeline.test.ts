@@ -81,7 +81,9 @@ describe("Sony chronology", () => {
             serializeTimelineFilters({ ...outside, phases: [...outside.phases] })
         );
         expect(parsed.phases).toEqual([...outside.phases]);
-        expect(filterTimeline(chronology, parsed)).toHaveLength(5);
+        expect(
+            filterTimeline(chronology, { ...parsed, query: "Sony Spider-Man Universe" })
+        ).toHaveLength(5);
         expect(
             filterTimeline(chronology, { ...filters, order: "release" }).map(
                 (entry) => entry.placement
@@ -95,6 +97,59 @@ describe("Sony chronology", () => {
                 (issue) => issue.message
             )
         ).toEqual(["Duplicate chronology order 10", "Duplicate slug", "Invalid release date"]);
+    });
+});
+
+describe("Fox X-Men chronology", () => {
+    test("keeps the complete Fox viewing sequence before its crossover, with Logan before both sequels", () => {
+        const expected = [
+            ["x-men-2000", "tt0120903"],
+            ["x2-2003", "tt0290334"],
+            ["x-men-the-last-stand-2006", "tt0376994"],
+            ["x-men-origins-wolverine-2009", "tt0458525"],
+            ["x-men-first-class-2011", "tt1270798"],
+            ["the-wolverine-2013", "tt1430132"],
+            ["x-men-days-of-future-past-2014", "tt1877832"],
+            ["deadpool-2016", "tt1431045"],
+            ["x-men-apocalypse-2016", "tt3385516"],
+            ["logan-2017", "tt3315342"],
+            ["deadpool-2-2018", "tt5463162"],
+            ["dark-phoenix-2019", "tt6565702"],
+            ["the-new-mutants-2020", "tt4682266"],
+        ];
+        const ordered = filterTimeline(chronology, emptyTimelineFilters);
+        const start = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
+        expect(ordered.slice(start, start + 15).map((entry) => entry.slug)).toEqual([
+            "what-if-season-2",
+            ...expected.map(([slug]) => slug),
+            "deadpool-and-wolverine",
+        ]);
+        const fox = filterTimeline(chronology, {
+            ...emptyTimelineFilters,
+            query: "Fox X-Men Universe",
+        });
+        expect(fox.map((entry) => [entry.slug, entry.imdbUrl])).toEqual(
+            expected.map(([slug, imdb]) => [slug, `https://www.imdb.com/title/${imdb}/`])
+        );
+        expect(fox.find((entry) => entry.slug === "logan-2017")?.placement).toBe("2029");
+        for (const entry of fox) {
+            expect(entry.universe).toBe("Earth-10005");
+            expect(entry.phase).toBeUndefined();
+            expect(entry.note).toBeTruthy();
+            expect(entry.description.length).toBeGreaterThan(30);
+            expect(entry.genres?.length).toBeGreaterThan(0);
+            expect(entry.posterUrl?.startsWith("https://image.tmdb.org/t/p/")).toBe(true);
+            expect(entry.traktUrl.startsWith("https://app.trakt.tv/movies/")).toBe(true);
+            expect(entry.rating).toBeGreaterThan(0);
+            expect(entry.runtime).toBeTruthy();
+            expect(isWatchable(entry)).toBe(true);
+        }
+        expect(
+            filterTimeline(fox, { ...emptyTimelineFilters, phases: ["Phase Five"] })
+        ).toHaveLength(0);
+        expect(
+            filterTimeline(fox, { ...emptyTimelineFilters, phases: ["Outside MCU phases"] })
+        ).toHaveLength(13);
     });
 });
 

@@ -1320,5 +1320,187 @@
       "traktUrl": "https://app.trakt.tv/movies/the-amazing-spider-man-2-2014"
     },
     "status": "resolved"
+  },
+  "x-men-2000": {
+    "fetchedAt": "2026-09-11T14:09:51.919Z",
+    "requestedTitle": "X-Men",
+    "source": {
+      "description": "Two mutants, Rogue and Wolverine, come to a private academy for their kind whose resident superhero team, the X-Men, must oppose a terrorist organization with similar powers.",
+      "genres": ["Adventure", "Action", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0120903/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/bRDAc4GogyS9ci3ow7UnInOcriN.jpg",
+      "rating": 7.021,
+      "runtime": "1h 44m",
+      "traktUrl": "https://app.trakt.tv/movies/x-men-2000"
+    },
+    "status": "resolved"
+  },
+  "x2-2003": {
+    "fetchedAt": "2026-09-11T14:09:53.073Z",
+    "requestedTitle": "X2",
+    "source": {
+      "description": "Professor Charles Xavier and his team of genetically gifted superheroes face a rising tide of anti-mutant sentiment led by Col. William Stryker. Storm, Wolverine and Jean Grey must join Magneto and Mystique to unhinge Stryker's scheme to exterminate all mutants.",
+      "genres": ["Adventure", "Action", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0290334/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/bst4alFUXCxISwdRUKSMhhkrX1M.jpg",
+      "rating": 7.045,
+      "runtime": "2h 13m",
+      "traktUrl": "https://app.trakt.tv/movies/x2-2003"
+    },
+    "status": "resolved"
+  },
+  "x-men-the-last-stand-2006": {
+    "fetchedAt": "2026-09-11T14:09:54.144Z",
+    "requestedTitle": "X-Men: The Last Stand",
+    "source": {
+      "description": "When a cure is found to treat mutations, lines are drawn amongst the X-Men led by Professor Charles Xavier, and Magneto's Brotherhood of Mutants.",
+      "genres": ["Adventure", "Action", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0376994/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/a2xicU8DpKtRizOHjQLC1JyCSRS.jpg",
+      "rating": 6.427,
+      "runtime": "1h 44m",
+      "traktUrl": "https://app.trakt.tv/movies/x-men-the-last-stand-2006"
+    },
+    "status": "resolved"
+  },
+  "x-men-origins-wolverine-2009": {
+    "fetchedAt": "2026-09-11T14:09:55.285Z",
+    "requestedTitle": "X-Men Origins: Wolverine",
+    "source": {
+      "description": "After seeking to live a normal life after 200 years, Logan sets out to avenge a death by undergoing the mutant Weapon X program and becoming Wolverine.",
+      "genres": ["Adventure", "Action", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0458525/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/yj8LbTju1p7CUJg7US2unSBk33s.jpg",
+      "rating": 6.297,
+      "runtime": "1h 47m",
+      "traktUrl": "https://app.trakt.tv/movies/x-men-origins-wolverine-2009"
+    },
+    "status": "resolved"
+  },
+  "x-men-first-class-2011": {
+    "fetchedAt": "2026-09-11T14:09:56.366Z",
+    "requestedTitle": "X-Men: First Class",
+    "source": {
+      "description": "Before Charles Xavier and Erik Lensherr took the names Professor X and Magneto, they were two young men discovering their powers for the first time. Before they were arch-enemies, they were closest of friends, working together with other mutants (some familiar, some new), to stop the greatest threat the world has ever known.",
+      "genres": ["Action", "Science Fiction", "Adventure"],
+      "imdbUrl": "https://www.imdb.com/title/tt1270798/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/hNEokmUke0dazoBhttFN0o3L7Xv.jpg",
+      "rating": 7.305,
+      "runtime": "2h 12m",
+      "traktUrl": "https://app.trakt.tv/movies/x-men-first-class-2011"
+    },
+    "status": "resolved"
+  },
+  "the-wolverine-2013": {
+    "fetchedAt": "2026-09-11T14:09:57.503Z",
+    "requestedTitle": "The Wolverine",
+    "source": {
+      "description": "Wolverine faces his ultimate nemesis - and tests of his physical, emotional, and mortal limits - in a life-changing voyage to modern-day Japan.",
+      "genres": ["Action", "Science Fiction", "Adventure"],
+      "imdbUrl": "https://www.imdb.com/title/tt1430132/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/t2wVAcoRlKvEIVSbiYDb8d0QqqS.jpg",
+      "rating": 6.436,
+      "runtime": "2h 6m",
+      "traktUrl": "https://app.trakt.tv/movies/the-wolverine-2013"
+    },
+    "status": "resolved"
+  },
+  "x-men-days-of-future-past-2014": {
+    "fetchedAt": "2026-09-11T14:09:58.647Z",
+    "requestedTitle": "X-Men: Days of Future Past",
+    "source": {
+      "description": "The ultimate X-Men ensemble fights a war for the survival of the species across two time periods as they join forces with their younger selves in an epic battle that must change the past – to save our future.",
+      "genres": ["Action", "Adventure", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt1877832/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/tYfijzolzgoMOtegh1Y7j2Enorg.jpg",
+      "rating": 7.535,
+      "runtime": "2h 12m",
+      "traktUrl": "https://app.trakt.tv/movies/x-men-days-of-future-past-2014"
+    },
+    "status": "resolved"
+  },
+  "deadpool-2016": {
+    "fetchedAt": "2026-09-11T14:09:59.791Z",
+    "requestedTitle": "Deadpool",
+    "source": {
+      "description": "The origin story of former Special Forces operative turned mercenary Wade Wilson, who, after being subjected to a rogue experiment that leaves him with accelerated healing powers, adopts the alter ego Deadpool. Armed with his new abilities and a dark, twisted sense of humor, Deadpool hunts down the man who nearly destroyed his life.",
+      "genres": ["Action", "Adventure", "Comedy"],
+      "imdbUrl": "https://www.imdb.com/title/tt1431045/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/3E53WEZJqP6aM84D8CckXx4pIHw.jpg",
+      "rating": 7.626,
+      "runtime": "1h 48m",
+      "traktUrl": "https://app.trakt.tv/movies/deadpool-2016"
+    },
+    "status": "resolved"
+  },
+  "x-men-apocalypse-2016": {
+    "fetchedAt": "2026-09-11T14:10:00.872Z",
+    "requestedTitle": "X-Men: Apocalypse",
+    "source": {
+      "description": "After the re-emergence of the world's first mutant, world-destroyer Apocalypse, the X-Men must unite to defeat his extinction level plan.",
+      "genres": ["Science Fiction", "Fantasy", "Action"],
+      "imdbUrl": "https://www.imdb.com/title/tt3385516/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/ikA8UhYdTGpqbatFa93nIf6noSr.jpg",
+      "rating": 6.527,
+      "runtime": "2h 24m",
+      "traktUrl": "https://app.trakt.tv/movies/x-men-apocalypse-2016"
+    },
+    "status": "resolved"
+  },
+  "logan-2017": {
+    "fetchedAt": "2026-09-11T14:10:01.940Z",
+    "requestedTitle": "Logan",
+    "source": {
+      "description": "In the near future, a weary Logan cares for an ailing Professor X in a hideout on the Mexican border. But Logan's attempts to hide from the world and his legacy are upended when a young mutant arrives, pursued by dark forces.",
+      "genres": ["Action", "Drama", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt3315342/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/fnbjcRDYn6YviCcePDnGdyAkYsB.jpg",
+      "rating": 7.82,
+      "runtime": "2h 17m",
+      "traktUrl": "https://app.trakt.tv/movies/logan-2017"
+    },
+    "status": "resolved"
+  },
+  "deadpool-2-2018": {
+    "fetchedAt": "2026-09-11T14:10:03.044Z",
+    "requestedTitle": "Deadpool 2",
+    "source": {
+      "description": "Wisecracking mercenary Deadpool battles the evil and powerful Cable and other bad guys to save a boy's life.",
+      "genres": ["Action", "Comedy", "Adventure"],
+      "imdbUrl": "https://www.imdb.com/title/tt5463162/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/to0spRl1CMDvyUbOnbb4fTk3VAd.jpg",
+      "rating": 7.488,
+      "runtime": "2h",
+      "traktUrl": "https://app.trakt.tv/movies/deadpool-2-2018"
+    },
+    "status": "resolved"
+  },
+  "dark-phoenix-2019": {
+    "fetchedAt": "2026-09-11T14:10:04.196Z",
+    "requestedTitle": "Dark Phoenix",
+    "source": {
+      "description": "The X-Men face their most formidable and powerful foe when one of their own, Jean Grey, starts to spiral out of control. During a rescue mission in outer space, Jean is nearly killed when she's hit by a mysterious cosmic force. Once she returns home, this force not only makes her infinitely more powerful, but far more unstable. The X-Men must now band together to save her soul and battle aliens that want to use Grey's new abilities to rule the galaxy.",
+      "genres": ["Science Fiction", "Action", "Adventure"],
+      "imdbUrl": "https://www.imdb.com/title/tt6565702/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/cCTJPelKGLhALq3r51A9uMonxKj.jpg",
+      "rating": 5.959,
+      "runtime": "1h 54m",
+      "traktUrl": "https://app.trakt.tv/movies/dark-phoenix-2019"
+    },
+    "status": "resolved"
+  },
+  "the-new-mutants-2020": {
+    "fetchedAt": "2026-09-11T14:10:05.321Z",
+    "requestedTitle": "The New Mutants",
+    "source": {
+      "description": "Five young mutants, just discovering their abilities while held in a secret facility against their will, fight to escape their past sins and save themselves.",
+      "genres": ["Science Fiction", "Horror"],
+      "imdbUrl": "https://www.imdb.com/title/tt4682266/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/xiDGcXJTvu1lazFRYip6g1eLt9c.jpg",
+      "rating": 6.052,
+      "runtime": "1h 34m",
+      "traktUrl": "https://app.trakt.tv/movies/the-new-mutants-2020"
+    },
+    "status": "resolved"
   }
 }
