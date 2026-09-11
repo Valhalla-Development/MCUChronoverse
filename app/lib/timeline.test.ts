@@ -33,15 +33,33 @@ describe("Sony chronology", () => {
             ["spider-man-3-2007", "2007", "2007-05-04", "https://www.imdb.com/title/tt0413300/"],
         ]);
         const ordered = filterTimeline(chronology, emptyTimelineFilters);
+        const andrew = chronology.filter((entry) => entry.universe === "Earth-120703");
+        expect(
+            andrew.map((entry) => [entry.title, entry.placement, entry.releaseDate, entry.imdbUrl])
+        ).toEqual([
+            [
+                "The Amazing Spider-Man",
+                "2012",
+                "2012-07-03",
+                "https://www.imdb.com/title/tt0948470/",
+            ],
+            [
+                "The Amazing Spider-Man 2",
+                "2014",
+                "2014-05-02",
+                "https://www.imdb.com/title/tt1872181/",
+            ],
+        ]);
         const eternalsIndex = ordered.findIndex((entry) => entry.slug === "eternals");
-        expect(ordered.slice(eternalsIndex, eternalsIndex + 5).map((entry) => entry.slug)).toEqual([
+        expect(ordered.slice(eternalsIndex, eternalsIndex + 7).map((entry) => entry.slug)).toEqual([
             "eternals",
             ...sony.map((entry) => entry.slug),
+            ...andrew.map((entry) => entry.slug),
             "spider-man-no-way-home",
         ]);
         const captainIndex = ordered.findIndex((entry) => entry.slug === "captain-marvel");
         expect(ordered[captainIndex + 1].slug).toBe("iron-man");
-        for (const entry of sony) {
+        for (const entry of [...sony, ...andrew]) {
             expect(entry.phase).toBeUndefined();
             expect(entry.saga).toBe("Sony Spider-Man Universe");
             expect(entry.description.length).toBeGreaterThan(30);
@@ -63,7 +81,7 @@ describe("Sony chronology", () => {
             serializeTimelineFilters({ ...outside, phases: [...outside.phases] })
         );
         expect(parsed.phases).toEqual([...outside.phases]);
-        expect(filterTimeline(chronology, parsed)).toHaveLength(3);
+        expect(filterTimeline(chronology, parsed)).toHaveLength(5);
         expect(
             filterTimeline(chronology, { ...filters, order: "release" }).map(
                 (entry) => entry.placement

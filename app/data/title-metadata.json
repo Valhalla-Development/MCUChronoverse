@@ -1292,5 +1292,33 @@
       "traktUrl": "https://app.trakt.tv/movies/spider-man-3-2007"
     },
     "status": "resolved"
+  },
+  "the-amazing-spider-man-2012": {
+    "fetchedAt": "2026-09-11T10:23:27.279Z",
+    "requestedTitle": "The Amazing Spider-Man",
+    "source": {
+      "description": "A teenage Peter Parker grapples with both high school and amazing super-human crises as his alter-ego Spider-Man.",
+      "genres": ["Action", "Adventure", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0948470/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/jexoNYnPd6vVrmygwF6QZmWPFdu.jpg",
+      "rating": 6.761,
+      "runtime": "2h 16m",
+      "traktUrl": "https://app.trakt.tv/movies/the-amazing-spider-man-2012"
+    },
+    "status": "resolved"
+  },
+  "the-amazing-spider-man-2-2014": {
+    "fetchedAt": "2026-09-11T10:23:28.390Z",
+    "requestedTitle": "The Amazing Spider-Man 2",
+    "source": {
+      "description": "For Peter Parker, life is busy. Between taking out the bad guys as Spider-Man and spending time with the person he loves, Gwen Stacy, high school graduation cannot come quickly enough. Peter has not forgotten about the promise he made to Gwen’s father to protect her by staying away, but that is a promise he cannot keep. Things will change for Peter when a new villain, Electro, emerges, an old friend, Harry Osborn, returns, and Peter uncovers new clues about his past.",
+      "genres": ["Action", "Adventure", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt1872181/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/bU7nTmvmy0h3VUP01v1T2imgH6N.jpg",
+      "rating": 6.56,
+      "runtime": "2h 21m",
+      "traktUrl": "https://app.trakt.tv/movies/the-amazing-spider-man-2-2014"
+    },
+    "status": "resolved"
   }
 }
