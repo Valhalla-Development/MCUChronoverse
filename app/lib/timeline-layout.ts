@@ -64,24 +64,29 @@ export function createTimelineLayout(
         const junction = branchJunction(main, branch.mergeBefore);
         const origin = junction ?? new Vector3(4.4, 0, 0);
         const [offsetY, offsetZ] = branch.offset;
-        // Entries flow forward toward the crossover. Increasing x preserves the
-        // plasma volume's uniform-x sampling; y/z separate cards in orthogonal views.
+        // Keep each universe on a nearly horizontal shelf. A card-free lead-out
+        // bends toward the crossover; increasing x preserves plasma volume sampling.
         const points = branchEntries.map((_, index) => {
             const distance = branchEntries.length - 1 - index;
             return origin
                 .clone()
                 .add(
                     new Vector3(
-                        -2.8 - distance * 2.5,
-                        offsetY - distance * 1.3 + Math.sin(distance * 0.8) * 0.18,
-                        offsetZ + distance * 2 + Math.sin(distance * 0.7) * 0.2
+                        -6.5 - distance * 2.5,
+                        offsetY + Math.sin(distance * 0.8) * 0.08,
+                        offsetZ + Math.sin(distance * 0.7) * 0.12
                     )
                 );
         });
         if (junction) {
             // Hide the merge when its target is filtered out, rather than imply a
             // crossover with an unrelated visible title. The Sony stream stays separate.
-            points.push(junction.clone().add(new Vector3(-0.9, -0.12, 0.1)), junction);
+            points.push(
+                junction.clone().add(new Vector3(-5.2, offsetY, offsetZ)),
+                junction.clone().add(new Vector3(-2.5, offsetY * 0.5, offsetZ * 0.5)),
+                junction.clone().add(new Vector3(-0.9, -0.12, 0.1)),
+                junction
+            );
         }
         streams.push({
             curve: createTimelineCurve(points),

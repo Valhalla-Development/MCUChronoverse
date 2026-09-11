@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { chronology } from "../data/chronology";
+import { timelineBranches } from "../data/timeline-branches";
 import { emptyTimelineFilters, filterTimeline, timelineNodePosition } from "./timeline";
 import { createTimelineLayout } from "./timeline-layout";
 
@@ -8,12 +9,16 @@ const sony = entries.filter((entry) => entry.universe === "Earth-96283");
 
 describe("timeline branches", () => {
     test("preserves every existing main-stream node and curve when adding a branch", () => {
-        const mainEntries = entries.filter((entry) => entry.universe !== "Earth-96283");
+        const mainEntries = entries.filter(
+            (entry) => !timelineBranches.some((branch) => branch.universe === entry.universe)
+        );
         const layout = createTimelineLayout(entries);
         const original = createTimelineLayout(mainEntries);
         expect(layout.streams[0].points).toEqual(original.positions);
         expect(original.cardDepthOffsets.every((offset) => offset === 0)).toBe(true);
-        expect(layout.cardDepthOffsets.filter((offset) => offset !== 0)).toEqual([1.7, 1.7, 1.7]);
+        expect(layout.cardDepthOffsets.filter((offset) => offset !== 0)).toEqual([
+            1.7, 1.7, 1.7, 1.7, 1.7,
+        ]);
         expect(layout.streams[0].curve.getPoints(500)).toEqual(
             original.streams[0].curve.getPoints(500)
         );
@@ -66,8 +71,29 @@ describe("timeline branches", () => {
         branchNodes.slice(1).forEach((point, index) => {
             const previous = branchNodes[index];
             expect(point.x - previous.x).toBeGreaterThan(2.3);
-            expect(previous.z - point.z).toBeGreaterThan(1.8);
+            expect(Math.abs(previous.y - point.y)).toBeLessThan(0.1);
+            expect(Math.abs(previous.z - point.z)).toBeLessThan(0.15);
         });
+    });
+
+    test("stacks Tobey above Andrew on separate shelves with one shared crossover", () => {
+        const [main, tobey, andrew] = createTimelineLayout(entries).streams;
+        expect(andrew.id).toBe("Earth-120703");
+        expect(andrew.entries.map((entry) => entry.placement)).toEqual(["2012", "2014"]);
+        expect(andrew.points.at(-1)).toEqual(tobey.points.at(-1));
+        expect(main.entries.some((entry) => entry.universe === andrew.id)).toBe(false);
+        for (const upper of tobey.points.slice(0, tobey.entries.length)) {
+            for (const lower of andrew.points.slice(0, andrew.entries.length)) {
+                expect(upper.y - lower.y).toBeGreaterThan(3.4);
+                expect(lower.z - upper.z).toBeGreaterThan(2.6);
+            }
+        }
+        for (const stream of [tobey, andrew]) {
+            const lastNode = stream.points[stream.entries.length - 1];
+            const bend = stream.points[stream.entries.length];
+            expect(bend.x - lastNode.x).toBeGreaterThan(1.2);
+            expect(Math.abs(bend.y - lastNode.y)).toBeLessThan(0.1);
+        }
     });
 
     test("keeps the release-order crossover immediately before No Way Home", () => {
