@@ -11,13 +11,13 @@ export const timelineBranches: readonly TimelineBranch[] = [
     {
         cardDepthOffset: 1.7,
         mergeBefore: "spider-man-no-way-home",
-        offset: [-3.3, 2.8],
+        offset: [-3.8, 2.8],
         universe: "Earth-96283",
     },
     {
         cardDepthOffset: 1.7,
         mergeBefore: "spider-man-no-way-home",
-        offset: [-6.9, 5.6],
+        offset: [-6.4, 5.6],
         universe: "Earth-120703",
     },
 ];
