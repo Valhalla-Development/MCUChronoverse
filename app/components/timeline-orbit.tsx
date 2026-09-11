@@ -1603,6 +1603,7 @@ function TimelineScene({
                         compact={compact}
                         curve={stream.curve}
                         eventCount={stream.points.length}
+                        mergeFadeLength={stream.mergeFadeLength}
                         qualityFactor={qualityFactor}
                         reducedMotion={reducedMotion}
                     />

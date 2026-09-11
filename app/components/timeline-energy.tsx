@@ -16,6 +16,8 @@ import {
     Vector3,
 } from "three";
 import {
+    createTemporalCoreFragmentShader,
+    createTemporalPlasmaFragmentShader,
     temporalCoreFragmentShader,
     temporalCoreVertexShader,
     temporalPlasmaFragmentShader,
@@ -30,6 +32,7 @@ interface TimelineEnergyProps {
     compact: boolean;
     curve: Curve<Vector3>;
     eventCount: number;
+    mergeFadeLength?: number;
     qualityFactor: number;
     reducedMotion: boolean;
 }
@@ -74,6 +77,7 @@ export function TimelineEnergy({
     compact,
     curve,
     eventCount,
+    mergeFadeLength = 0,
     qualityFactor,
     reducedMotion,
 }: TimelineEnergyProps) {
@@ -91,7 +95,14 @@ export function TimelineEnergy({
                 blending: AdditiveBlending,
                 depthTest: false,
                 depthWrite: false,
-                fragmentShader: temporalPlasmaFragmentShader,
+                fragmentShader: mergeFadeLength
+                    ? createTemporalPlasmaFragmentShader({
+                          declarations:
+                              "uniform float uMergeFadeLength; uniform float uCurveLength;",
+                          emissionTransform:
+                              "emission *= smoothstep(0.0, uMergeFadeLength, uCurveLength - along);",
+                      })
+                    : temporalPlasmaFragmentShader,
                 side: BackSide,
                 toneMapped: false,
                 transparent: true,
@@ -99,24 +110,34 @@ export function TimelineEnergy({
                     uBoundsMax: { value: volume.bounds.max },
                     uBoundsMin: { value: volume.bounds.min },
                     uCurve: { value: volume.texture },
+                    uCurveLength: { value: curve.getLength() },
                     uCurveSize: { value: segments + 1 },
+                    uMergeFadeLength: { value: mergeFadeLength },
                     uNodeSpacing: { value: curve.getLength() / Math.max(eventCount - 1, 1) },
                     uRadius: { value: PLASMA_RADIUS },
                     uTime: { value: 0 },
                 },
                 vertexShader: temporalPlasmaVertexShader,
             }),
-        [curve, eventCount, segments, volume]
+        [curve, eventCount, mergeFadeLength, segments, volume]
     );
     const coreMaterial = useMemo(
         () =>
             new ShaderMaterial({
-                fragmentShader: temporalCoreFragmentShader,
+                depthWrite: !mergeFadeLength,
+                fragmentShader: mergeFadeLength
+                    ? createTemporalCoreFragmentShader(true)
+                    : temporalCoreFragmentShader,
                 toneMapped: false,
-                uniforms: { uTime: { value: 0 } },
+                transparent: Boolean(mergeFadeLength),
+                uniforms: {
+                    uEndX: { value: curve.getPoint(1).x },
+                    uMergeFadeLength: { value: mergeFadeLength },
+                    uTime: { value: 0 },
+                },
                 vertexShader: temporalCoreVertexShader,
             }),
-        []
+        [curve, mergeFadeLength]
     );
 
     useEffect(

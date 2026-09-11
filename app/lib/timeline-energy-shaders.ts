@@ -28,17 +28,22 @@ export const temporalCoreVertexShader = /* glsl */ `
     }
 `;
 
-export const temporalCoreFragmentShader = /* glsl */ `
+export function createTemporalCoreFragmentShader(merge = false) {
+    return /* glsl */ `
     uniform float uTime;
+    ${merge ? "uniform float uEndX; uniform float uMergeFadeLength;" : ""}
     varying vec3 vPosition;
     ${energyNoise}
 
     void main() {
         float heat = noise3(vPosition * vec3(3.4, 0.8, 0.8) - vec3(uTime * 0.24, 0, 0));
         vec3 ivory = mix(vec3(1.0, 0.88, 0.57), vec3(1.0, 0.985, 0.87), heat);
-        gl_FragColor = vec4(ivory, 1.0);
+        gl_FragColor = vec4(ivory, ${merge ? "smoothstep(0.0, uMergeFadeLength, uEndX - vPosition.x)" : "1.0"});
     }
 `;
+}
+
+export const temporalCoreFragmentShader = createTemporalCoreFragmentShader();
 
 export const temporalPlasmaVertexShader = /* glsl */ `
     varying vec3 vSurface;

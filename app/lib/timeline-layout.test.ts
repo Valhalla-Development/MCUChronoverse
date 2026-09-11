@@ -96,6 +96,21 @@ describe("timeline branches", () => {
         }
     });
 
+    test("joins along the main tangent and fades only connected branch endpoints", () => {
+        const [main, ...branches] = createTimelineLayout(entries).streams;
+        const crossover = main.entries.findIndex(
+            (entry) => entry.slug === "spider-man-no-way-home"
+        );
+        const tangent = main.curve.getTangent((crossover - 0.5) / (main.points.length - 1));
+        expect(main.mergeFadeLength).toBeUndefined();
+        for (const branch of branches) {
+            expect(branch.curve.getTangent(1).dot(tangent)).toBeGreaterThan(0.999);
+            expect(branch.mergeFadeLength).toBe(2);
+        }
+        const [detached] = createTimelineLayout(sony).streams;
+        expect(detached.mergeFadeLength).toBeUndefined();
+    });
+
     test("keeps the release-order crossover immediately before No Way Home", () => {
         const release = filterTimeline(chronology, { ...emptyTimelineFilters, order: "release" });
         const { positions, streams } = createTimelineLayout(release);

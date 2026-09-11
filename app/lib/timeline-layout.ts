@@ -7,6 +7,7 @@ export interface TimelineStream {
     curve: Curve<Vector3>;
     entries: readonly TimelineEntry[];
     id: string;
+    mergeFadeLength?: number;
     nodePointIndices: number[];
     points: Vector3[];
 }
@@ -81,10 +82,17 @@ export function createTimelineLayout(
         if (junction) {
             // Hide the merge when its target is filtered out, rather than imply a
             // crossover with an unrelated visible title. The Sony stream stays separate.
+            const crossover = main.entries.findIndex((entry) => entry.slug === branch.mergeBefore);
+            const tangent = main.curve.getTangent(
+                Math.max(crossover - 0.5, 0) / Math.max(main.points.length - 1, 1)
+            );
+            // Approach along the main tangent so the join cannot hook above the stream.
             points.push(
                 junction.clone().add(new Vector3(-5.2, offsetY, offsetZ)),
                 junction.clone().add(new Vector3(-2.5, offsetY * 0.5, offsetZ * 0.5)),
-                junction.clone().add(new Vector3(-0.9, -0.12, 0.1)),
+                junction.clone().add(new Vector3(-1.5, offsetY * 0.12, offsetZ * 0.12)),
+                junction.clone().addScaledVector(tangent, -0.75),
+                junction.clone().addScaledVector(tangent, -0.35),
                 junction
             );
         }
@@ -92,6 +100,7 @@ export function createTimelineLayout(
             curve: createTimelineCurve(points),
             entries: branchEntries,
             id: branch.universe,
+            mergeFadeLength: junction ? 2 : undefined,
             nodePointIndices: branchEntries.map((_, index) => index),
             points,
         });
