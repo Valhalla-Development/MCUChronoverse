@@ -732,6 +732,13 @@ a {
   color: rgb(244 241 232 / 61%);
 }
 
+.timeline-detail-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: rgb(244 241 232 / 70%);
+}
+
 .timeline-detail-credits {
   display: flex;
   gap: 0.65rem;

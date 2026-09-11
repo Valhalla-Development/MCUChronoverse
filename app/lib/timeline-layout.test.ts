@@ -8,6 +8,59 @@ const entries = filterTimeline(chronology, emptyTimelineFilters);
 const sony = entries.filter((entry) => entry.universe === "Earth-96283");
 
 describe("timeline branches", () => {
+    test("adds the entire Fox branch at Deadpool & Wolverine without moving MCU or Sony geometry", () => {
+        const foxEntries = entries.filter((entry) => entry.universe === "Earth-10005");
+        const previous = createTimelineLayout(
+            entries.filter((entry) => entry.universe !== "Earth-10005")
+        );
+        for (const order of ["chronology", "release"] as const) {
+            const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
+            const layout = createTimelineLayout(ordered);
+            const fox = layout.streams.find((stream) => stream.id === "Earth-10005");
+            expect(fox?.entries).toEqual(foxEntries);
+            const [main] = layout.streams;
+            const crossover = main.entries.findIndex(
+                (entry) => entry.slug === "deadpool-and-wolverine"
+            );
+            expect(fox?.points.at(-1)).toEqual(
+                main.curve.getPoint((crossover - 0.5) / (main.points.length - 1))
+            );
+            expect(main.entries.some((entry) => entry.universe === "Earth-10005")).toBe(false);
+            if (order === "chronology") {
+                for (const stream of previous.streams) {
+                    expect(
+                        layout.streams.find((item) => item.id === stream.id)?.curve.getPoints(500)
+                    ).toEqual(stream.curve.getPoints(500));
+                }
+            }
+        }
+        const [foxOnly] = createTimelineLayout(foxEntries).streams;
+        expect(foxOnly.points).toHaveLength(13);
+        expect(foxOnly.mergeFadeLength).toBeUndefined();
+        const single = createTimelineLayout([foxEntries[9]]);
+        expect(single.positions).toHaveLength(1);
+        expect(single.positions[0].toArray().every(Number.isFinite)).toBe(true);
+    });
+
+    test("keeps Fox cards clear of Sony nodes and merge curves, including detached filters", () => {
+        for (const subset of [entries, entries.filter((entry) => entry.phase === undefined)]) {
+            const layout = createTimelineLayout(subset);
+            const fox = layout.streams.find((stream) => stream.id === "Earth-10005");
+            expect(fox).toBeDefined();
+            const sonyStreams = layout.streams.filter(
+                (stream) => stream.id === "Earth-96283" || stream.id === "Earth-120703"
+            );
+            for (const point of fox?.points.slice(0, fox.entries.length) ?? []) {
+                for (const stream of sonyStreams) {
+                    const closest = Math.min(
+                        ...stream.curve.getPoints(200).map((sample) => sample.distanceTo(point))
+                    );
+                    expect(closest).toBeGreaterThan(2.4);
+                }
+            }
+        }
+    });
+
     test("preserves every existing main-stream node and curve when adding a branch", () => {
         const mainEntries = entries.filter(
             (entry) => !timelineBranches.some((branch) => branch.universe === entry.universe)
@@ -16,9 +69,9 @@ describe("timeline branches", () => {
         const original = createTimelineLayout(mainEntries);
         expect(layout.streams[0].points).toEqual(original.positions);
         expect(original.cardDepthOffsets.every((offset) => offset === 0)).toBe(true);
-        expect(layout.cardDepthOffsets.filter((offset) => offset !== 0)).toEqual([
-            1.7, 1.7, 1.7, 1.7, 1.7,
-        ]);
+        expect(layout.cardDepthOffsets.filter((offset) => offset !== 0)).toEqual(
+            Array.from({ length: 18 }, () => 1.7)
+        );
         expect(layout.streams[0].curve.getPoints(500)).toEqual(
             original.streams[0].curve.getPoints(500)
         );
@@ -84,7 +137,9 @@ describe("timeline branches", () => {
         expect(main.entries.some((entry) => entry.universe === andrew.id)).toBe(false);
         for (const upper of tobey.points.slice(0, tobey.entries.length)) {
             for (const lower of andrew.points.slice(0, andrew.entries.length)) {
-                expect(upper.y - lower.y).toBeGreaterThan(3.4);
+                // The approved tighter rows still clear the 1.86-unit card height
+                // with more than half a unit left for borders and node connectors.
+                expect(upper.y - lower.y).toBeGreaterThan(2.4);
                 expect(lower.z - upper.z).toBeGreaterThan(2.6);
             }
         }
@@ -98,12 +153,11 @@ describe("timeline branches", () => {
 
     test("joins along the main tangent and fades only connected branch endpoints", () => {
         const [main, ...branches] = createTimelineLayout(entries).streams;
-        const crossover = main.entries.findIndex(
-            (entry) => entry.slug === "spider-man-no-way-home"
-        );
-        const tangent = main.curve.getTangent((crossover - 0.5) / (main.points.length - 1));
         expect(main.mergeFadeLength).toBeUndefined();
         for (const branch of branches) {
+            const config = timelineBranches.find((item) => item.universe === branch.id);
+            const crossover = main.entries.findIndex((entry) => entry.slug === config?.mergeBefore);
+            const tangent = main.curve.getTangent((crossover - 0.5) / (main.points.length - 1));
             expect(branch.curve.getTangent(1).dot(tangent)).toBeGreaterThan(0.999);
             expect(branch.mergeFadeLength).toBe(2);
         }
@@ -120,8 +174,12 @@ describe("timeline branches", () => {
         expect(streams[1].points.at(-1)).toEqual(
             streams[0].curve.getPoint((crossover - 0.5) / (streams[0].points.length - 1))
         );
-        expect(release.slice(0, 3)).toEqual(sony);
-        expect(positions.slice(0, 3)).toEqual(streams[1].points.slice(0, 3));
+        expect(release.filter((entry) => entry.universe === "Earth-96283")).toEqual(sony);
+        expect(
+            release.flatMap((entry, index) =>
+                entry.universe === "Earth-96283" ? [positions[index]] : []
+            )
+        ).toEqual(streams[1].points.slice(0, 3));
     });
 
     test("does not imply a crossover with unrelated titles when No Way Home is filtered out", () => {

@@ -220,6 +220,8 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
 
                     <p className="timeline-detail-description">{entry.description}</p>
 
+                    {entry.note ? <p className="timeline-detail-note">{entry.note}</p> : null}
+
                     {entry.genres && entry.genres.length > 0 ? (
                         <div className="timeline-detail-genres">
                             {entry.genres.map((genre) => (

@@ -63,7 +63,7 @@ export function createTimelineLayout(
             continue;
         }
         const junction = branchJunction(main, branch.mergeBefore);
-        const origin = junction ?? new Vector3(4.4, 0, 0);
+        const origin = junction ?? new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
         const [offsetY, offsetZ] = branch.offset;
         // Keep each universe on a nearly horizontal shelf. A card-free lead-out
         // bends toward the crossover; increasing x preserves plasma volume sampling.
@@ -81,7 +81,7 @@ export function createTimelineLayout(
         });
         if (junction) {
             // Hide the merge when its target is filtered out, rather than imply a
-            // crossover with an unrelated visible title. The Sony stream stays separate.
+            // crossover with an unrelated visible title. The alternate stream stays separate.
             const crossover = main.entries.findIndex((entry) => entry.slug === branch.mergeBefore);
             const tangent = main.curve.getTangent(
                 Math.max(crossover - 0.5, 0) / Math.max(main.points.length - 1, 1)
