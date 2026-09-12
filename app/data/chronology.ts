@@ -1023,7 +1023,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         slug: "x-men-origins-wolverine-2009",
         status: "released",
         title: "X-Men Origins: Wolverine",
-        universe: "Earth-10005",
+        universe: "Earth-41578",
     },
     {
         chronologyOrder: 810,
@@ -1062,7 +1062,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         slug: "x-men-2000",
         status: "released",
         title: "X-Men",
-        universe: "Earth-10005",
+        universe: "Earth-41578",
     },
     {
         chronologyOrder: 840,
@@ -1075,7 +1075,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         slug: "x2-2003",
         status: "released",
         title: "X2",
-        universe: "Earth-10005",
+        universe: "Earth-41578",
     },
     {
         chronologyOrder: 850,
@@ -1088,7 +1088,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         slug: "x-men-the-last-stand-2006",
         status: "released",
         title: "X-Men: The Last Stand",
-        universe: "Earth-10005",
+        universe: "Earth-41578",
     },
     {
         chronologyOrder: 860,
@@ -1101,7 +1101,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         slug: "the-wolverine-2013",
         status: "released",
         title: "The Wolverine",
-        universe: "Earth-10005",
+        universe: "Earth-41578",
     },
     {
         chronologyOrder: 870,

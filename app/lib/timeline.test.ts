@@ -134,7 +134,16 @@ describe("Fox X-Men chronology", () => {
         expect(fox.find((entry) => entry.slug === "logan-2017")?.placement).toBe("2029");
         expect(fox.at(-1)?.slug).toBe("logan-2017");
         for (const entry of fox) {
-            expect(entry.universe).toBe("Earth-10005");
+            const originalHistory = [
+                "x-men-origins-wolverine-2009",
+                "x-men-2000",
+                "x2-2003",
+                "x-men-the-last-stand-2006",
+                "the-wolverine-2013",
+            ];
+            expect(entry.universe).toBe(
+                originalHistory.includes(entry.slug) ? "Earth-41578" : "Earth-10005"
+            );
             expect(entry.phase).toBeUndefined();
             expect(entry.note).toBeTruthy();
             expect(entry.description.length).toBeGreaterThan(30);

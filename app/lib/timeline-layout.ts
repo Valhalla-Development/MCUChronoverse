@@ -37,7 +37,25 @@ function branchJunction(main: TimelineStream, mergeBefore: string): Vector3 | un
         return undefined;
     }
     // The same crossover remains the anchor in chronology and release order.
-    return main.curve.getPoint(Math.max(index - 0.5, 0) / Math.max(main.points.length - 1, 1));
+    return main.curve.getPoint(
+        Math.max(main.nodePointIndices[index] - 0.5, 0) / Math.max(main.points.length - 1, 1)
+    );
+}
+
+function orderBranches(branches: readonly TimelineBranch[]): TimelineBranch[] {
+    // Build parent streams first even when configuration is reordered.
+    const pending = [...branches];
+    const ordered: TimelineBranch[] = [];
+    while (pending.length) {
+        const index = pending.findIndex(
+            (branch) => !pending.some((parent) => parent.universe === branch.mergeIntoUniverse)
+        );
+        if (index < 0) {
+            throw new Error("Timeline branch connections must not contain cycles");
+        }
+        ordered.push(...pending.splice(index, 1));
+    }
+    return ordered;
 }
 
 export function createTimelineLayout(
@@ -58,12 +76,15 @@ export function createTimelineLayout(
         points: mainPoints,
     };
     const streams = mainEntries.length ? [main] : [];
-    for (const branch of branches) {
+    for (const branch of orderBranches(branches)) {
         const branchEntries = entries.filter((entry) => entry.universe === branch.universe);
         if (!branchEntries.length) {
             continue;
         }
-        const junction = branchJunction(main, branch.mergeBefore);
+        const target = branch.mergeIntoUniverse
+            ? streams.find((stream) => stream.id === branch.mergeIntoUniverse)
+            : main;
+        const junction = target ? branchJunction(target, branch.mergeBefore) : undefined;
         const origin = junction ?? new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
         const [offsetY, offsetZ] = branch.offset;
         // Keep each universe on a nearly horizontal shelf. A card-free lead-out
@@ -80,12 +101,15 @@ export function createTimelineLayout(
                     )
                 );
         });
-        if (junction) {
+        if (junction && target) {
             // Hide the merge when its target is filtered out, rather than imply a
             // crossover with an unrelated visible title. The alternate stream stays separate.
-            const crossover = main.entries.findIndex((entry) => entry.slug === branch.mergeBefore);
-            const tangent = main.curve.getTangent(
-                Math.max(crossover - 0.5, 0) / Math.max(main.points.length - 1, 1)
+            const crossover = target.entries.findIndex(
+                (entry) => entry.slug === branch.mergeBefore
+            );
+            const tangent = target.curve.getTangent(
+                Math.max(target.nodePointIndices[crossover] - 0.5, 0) /
+                    Math.max(target.points.length - 1, 1)
             );
             // Approach along the main tangent so the join cannot hook above the stream.
             points.push(

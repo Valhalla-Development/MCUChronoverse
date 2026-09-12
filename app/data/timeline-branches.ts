@@ -5,6 +5,8 @@ export interface TimelineBranch {
     detachedOffsetX?: number;
     /** A crossover joins the streams without changing the entries' universe identities. */
     mergeBefore: string;
+    /** Resolve a time-travel connection against another universe's stream. */
+    mergeIntoUniverse?: string;
     offset: readonly [number, number];
     showUniverseMarker?: boolean;
     universe: string;
@@ -32,5 +34,14 @@ export const timelineBranches: readonly TimelineBranch[] = [
         offset: [-3.8, 2.8],
         showUniverseMarker: true,
         universe: "Earth-10005",
+    },
+    {
+        cardDepthOffset: 1.7,
+        detachedOffsetX: -60,
+        mergeBefore: "x-men-days-of-future-past-2014",
+        mergeIntoUniverse: "Earth-10005",
+        offset: [-6.4, 5.6],
+        showUniverseMarker: true,
+        universe: "Earth-41578",
     },
 ];

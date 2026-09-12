@@ -8,10 +8,51 @@ const entries = filterTimeline(chronology, emptyTimelineFilters);
 const sony = entries.filter((entry) => entry.universe === "Earth-96283");
 
 describe("timeline branches", () => {
+    test("connects the original Fox history to the reset without changing navigation order", () => {
+        for (const order of ["chronology", "release"] as const) {
+            const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
+            const layout = createTimelineLayout(ordered, [...timelineBranches].reverse());
+            const original = layout.streams.find((stream) => stream.id === "Earth-41578");
+            const revised = layout.streams.find((stream) => stream.id === "Earth-10005");
+            if (!(original && revised)) {
+                throw new Error("Both Fox histories must be rendered");
+            }
+            const reset = revised.entries.findIndex(
+                (entry) => entry.slug === "x-men-days-of-future-past-2014"
+            );
+            expect(original.entries).toHaveLength(5);
+            expect(original.points.at(-1)).toEqual(
+                revised.curve.getPoint((reset - 0.5) / (revised.points.length - 1))
+            );
+            expect(original.universeMarker).toBe("Earth-41578");
+            expect(revised.universeMarker).toBe("Earth-10005");
+            expect(layout.positions).toHaveLength(ordered.length);
+            expect(
+                new Set(
+                    layout.streams.flatMap((stream) => stream.entries.map((entry) => entry.slug))
+                ).size
+            ).toBe(ordered.length);
+            original.entries.forEach((entry, index) => {
+                expect(layout.positions[ordered.indexOf(entry)]).toEqual(original.points[index]);
+                const nearest = Math.min(
+                    ...revised.curve
+                        .getPoints(200)
+                        .map((point) => point.distanceTo(original.points[index]))
+                );
+                expect(nearest).toBeGreaterThan(2.4);
+            });
+            const filtered = createTimelineLayout(
+                ordered.filter((entry) => entry.slug !== "x-men-days-of-future-past-2014")
+            );
+            expect(
+                filtered.streams.find((stream) => stream.id === "Earth-41578")?.mergeFadeLength
+            ).toBeUndefined();
+        }
+    });
     test("adds the entire Fox branch at Deadpool & Wolverine without moving MCU or Sony geometry", () => {
         const foxEntries = entries.filter((entry) => entry.universe === "Earth-10005");
         const previous = createTimelineLayout(
-            entries.filter((entry) => entry.universe !== "Earth-10005")
+            entries.filter((entry) => entry.saga !== "Fox X-Men Universe")
         );
         for (const order of ["chronology", "release"] as const) {
             const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
@@ -37,9 +78,9 @@ describe("timeline branches", () => {
             }
         }
         const [foxOnly] = createTimelineLayout(foxEntries).streams;
-        expect(foxOnly.points).toHaveLength(13);
+        expect(foxOnly.points).toHaveLength(8);
         expect(foxOnly.mergeFadeLength).toBeUndefined();
-        const single = createTimelineLayout([foxEntries[9]]);
+        const single = createTimelineLayout([foxEntries[0]]);
         expect(single.positions).toHaveLength(1);
         expect(single.positions[0].toArray().every(Number.isFinite)).toBe(true);
     });
@@ -153,13 +194,21 @@ describe("timeline branches", () => {
         }
     });
 
-    test("joins along the main tangent and fades only connected branch endpoints", () => {
+    test("joins along the target tangent and fades only connected branch endpoints", () => {
         const [main, ...branches] = createTimelineLayout(entries).streams;
         expect(main.mergeFadeLength).toBeUndefined();
         for (const branch of branches) {
             const config = timelineBranches.find((item) => item.universe === branch.id);
-            const crossover = main.entries.findIndex((entry) => entry.slug === config?.mergeBefore);
-            const tangent = main.curve.getTangent((crossover - 0.5) / (main.points.length - 1));
+            const target = config?.mergeIntoUniverse
+                ? branches.find((item) => item.id === config.mergeIntoUniverse)
+                : main;
+            if (!target) {
+                throw new Error("Connection target must exist");
+            }
+            const crossover = target.entries.findIndex(
+                (entry) => entry.slug === config?.mergeBefore
+            );
+            const tangent = target.curve.getTangent((crossover - 0.5) / (target.points.length - 1));
             expect(branch.curve.getTangent(1).dot(tangent)).toBeGreaterThan(0.999);
             expect(branch.mergeFadeLength).toBe(2);
         }
