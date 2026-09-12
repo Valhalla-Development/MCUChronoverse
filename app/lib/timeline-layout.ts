@@ -68,7 +68,7 @@ function createBranchPoints(branch: TimelineBranch, count: number, origin: Vecto
             .clone()
             .add(
                 new Vector3(
-                    (branch.mergeBefore ? -6.5 : 0) - distance * 2.5,
+                    (branch.mergeBefore || branch.mergeAfter ? -6.5 : 0) - distance * 2.5,
                     offsetY + Math.sin(distance * 0.8) * 0.08,
                     offsetZ + Math.sin(distance * 0.7) * 0.12
                 )
@@ -76,10 +76,61 @@ function createBranchPoints(branch: TimelineBranch, count: number, origin: Vecto
     });
     // Independent single-title universes still need a visible line beyond the node.
     const last = points.at(-1);
-    if (!branch.mergeBefore && last) {
+    if (!(branch.mergeBefore || branch.mergeAfter) && last) {
         points.push(last.clone().add(new Vector3(1.25, 0, 0)));
     }
     return points;
+}
+
+function entriesForBranch(
+    entries: readonly TimelineEntry[],
+    branch: TimelineBranch
+): TimelineEntry[] {
+    return entries.filter(
+        (entry) =>
+            entry.universe === branch.universe &&
+            (!branch.entrySlugs || branch.entrySlugs.includes(entry.slug))
+    );
+}
+
+function mergeProgress(target: TimelineStream, branch: TimelineBranch): number | undefined {
+    if (branch.mergeAfter) {
+        return target.entries.at(-1)?.slug === branch.mergeAfter ? 1 : undefined;
+    }
+    const index = target.entries.findIndex((entry) => entry.slug === branch.mergeBefore);
+    return index < 0
+        ? undefined
+        : Math.max(target.nodePointIndices[index] - 0.5, 0) / Math.max(target.points.length - 1, 1);
+}
+
+function extendMainStream(
+    points: Vector3[],
+    mainEntries: readonly TimelineEntry[],
+    entries: readonly TimelineEntry[],
+    branches: readonly TimelineBranch[]
+): void {
+    const finalMain = mainEntries.at(-1);
+    const tail = branches.some(
+        (branch) =>
+            branch.mergeAfter &&
+            branch.mergeAfter === finalMain?.slug &&
+            entriesForBranch(entries, branch).length > 0
+    );
+    const last = points.at(-1);
+    if (tail && last) {
+        // Regularly spaced support points keep the continuation monotonic for plasma sampling.
+        for (let step = 1; step <= 7; step += 1) {
+            points.push(last.clone().add(new Vector3(step * 2, 0, 0)));
+        }
+    }
+}
+
+function connectionTo(target: TimelineStream | undefined, branch: TimelineBranch) {
+    const progress = target ? mergeProgress(target, branch) : undefined;
+    if (!target || progress === undefined) {
+        return;
+    }
+    return { point: target.curve.getPoint(progress), tangent: target.curve.getTangent(progress) };
 }
 
 export function createTimelineLayout(
@@ -98,6 +149,8 @@ export function createTimelineLayout(
         const point = timelineNodePosition(index, mainEntries.length);
         return new Vector3(point.x, point.y, point.z);
     });
+    // Reserve a card-free continuation for entries after the last known Earth-616 story.
+    extendMainStream(mainPoints, mainEntries, entries, branches);
     const main: TimelineStream = {
         curve: createTimelineCurve(mainPoints),
         entries: mainEntries,
@@ -108,30 +161,25 @@ export function createTimelineLayout(
     };
     const streams = mainEntries.length ? [main] : [];
     for (const branch of orderBranches(branches)) {
-        const branchEntries = entries.filter((entry) => entry.universe === branch.universe);
+        const branchEntries = entriesForBranch(entries, branch);
         if (!branchEntries.length) {
             continue;
         }
         const target = branch.mergeIntoUniverse
             ? streams.find((stream) => stream.id === branch.mergeIntoUniverse)
             : main;
-        const junction = target ? branchJunction(target, branch.mergeBefore) : undefined;
+        const connection = connectionTo(target, branch);
+        const junction = connection?.point;
         const origin =
             junction ??
             branchJunction(main, branch.anchorBefore) ??
             new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
         const [offsetY, offsetZ] = branch.offset;
         const points = createBranchPoints(branch, branchEntries.length, origin);
-        if (junction && target) {
+        if (junction && connection) {
             // Hide the merge when its target is filtered out, rather than imply a
             // crossover with an unrelated visible title. The alternate stream stays separate.
-            const crossover = target.entries.findIndex(
-                (entry) => entry.slug === branch.mergeBefore
-            );
-            const tangent = target.curve.getTangent(
-                Math.max(target.nodePointIndices[crossover] - 0.5, 0) /
-                    Math.max(target.points.length - 1, 1)
-            );
+            const { tangent } = connection;
             // Approach along the main tangent so the join cannot hook above the stream.
             points.push(
                 junction.clone().add(new Vector3(-5.2, offsetY, offsetZ)),
@@ -145,7 +193,7 @@ export function createTimelineLayout(
         streams.push({
             curve: createTimelineCurve(points),
             entries: branchEntries,
-            id: branch.universe,
+            id: branch.id ?? branch.universe,
             markerCaption: branch.markerCaption,
             mergeFadeLength: junction ? 2 : undefined,
             nodePointIndices: branchEntries.map((_, index) => index),

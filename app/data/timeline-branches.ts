@@ -1,3 +1,5 @@
+import { curatedChronology } from "./chronology";
+
 export interface TimelineBranch {
     /** Visual alignment only; this does not imply a connection to the anchor's universe. */
     anchorBefore?: string;
@@ -5,9 +7,13 @@ export interface TimelineBranch {
     cardDepthOffset: number;
     /** Separate histories that share a lane when their crossover is filtered out. */
     detachedOffsetX?: number;
+    entrySlugs?: readonly string[];
+    id?: string;
     markerCaption?: string;
     markerTitle?: string;
-    /** A crossover joins the streams without changing the entries' universe identities. */
+    /** Join the continuation beyond the final main-stream entry. */
+    mergeAfter?: string;
+    /** A viewing-order junction joins streams without changing universe identities. */
     mergeBefore?: string;
     /** Resolve a time-travel connection against another universe's stream. */
     mergeIntoUniverse?: string;
@@ -16,7 +22,7 @@ export interface TimelineBranch {
     universe: string;
 }
 
-export const timelineBranches: readonly TimelineBranch[] = [
+const universeBranches: readonly TimelineBranch[] = [
     {
         cardDepthOffset: 1.7,
         mergeBefore: "spider-man-no-way-home",
@@ -32,9 +38,9 @@ export const timelineBranches: readonly TimelineBranch[] = [
         universe: "Earth-120703",
     },
     {
-        anchorBefore: "agatha-all-along",
         cardDepthOffset: 1.7,
         detachedOffsetX: -38,
+        mergeBefore: "agatha-all-along",
         offset: [-3.8, 2.8],
         showUniverseMarker: true,
         universe: "Earth-10005",
@@ -95,3 +101,41 @@ export const timelineBranches: readonly TimelineBranch[] = [
         universe: "TBD",
     },
 ];
+
+// These entries retain their individual curated slots, rather than gathering all
+// seasons at the first appearance of a universe. Release sorting changes card order,
+// while the connection always identifies the same chronological destination.
+function chronologicalBranches(branch: TimelineBranch): TimelineBranch[] {
+    const groups = new Map<string, string[]>();
+    const main = curatedChronology.filter((entry) => entry.universe === "Earth-616");
+    const lastMain = main.at(-1);
+    return curatedChronology
+        .filter((entry) => entry.universe === branch.universe)
+        .reduce<TimelineBranch[]>((result, entry) => {
+            const next = main.find((item) => item.chronologyOrder > entry.chronologyOrder);
+            const destination = next?.slug ?? lastMain?.slug;
+            if (!destination) {
+                return result;
+            }
+            const existing = groups.get(destination);
+            if (existing) {
+                existing.push(entry.slug);
+            } else {
+                const entrySlugs = [entry.slug];
+                groups.set(destination, entrySlugs);
+                result.push({
+                    ...branch,
+                    detachedOffsetX: (branch.detachedOffsetX ?? 0) + result.length * 12,
+                    entrySlugs,
+                    id: `${branch.universe}:${entry.slug}`,
+                    mergeAfter: next ? undefined : destination,
+                    mergeBefore: next?.slug,
+                });
+            }
+            return result;
+        }, []);
+}
+
+export const timelineBranches: readonly TimelineBranch[] = universeBranches.flatMap((branch) =>
+    branch.anchorBefore ? chronologicalBranches(branch) : [branch]
+);

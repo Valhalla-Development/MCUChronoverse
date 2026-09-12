@@ -1159,7 +1159,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 910,
         contentType: "film",
         creditScenes: { after: true, during: true },
-        note: "Earth-10005 is the home reality. The story also visits the TVA, the Void and Earth-616; those visits do not merge the Fox universe into Earth-616.",
+        note: "Earth-10005 is the home reality. The story also visits the TVA, the Void and Earth-616. The timeline connection marks viewing order before Agatha All Along, not a change of home universe.",
         phase: "Phase Five",
         placement: "2024 and outside linear time",
         releaseDate: "2024-07-26",
