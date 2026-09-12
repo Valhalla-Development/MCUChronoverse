@@ -8,6 +8,31 @@ const entries = filterTimeline(chronology, emptyTimelineFilters);
 const sony = entries.filter((entry) => entry.universe === "Earth-96283");
 
 describe("timeline branches", () => {
+    test("anchors an independent single-title stream without implying a crossover", () => {
+        const alternate = { ...sony[0], universe: "Outside time" };
+        const layout = createTimelineLayout(
+            [entries[0], alternate],
+            [
+                {
+                    anchorBefore: entries[0].slug,
+                    cardDepthOffset: 1.7,
+                    markerCaption: "OUTSIDE TIME",
+                    markerTitle: "TVA",
+                    offset: [3.8, -2.8],
+                    showUniverseMarker: true,
+                    universe: alternate.universe,
+                },
+            ]
+        );
+        const [, stream] = layout.streams;
+        expect(stream.curve.getLength()).toBeGreaterThan(1);
+        expect(stream.entries).toEqual([alternate]);
+        expect(stream.nodePointIndices).toEqual([0]);
+        expect(stream.mergeFadeLength).toBeUndefined();
+        expect(stream.universeMarker).toBe("TVA");
+        expect(stream.markerCaption).toBe("OUTSIDE TIME");
+        expect(stream.points[0].y - layout.positions[0].y).toBeCloseTo(3.8);
+    });
     test("connects the original Fox history to the reset without changing navigation order", () => {
         for (const order of ["chronology", "release"] as const) {
             const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });

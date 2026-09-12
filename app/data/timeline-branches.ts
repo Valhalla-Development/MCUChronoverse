@@ -1,10 +1,14 @@
 export interface TimelineBranch {
+    /** Visual alignment only; this does not imply a connection to the anchor's universe. */
+    anchorBefore?: string;
     /** Keep billboard artwork clear of the stream when viewed from above or below. */
     cardDepthOffset: number;
     /** Separate histories that share a lane when their crossover is filtered out. */
     detachedOffsetX?: number;
+    markerCaption?: string;
+    markerTitle?: string;
     /** A crossover joins the streams without changing the entries' universe identities. */
-    mergeBefore: string;
+    mergeBefore?: string;
     /** Resolve a time-travel connection against another universe's stream. */
     mergeIntoUniverse?: string;
     offset: readonly [number, number];

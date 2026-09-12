@@ -1591,16 +1591,18 @@ function UniverseMarker({ stream }: { stream: TimelineStream }) {
                 letterSpacing={0.18}
                 position={[0, 0.16, 0]}
             >
-                EARTH
+                {stream.markerCaption ?? "EARTH"}
             </Text>
             <Text
                 anchorX="center"
                 anchorY="middle"
                 color="#ffe4c7"
                 font={GEIST_MONO_FONT_URL}
-                fontSize={0.19}
+                fontSize={stream.universeMarker?.startsWith("Earth-") ? 0.19 : 0.12}
             >
-                {stream.universeMarker?.split("-").at(-1)}
+                {stream.universeMarker?.startsWith("Earth-")
+                    ? stream.universeMarker.slice(6)
+                    : stream.universeMarker}
             </Text>
             <mesh position={[0, -0.17, 0]}>
                 <planeGeometry args={[0.76, 0.009]} />

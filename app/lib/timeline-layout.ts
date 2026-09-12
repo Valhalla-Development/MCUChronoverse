@@ -7,6 +7,7 @@ export interface TimelineStream {
     curve: Curve<Vector3>;
     entries: readonly TimelineEntry[];
     id: string;
+    markerCaption?: string;
     mergeFadeLength?: number;
     nodePointIndices: number[];
     points: Vector3[];
@@ -31,7 +32,7 @@ function createTimelineCurve(points: readonly Vector3[]): Curve<Vector3> {
     return new CatmullRomCurve3([...points], false, "catmullrom", 0.42);
 }
 
-function branchJunction(main: TimelineStream, mergeBefore: string): Vector3 | undefined {
+function branchJunction(main: TimelineStream, mergeBefore?: string): Vector3 | undefined {
     const index = main.entries.findIndex((entry) => entry.slug === mergeBefore);
     if (index < 0) {
         return undefined;
@@ -56,6 +57,29 @@ function orderBranches(branches: readonly TimelineBranch[]): TimelineBranch[] {
         ordered.push(...pending.splice(index, 1));
     }
     return ordered;
+}
+
+function createBranchPoints(branch: TimelineBranch, count: number, origin: Vector3): Vector3[] {
+    const [offsetY, offsetZ] = branch.offset;
+    // Nearly horizontal shelves leave the approach to a crossover free of cards.
+    const points = Array.from({ length: count }, (_, index) => {
+        const distance = count - 1 - index;
+        return origin
+            .clone()
+            .add(
+                new Vector3(
+                    (branch.mergeBefore ? -6.5 : 0) - distance * 2.5,
+                    offsetY + Math.sin(distance * 0.8) * 0.08,
+                    offsetZ + Math.sin(distance * 0.7) * 0.12
+                )
+            );
+    });
+    // Independent single-title universes still need a visible line beyond the node.
+    const last = points.at(-1);
+    if (!branch.mergeBefore && last) {
+        points.push(last.clone().add(new Vector3(1.25, 0, 0)));
+    }
+    return points;
 }
 
 export function createTimelineLayout(
@@ -85,22 +109,12 @@ export function createTimelineLayout(
             ? streams.find((stream) => stream.id === branch.mergeIntoUniverse)
             : main;
         const junction = target ? branchJunction(target, branch.mergeBefore) : undefined;
-        const origin = junction ?? new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
+        const origin =
+            junction ??
+            branchJunction(main, branch.anchorBefore) ??
+            new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
         const [offsetY, offsetZ] = branch.offset;
-        // Keep each universe on a nearly horizontal shelf. A card-free lead-out
-        // bends toward the crossover; increasing x preserves plasma volume sampling.
-        const points = branchEntries.map((_, index) => {
-            const distance = branchEntries.length - 1 - index;
-            return origin
-                .clone()
-                .add(
-                    new Vector3(
-                        -6.5 - distance * 2.5,
-                        offsetY + Math.sin(distance * 0.8) * 0.08,
-                        offsetZ + Math.sin(distance * 0.7) * 0.12
-                    )
-                );
-        });
+        const points = createBranchPoints(branch, branchEntries.length, origin);
         if (junction && target) {
             // Hide the merge when its target is filtered out, rather than imply a
             // crossover with an unrelated visible title. The alternate stream stays separate.
@@ -125,10 +139,13 @@ export function createTimelineLayout(
             curve: createTimelineCurve(points),
             entries: branchEntries,
             id: branch.universe,
+            markerCaption: branch.markerCaption,
             mergeFadeLength: junction ? 2 : undefined,
             nodePointIndices: branchEntries.map((_, index) => index),
             points,
-            universeMarker: branch.showUniverseMarker ? branch.universe : undefined,
+            universeMarker: branch.showUniverseMarker
+                ? (branch.markerTitle ?? branch.universe)
+                : undefined,
         });
     }
     const positionsBySlug = new Map<string, Vector3>();
