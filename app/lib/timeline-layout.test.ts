@@ -17,7 +17,9 @@ describe("timeline branches", () => {
             const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
             const layout = createTimelineLayout(ordered);
             const fox = layout.streams.find((stream) => stream.id === "Earth-10005");
-            expect(fox?.entries).toEqual(foxEntries);
+            expect(fox?.entries).toEqual(
+                ordered.filter((entry) => entry.universe === "Earth-10005")
+            );
             const [main] = layout.streams;
             const crossover = main.entries.findIndex(
                 (entry) => entry.slug === "deadpool-and-wolverine"

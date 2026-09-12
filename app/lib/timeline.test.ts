@@ -101,21 +101,21 @@ describe("Sony chronology", () => {
 });
 
 describe("Fox X-Men chronology", () => {
-    test("keeps the complete Fox viewing sequence before its crossover, with Logan before both sequels", () => {
+    test("keeps the complete Fox chronology before its crossover, with Logan immediately before it", () => {
         const expected = [
+            ["x-men-first-class-2011", "tt1270798"],
+            ["x-men-days-of-future-past-2014", "tt1877832"],
+            ["x-men-origins-wolverine-2009", "tt0458525"],
+            ["x-men-apocalypse-2016", "tt3385516"],
+            ["dark-phoenix-2019", "tt6565702"],
             ["x-men-2000", "tt0120903"],
             ["x2-2003", "tt0290334"],
             ["x-men-the-last-stand-2006", "tt0376994"],
-            ["x-men-origins-wolverine-2009", "tt0458525"],
-            ["x-men-first-class-2011", "tt1270798"],
             ["the-wolverine-2013", "tt1430132"],
-            ["x-men-days-of-future-past-2014", "tt1877832"],
             ["deadpool-2016", "tt1431045"],
-            ["x-men-apocalypse-2016", "tt3385516"],
-            ["logan-2017", "tt3315342"],
             ["deadpool-2-2018", "tt5463162"],
-            ["dark-phoenix-2019", "tt6565702"],
             ["the-new-mutants-2020", "tt4682266"],
+            ["logan-2017", "tt3315342"],
         ];
         const ordered = filterTimeline(chronology, emptyTimelineFilters);
         const start = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
@@ -132,6 +132,7 @@ describe("Fox X-Men chronology", () => {
             expected.map(([slug, imdb]) => [slug, `https://www.imdb.com/title/${imdb}/`])
         );
         expect(fox.find((entry) => entry.slug === "logan-2017")?.placement).toBe("2029");
+        expect(fox.at(-1)?.slug).toBe("logan-2017");
         for (const entry of fox) {
             expect(entry.universe).toBe("Earth-10005");
             expect(entry.phase).toBeUndefined();
@@ -150,6 +151,10 @@ describe("Fox X-Men chronology", () => {
         expect(
             filterTimeline(fox, { ...emptyTimelineFilters, phases: ["Outside MCU phases"] })
         ).toHaveLength(13);
+        const releaseOrder = filterTimeline(fox, { ...emptyTimelineFilters, order: "release" });
+        expect(releaseOrder.map((entry) => entry.releaseDate)).toEqual(
+            [...fox].map((entry) => entry.releaseDate).sort()
+        );
     });
 });
 
