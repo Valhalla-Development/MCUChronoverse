@@ -6,6 +6,7 @@ export interface TimelineBranch {
     /** A crossover joins the streams without changing the entries' universe identities. */
     mergeBefore: string;
     offset: readonly [number, number];
+    showUniverseMarker?: boolean;
     universe: string;
 }
 
@@ -14,12 +15,14 @@ export const timelineBranches: readonly TimelineBranch[] = [
         cardDepthOffset: 1.7,
         mergeBefore: "spider-man-no-way-home",
         offset: [-3.8, 2.8],
+        showUniverseMarker: true,
         universe: "Earth-96283",
     },
     {
         cardDepthOffset: 1.7,
         mergeBefore: "spider-man-no-way-home",
         offset: [-6.4, 5.6],
+        showUniverseMarker: true,
         universe: "Earth-120703",
     },
     {

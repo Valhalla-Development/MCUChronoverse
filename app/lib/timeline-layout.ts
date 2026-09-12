@@ -10,6 +10,7 @@ export interface TimelineStream {
     mergeFadeLength?: number;
     nodePointIndices: number[];
     points: Vector3[];
+    universeMarker?: string;
 }
 
 export interface TimelineLayout {
@@ -103,6 +104,7 @@ export function createTimelineLayout(
             mergeFadeLength: junction ? 2 : undefined,
             nodePointIndices: branchEntries.map((_, index) => index),
             points,
+            universeMarker: branch.showUniverseMarker ? branch.universe : undefined,
         });
     }
     const positionsBySlug = new Map<string, Vector3>();

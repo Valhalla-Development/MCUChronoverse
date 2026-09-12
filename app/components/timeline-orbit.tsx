@@ -1568,6 +1568,48 @@ interface TimelineSceneProps {
     zoomDistance: number;
 }
 
+function UniverseMarker({ stream }: { stream: TimelineStream }) {
+    const billboard = useRef<Group | null>(null);
+    const position = useMemo(
+        () => stream.points[0].clone().add(new Vector3(-1.25, 0.12, 0)),
+        [stream.points]
+    );
+    useFrame(({ camera }) => {
+        const group = billboard.current as Group;
+        // Only the two stream labels billboard; movie rendering keeps its existing budget.
+        group.visible = camera.position.distanceToSquared(position) < 625;
+        group.quaternion.copy(camera.quaternion);
+    });
+    return (
+        <group position={position} ref={billboard}>
+            <Text
+                anchorX="center"
+                anchorY="middle"
+                color="#ffad66"
+                font={GEIST_MONO_FONT_URL}
+                fontSize={0.075}
+                letterSpacing={0.18}
+                position={[0, 0.16, 0]}
+            >
+                EARTH
+            </Text>
+            <Text
+                anchorX="center"
+                anchorY="middle"
+                color="#ffe4c7"
+                font={GEIST_MONO_FONT_URL}
+                fontSize={0.19}
+            >
+                {stream.universeMarker?.split("-").at(-1)}
+            </Text>
+            <mesh position={[0, -0.17, 0]}>
+                <planeGeometry args={[0.76, 0.009]} />
+                <meshBasicMaterial color="#ff943d" toneMapped={false} />
+            </mesh>
+        </group>
+    );
+}
+
 function TimelineScene({
     layout,
     compact,
@@ -1599,6 +1641,7 @@ function TimelineScene({
             </group>
             {layout.streams.map((stream) => (
                 <group key={stream.id}>
+                    {stream.universeMarker ? <UniverseMarker stream={stream} /> : null}
                     <TimelineEnergy
                         compact={compact}
                         curve={stream.curve}
