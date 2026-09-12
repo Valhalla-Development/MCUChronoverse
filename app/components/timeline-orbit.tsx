@@ -1576,7 +1576,7 @@ function UniverseMarker({ stream }: { stream: TimelineStream }) {
     );
     useFrame(({ camera }) => {
         const group = billboard.current as Group;
-        // Only the two stream labels billboard; movie rendering keeps its existing budget.
+        // Stream labels billboard independently; movie rendering keeps its existing budget.
         group.visible = camera.position.distanceToSquared(position) < 625;
         group.quaternion.copy(camera.quaternion);
     });

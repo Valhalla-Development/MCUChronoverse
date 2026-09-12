@@ -30,6 +30,7 @@ export const timelineBranches: readonly TimelineBranch[] = [
         detachedOffsetX: -38,
         mergeBefore: "deadpool-and-wolverine",
         offset: [-3.8, 2.8],
+        showUniverseMarker: true,
         universe: "Earth-10005",
     },
 ];
