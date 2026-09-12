@@ -87,6 +87,12 @@ export function createTimelineLayout(
     branches: readonly TimelineBranch[] = timelineBranches
 ): TimelineLayout {
     const branchUniverses = new Set(branches.map((branch) => branch.universe));
+    const unassigned = entries.find(
+        (entry) => entry.universe !== "Earth-616" && !branchUniverses.has(entry.universe)
+    );
+    if (unassigned) {
+        throw new Error(`Missing timeline branch for ${unassigned.universe}`);
+    }
     const mainEntries = entries.filter((entry) => !branchUniverses.has(entry.universe));
     const mainPoints = mainEntries.map((_, index) => {
         const point = timelineNodePosition(index, mainEntries.length);
@@ -98,6 +104,7 @@ export function createTimelineLayout(
         id: "main",
         nodePointIndices: mainEntries.map((_, index) => index),
         points: mainPoints,
+        universeMarker: "Earth-616",
     };
     const streams = mainEntries.length ? [main] : [];
     for (const branch of orderBranches(branches)) {

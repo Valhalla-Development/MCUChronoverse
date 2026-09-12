@@ -8,6 +8,64 @@ const entries = filterTimeline(chronology, emptyTimelineFilters);
 const sony = entries.filter((entry) => entry.universe === "Earth-96283");
 
 describe("timeline branches", () => {
+    test("keeps every non-616 entry on a labelled stream in either viewing order", () => {
+        const expected = new Map([
+            ["TVA / Multiverse", ["loki-season-1", "loki-season-2"]],
+            ["Multiverse", ["what-if-season-1", "what-if-season-2", "what-if-season-3"]],
+            ["Earth-89521", ["marvel-zombies"]],
+            ["Earth-828", ["the-fantastic-four-first-steps"]],
+            ["TBD", ["avengers-doomsday", "avengers-secret-wars"]],
+        ]);
+        for (const order of ["chronology", "release"] as const) {
+            const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
+            const layout = createTimelineLayout(ordered);
+            const [main] = layout.streams;
+            expect(main.universeMarker).toBe("Earth-616");
+            expect(main.entries).toHaveLength(76);
+            expect(main.entries.every((entry) => entry.universe === "Earth-616")).toBe(true);
+            expect(layout.streams.flatMap((stream) => stream.entries)).toHaveLength(104);
+            for (const [universe, slugs] of expected) {
+                const stream = layout.streams.find((item) => item.id === universe);
+                expect(stream?.entries.map((entry) => entry.slug)).toEqual(slugs);
+                expect(stream?.universeMarker).toBeTruthy();
+                expect(stream?.mergeFadeLength).toBeUndefined();
+            }
+            for (const stream of layout.streams) {
+                stream.entries.forEach((entry, index) => {
+                    expect(layout.positions[ordered.indexOf(entry)]).toEqual(
+                        stream.points[stream.nodePointIndices[index]]
+                    );
+                });
+            }
+        }
+    });
+
+    test("renders every universe search and single-card filter without orphaning entries", () => {
+        for (const query of new Set(entries.map((entry) => entry.universe))) {
+            const filtered = filterTimeline(chronology, { ...emptyTimelineFilters, query });
+            const layout = createTimelineLayout(filtered);
+            expect(layout.positions).toHaveLength(filtered.length);
+            expect(layout.streams).toHaveLength(
+                new Set(filtered.map((entry) => entry.universe)).size
+            );
+            expect(layout.streams.flatMap((stream) => stream.entries)).toHaveLength(
+                filtered.length
+            );
+            const isolated = createTimelineLayout(
+                entries.filter((entry) => entry.universe === query)
+            );
+            expect(isolated.streams).toHaveLength(1);
+            expect(isolated.streams[0].mergeFadeLength).toBeUndefined();
+        }
+        for (const entry of entries) {
+            const layout = createTimelineLayout([entry]);
+            expect(layout.positions[0].toArray().every(Number.isFinite)).toBe(true);
+            expect(layout.streams[0].entries).toEqual([entry]);
+        }
+        expect(() => createTimelineLayout([{ ...sony[0], universe: "Unconfigured" }])).toThrow(
+            "Missing timeline branch"
+        );
+    });
     test("anchors an independent single-title stream without implying a crossover", () => {
         const alternate = { ...sony[0], universe: "Outside time" };
         const layout = createTimelineLayout(
@@ -74,10 +132,10 @@ describe("timeline branches", () => {
             ).toBeUndefined();
         }
     });
-    test("adds the entire Fox branch at Deadpool & Wolverine without moving MCU or Sony geometry", () => {
+    test("keeps Deadpool & Wolverine on the independent Fox stream without moving MCU or Sony geometry", () => {
         const foxEntries = entries.filter((entry) => entry.universe === "Earth-10005");
         const previous = createTimelineLayout(
-            entries.filter((entry) => entry.saga !== "Fox X-Men Universe")
+            entries.filter((entry) => !["Earth-10005", "Earth-41578"].includes(entry.universe))
         );
         for (const order of ["chronology", "release"] as const) {
             const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
@@ -87,12 +145,11 @@ describe("timeline branches", () => {
                 ordered.filter((entry) => entry.universe === "Earth-10005")
             );
             const [main] = layout.streams;
-            const crossover = main.entries.findIndex(
-                (entry) => entry.slug === "deadpool-and-wolverine"
+            expect(fox?.entries.some((entry) => entry.slug === "deadpool-and-wolverine")).toBe(
+                true
             );
-            expect(fox?.points.at(-1)).toEqual(
-                main.curve.getPoint((crossover - 0.5) / (main.points.length - 1))
-            );
+            expect(fox?.mergeFadeLength).toBeUndefined();
+            expect(fox?.points).toHaveLength(10);
             expect(main.entries.some((entry) => entry.universe === "Earth-10005")).toBe(false);
             if (order === "chronology") {
                 for (const stream of previous.streams) {
@@ -103,7 +160,7 @@ describe("timeline branches", () => {
             }
         }
         const [foxOnly] = createTimelineLayout(foxEntries).streams;
-        expect(foxOnly.points).toHaveLength(8);
+        expect(foxOnly.points).toHaveLength(10);
         expect(foxOnly.mergeFadeLength).toBeUndefined();
         const single = createTimelineLayout([foxEntries[0]]);
         expect(single.positions).toHaveLength(1);
@@ -138,7 +195,7 @@ describe("timeline branches", () => {
         expect(layout.streams[0].points).toEqual(original.positions);
         expect(original.cardDepthOffsets.every((offset) => offset === 0)).toBe(true);
         expect(layout.cardDepthOffsets.filter((offset) => offset !== 0)).toEqual(
-            Array.from({ length: 18 }, () => 1.7)
+            Array.from({ length: 28 }, () => 1.7)
         );
         expect(layout.streams[0].curve.getPoints(500)).toEqual(
             original.streams[0].curve.getPoints(500)
@@ -224,6 +281,11 @@ describe("timeline branches", () => {
         expect(main.mergeFadeLength).toBeUndefined();
         for (const branch of branches) {
             const config = timelineBranches.find((item) => item.universe === branch.id);
+            if (!config?.mergeBefore) {
+                expect(branch.mergeFadeLength).toBeUndefined();
+                expect(branch.points).toHaveLength(branch.entries.length + 1);
+                continue;
+            }
             const target = config?.mergeIntoUniverse
                 ? branches.find((item) => item.id === config.mergeIntoUniverse)
                 : main;

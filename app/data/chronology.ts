@@ -1159,6 +1159,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 910,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        note: "Earth-10005 is the home reality. The story also visits the TVA, the Void and Earth-616; those visits do not merge the Fox universe into Earth-616.",
         phase: "Phase Five",
         placement: "2024 and outside linear time",
         releaseDate: "2024-07-26",
@@ -1166,7 +1167,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         slug: "deadpool-and-wolverine",
         status: "released",
         title: "Deadpool & Wolverine",
-        universe: "Earth-10005 / Multiverse",
+        universe: "Earth-10005",
     },
     {
         chronologyOrder: 920,
