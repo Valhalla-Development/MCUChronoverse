@@ -72,18 +72,19 @@ describe("Sony chronology", () => {
         }
     });
 
-    test("supports universe search and an explicit non-MCU phase filter", () => {
+    test("supports universe search and explicit franchise filters", () => {
         const filters = { ...emptyTimelineFilters, query: "Earth-96283" };
         expect(filterTimeline(chronology, filters)).toHaveLength(3);
         expect(filterTimeline(chronology, { ...filters, phases: ["Phase One"] })).toHaveLength(0);
-        const outside = { ...emptyTimelineFilters, phases: ["Outside MCU phases"] as const };
+        const sony = { ...emptyTimelineFilters, universes: ["sony-spider-man"] as const };
         const parsed = parseTimelineFilters(
-            serializeTimelineFilters({ ...outside, phases: [...outside.phases] })
+            serializeTimelineFilters({
+                ...sony,
+                universes: [...sony.universes],
+            })
         );
-        expect(parsed.phases).toEqual([...outside.phases]);
-        expect(
-            filterTimeline(chronology, { ...parsed, query: "Sony Spider-Man Universe" })
-        ).toHaveLength(5);
+        expect(parsed.universes).toEqual([...sony.universes]);
+        expect(filterTimeline(chronology, parsed)).toHaveLength(5);
         expect(
             filterTimeline(chronology, { ...filters, order: "release" }).map(
                 (entry) => entry.placement
@@ -158,7 +159,10 @@ describe("Fox X-Men chronology", () => {
             filterTimeline(fox, { ...emptyTimelineFilters, phases: ["Phase Five"] })
         ).toHaveLength(0);
         expect(
-            filterTimeline(fox, { ...emptyTimelineFilters, phases: ["Outside MCU phases"] })
+            filterTimeline(fox, {
+                ...emptyTimelineFilters,
+                universes: ["fox-x-men"],
+            })
         ).toHaveLength(13);
         const releaseOrder = filterTimeline(fox, { ...emptyTimelineFilters, order: "release" });
         expect(releaseOrder.map((entry) => entry.releaseDate)).toEqual(
@@ -168,22 +172,53 @@ describe("Fox X-Men chronology", () => {
 });
 
 describe("timeline filters", () => {
+    test("groups entries into clear universe choices", () => {
+        const expectedCounts = {
+            "fantastic-four": 1,
+            "fox-x-men": 14,
+            "marvel-zombies": 1,
+            mcu: 76,
+            multiverse: 5,
+            "sony-spider-man": 5,
+            unconfirmed: 2,
+        } as const;
+        for (const [universe, count] of Object.entries(expectedCounts)) {
+            expect(
+                filterTimeline(chronology, {
+                    ...emptyTimelineFilters,
+                    universes: [universe as (typeof emptyTimelineFilters.universes)[number]],
+                })
+            ).toHaveLength(count);
+        }
+        expect(
+            filterTimeline(chronology, {
+                ...emptyTimelineFilters,
+                phases: ["Phase Four"],
+                universes: ["mcu"],
+            }).every((entry) => entry.phase === "Phase Four" && entry.universe === "Earth-616")
+        ).toBe(true);
+    });
+
     test("filters by search, type, and phase", () => {
         const entries = filterTimeline(chronology, {
             order: "chronology",
             phases: ["Phase One"],
             query: "iron",
             types: ["film"],
+            universes: ["mcu"],
         });
         expect(entries.map((entry) => entry.slug)).toEqual(["iron-man", "iron-man-2"]);
     });
 
     test("ignores unknown URL values", () => {
         const filters = parseTimelineFilters(
-            new URLSearchParams("types=film,game&phases=Phase%20One,Phase%20Nine")
+            new URLSearchParams(
+                "types=film,game&phases=Phase%20One,Phase%20Nine&universes=fox-x-men,unknown"
+            )
         );
         expect(filters.types).toEqual(["film"]);
         expect(filters.phases).toEqual(["Phase One"]);
+        expect(filters.universes).toEqual(["fox-x-men"]);
         expect(filters.order).toBe("chronology");
     });
 

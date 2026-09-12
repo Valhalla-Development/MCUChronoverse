@@ -30,7 +30,9 @@ import {
     type TimelineFilters,
     type TimelineOrder,
     type TimelinePhaseFilter,
+    type TimelineUniverseFilter,
     timelineOrders,
+    universeFilters,
 } from "../lib/timeline";
 import { AuthMenu } from "./auth-menu";
 import { UiIcon } from "./ui-icon";
@@ -76,6 +78,10 @@ function isContentType(value: string | undefined): value is ContentType {
 
 function isTimelinePhaseFilter(value: string | undefined): value is TimelinePhaseFilter {
     return phaseFilters.some((phase) => phase === value);
+}
+
+function isTimelineUniverseFilter(value: string | undefined): value is TimelineUniverseFilter {
+    return universeFilters.some((filter) => filter.value === value);
 }
 
 const contentTypeNames: Record<ContentType, string> = {
@@ -195,7 +201,7 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
                             </div>
                         )}
                         <span>{entry.runtime}</span>
-                        <span>{entry.phase ?? "Outside MCU phases"}</span>
+                        <span>{entry.phase ?? "No MCU phase"}</span>
                         <span>{entry.releaseDate.slice(0, 4)}</span>
                     </div>
 
@@ -403,6 +409,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
     const activeFilterCount =
         filters.types.length +
         filters.phases.length +
+        filters.universes.length +
         (filters.query ? 1 : 0) +
         Number(filters.order === "release");
     let accountActionLabel = "Checking account...";
@@ -489,6 +496,19 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                 return;
             }
             updateFilters({ ...filters, phases: toggleValue(filters.phases, phase) });
+        },
+        [filters, updateFilters]
+    );
+    const handleUniverseToggle = useCallback(
+        (event: MouseEvent<HTMLButtonElement>) => {
+            const universe = event.currentTarget.dataset.value;
+            if (!isTimelineUniverseFilter(universe)) {
+                return;
+            }
+            updateFilters({
+                ...filters,
+                universes: toggleValue(filters.universes, universe),
+            });
         },
         [filters, updateFilters]
     );
@@ -856,11 +876,32 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                                                     type="button"
                                                 >
                                                     <span>
-                                                        {phase === "Outside MCU phases"
-                                                            ? "ALT"
-                                                            : String(index + 1).padStart(2, "0")}
+                                                        {String(index + 1).padStart(2, "0")}
                                                     </span>
                                                     {phase}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </fieldset>
+
+                                <fieldset className="timeline-filter-group">
+                                    <legend>Universe</legend>
+                                    <div className="timeline-filter-phases">
+                                        {universeFilters.map((universe) => {
+                                            const active = filters.universes.includes(
+                                                universe.value
+                                            );
+                                            return (
+                                                <button
+                                                    aria-pressed={active}
+                                                    className="focus-ring timeline-filter-phase-option"
+                                                    data-value={universe.value}
+                                                    key={universe.value}
+                                                    onClick={handleUniverseToggle}
+                                                    type="button"
+                                                >
+                                                    {universe.label}
                                                 </button>
                                             );
                                         })}
