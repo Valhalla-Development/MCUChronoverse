@@ -1150,7 +1150,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 900,
         contentType: "film",
         creditScenes: { after: true, during: true },
-        note: "Earth-10005 is the home reality. The story also visits the TVA, the Void and Earth-616. The timeline connection marks viewing order before Agatha All Along, not a change of home universe.",
+        note: "Earth-10005 is the home reality. The story also visits the TVA, the Void and Earth-616. Its timeline joins Earth-616 before Avengers: Doomsday, where the X-Men enter the main MCU story; this marks viewing order, not a confirmed merger of realities.",
         phase: "Phase Five",
         placement: "2024 and outside linear time",
         releaseDate: "2024-07-26",

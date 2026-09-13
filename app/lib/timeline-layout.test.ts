@@ -204,7 +204,7 @@ describe("timeline branches", () => {
                 ).toHaveLength(0);
             }
             const hiddenDestination = createTimelineLayout(
-                ordered.filter((entry) => entry.slug !== "agatha-all-along")
+                ordered.filter((entry) => entry.slug !== "avengers-doomsday")
             );
             expect(
                 hiddenDestination.streams.find((stream) => stream.id === revised.id)
@@ -212,7 +212,7 @@ describe("timeline branches", () => {
             ).toBeUndefined();
         }
     });
-    test("joins the Fox viewing sequence before Agatha without changing its home reality", () => {
+    test("joins the Fox viewing sequence before Doomsday without changing its home reality", () => {
         const foxEntries = entries.filter((entry) => entry.universe === "Earth-10005");
         const previous = createTimelineLayout(
             entries.filter(
@@ -233,9 +233,9 @@ describe("timeline branches", () => {
             );
             expect(fox?.mergeFadeLength).toBe(2);
             expect(fox?.points).toHaveLength(14);
-            const agatha = main.entries.findIndex((entry) => entry.slug === "agatha-all-along");
+            const doomsday = main.entries.findIndex((entry) => entry.slug === "avengers-doomsday");
             expect(fox?.points.at(-1)).toEqual(
-                main.curve.getPoint((agatha - 0.5) / (main.points.length - 1))
+                main.curve.getPoint((doomsday - 0.5) / (main.points.length - 1))
             );
             expect(main.entries.some((entry) => entry.universe === "Earth-10005")).toBe(false);
             if (order === "chronology") {

@@ -46,7 +46,7 @@ const universeBranches: readonly TimelineBranch[] = [
         connectionLabel: "VIEWING ORDER",
         detachedOffsetX: -38,
         markerCaption: "REVISED FOX HISTORY",
-        mergeBefore: "agatha-all-along",
+        mergeBefore: "avengers-doomsday",
         offset: [-3.8, 2.8],
         showUniverseMarker: true,
         universe: "Earth-10005",
