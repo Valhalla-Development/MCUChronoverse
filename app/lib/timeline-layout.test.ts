@@ -151,7 +151,7 @@ describe("timeline branches", () => {
             );
             expect(original.entries).toHaveLength(5);
             expect(original.points.at(-1)).toEqual(
-                revised.curve.getPoint((reset - 0.5) / (revised.points.length - 1))
+                revised.curve.getPoint(Math.max(reset - 0.5, 0) / (revised.points.length - 1))
             );
             expect(original.universeMarker).toBe("Earth-41578");
             expect(revised.universeMarker).toBe("Earth-10005");
@@ -178,10 +178,10 @@ describe("timeline branches", () => {
             ).toBeUndefined();
         }
     });
-    test("merges the Fox stream after Deadpool & Wolverine and before Agatha", () => {
+    test("joins the Fox viewing sequence before Agatha without changing its home reality", () => {
         const foxEntries = entries.filter((entry) => entry.universe === "Earth-10005");
         const previous = createTimelineLayout(
-            entries.filter((entry) => !["Earth-10005", "Earth-41578"].includes(entry.universe))
+            entries.filter((entry) => !["Earth-10005", "Earth-41578", "Shared Fox history"].includes(entry.universe))
         );
         for (const order of ["chronology", "release"] as const) {
             const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
@@ -195,7 +195,7 @@ describe("timeline branches", () => {
                 true
             );
             expect(fox?.mergeFadeLength).toBe(2);
-            expect(fox?.points).toHaveLength(15);
+            expect(fox?.points).toHaveLength(14);
             const agatha = main.entries.findIndex((entry) => entry.slug === "agatha-all-along");
             expect(fox?.points.at(-1)).toEqual(
                 main.curve.getPoint((agatha - 0.5) / (main.points.length - 1))
@@ -210,7 +210,7 @@ describe("timeline branches", () => {
             }
         }
         const [foxOnly] = createTimelineLayout(foxEntries).streams;
-        expect(foxOnly.points).toHaveLength(9);
+        expect(foxOnly.points).toHaveLength(8);
         expect(foxOnly.mergeFadeLength).toBeUndefined();
         const single = createTimelineLayout([foxEntries[0]]);
         expect(single.positions).toHaveLength(1);
@@ -351,7 +351,7 @@ describe("timeline branches", () => {
                 (entry) => entry.slug === config?.mergeBefore
             );
             const tangent = target.curve.getTangent(
-                config.mergeAfter ? 1 : (crossover - 0.5) / (target.points.length - 1)
+                config.mergeAfter ? 1 : Math.max(crossover - 0.5, 0) / (target.points.length - 1)
             );
             expect(branch.curve.getTangent(1).dot(tangent)).toBeGreaterThan(0.999);
             expect(branch.mergeFadeLength).toBe(2);

@@ -104,6 +104,20 @@ interface TimelineDetailProps {
     watched: boolean;
 }
 
+function TimelineUniverse({ entry }: { entry: TimelineEntry }) {
+    const label = { junction: "Timeline junction", shared: "Shared history" };
+    const universes = entry.timelineRole === "shared" ? [] : [entry.universe];
+    const value = entry.relatedUniverses
+        ? [...new Set([...universes, ...entry.relatedUniverses])].join(" / ")
+        : entry.universe;
+    return (
+        <>
+            <span>{entry.timelineRole ? label[entry.timelineRole] : "Universe"}</span>
+            <strong>{value}</strong>
+        </>
+    );
+}
+
 function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDetailProps) {
     const watchable = isWatchable(entry);
     let watchAction = "Unavailable";
@@ -257,8 +271,7 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
 
                     <div className="timeline-detail-footer">
                         <div className="timeline-detail-universe">
-                            <span>Universe</span>
-                            <strong>{entry.universe}</strong>
+                            <TimelineUniverse entry={entry} />
                         </div>
                         {entry.imdbUrl ? (
                             <div className="timeline-detail-links">

@@ -46,11 +46,14 @@ export interface TimelineEntry {
     placement: string;
     posterUrl?: string;
     rating?: number;
+    /** Other histories represented by a shared story or a time-travel junction. */
+    relatedUniverses?: readonly string[];
     releaseDate: string;
     runtime: string;
     saga: Saga;
     slug: string;
     status: ContentStatus;
+    timelineRole?: "shared" | "junction";
     title: string;
     traktUrl: string;
     universe: string;

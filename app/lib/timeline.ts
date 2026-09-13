@@ -100,6 +100,9 @@ export function filterTimeline(
                 entry.title.toLocaleLowerCase("en-GB").includes(query) ||
                 entry.description.toLocaleLowerCase("en-GB").includes(query) ||
                 entry.universe.toLocaleLowerCase("en-GB").includes(query) ||
+                entry.relatedUniverses?.some((universe) =>
+                    universe.toLocaleLowerCase("en-GB").includes(query)
+                ) ||
                 entry.saga.toLocaleLowerCase("en-GB").includes(query);
             const matchesType =
                 filters.types.length === 0 || filters.types.includes(entry.contentType);
@@ -129,7 +132,7 @@ export function universeFilterForEntry(entry: TimelineEntry): TimelineUniverseFi
     if (["Earth-96283", "Earth-120703"].includes(entry.universe)) {
         return "sony-spider-man";
     }
-    if (["Earth-10005", "Earth-41578"].includes(entry.universe)) {
+    if (["Earth-10005", "Earth-41578", "Shared Fox history"].includes(entry.universe)) {
         return "fox-x-men";
     }
     if (entry.universe === "Earth-89521") {

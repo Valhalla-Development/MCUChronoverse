@@ -102,7 +102,7 @@ describe("Sony chronology", () => {
 });
 
 describe("Fox X-Men chronology", () => {
-    test("keeps the complete Fox chronology before its crossover, with Logan immediately before it", () => {
+    test("orders the Fox stories by their main setting, with Logan after the contemporary crossover", () => {
         const expected = [
             ["x-men-first-class-2011", "tt1270798"],
             ["x-men-days-of-future-past-2014", "tt1877832"],
@@ -122,8 +122,9 @@ describe("Fox X-Men chronology", () => {
         const start = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
         expect(ordered.slice(start, start + 15).map((entry) => entry.slug)).toEqual([
             "what-if-season-2",
-            ...expected.map(([slug]) => slug),
+            ...expected.slice(0, -1).map(([slug]) => slug),
             "deadpool-and-wolverine",
+            "logan-2017",
         ]);
         const fox = filterTimeline(chronology, {
             ...emptyTimelineFilters,
@@ -142,9 +143,11 @@ describe("Fox X-Men chronology", () => {
                 "x-men-the-last-stand-2006",
                 "the-wolverine-2013",
             ];
-            expect(entry.universe).toBe(
-                originalHistory.includes(entry.slug) ? "Earth-41578" : "Earth-10005"
-            );
+            let universe = originalHistory.includes(entry.slug) ? "Earth-41578" : "Earth-10005";
+            if (entry.timelineRole === "shared") {
+                universe = "Shared Fox history";
+            }
+            expect(entry.universe).toBe(universe);
             expect(entry.phase).toBeUndefined();
             expect(entry.note).toBeTruthy();
             expect(entry.description.length).toBeGreaterThan(30);

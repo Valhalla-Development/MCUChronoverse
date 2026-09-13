@@ -40,6 +40,7 @@ const universeBranches: readonly TimelineBranch[] = [
     {
         cardDepthOffset: 1.7,
         detachedOffsetX: -38,
+        markerCaption: "REVISED FOX HISTORY",
         mergeBefore: "agatha-all-along",
         offset: [-3.8, 2.8],
         showUniverseMarker: true,
@@ -48,11 +49,23 @@ const universeBranches: readonly TimelineBranch[] = [
     {
         cardDepthOffset: 1.7,
         detachedOffsetX: -60,
+        markerCaption: "ORIGINAL FOX HISTORY",
         mergeBefore: "x-men-days-of-future-past-2014",
         mergeIntoUniverse: "Earth-10005",
         offset: [-6.4, 5.6],
         showUniverseMarker: true,
         universe: "Earth-41578",
+    },
+    {
+        cardDepthOffset: 1.7,
+        detachedOffsetX: -85,
+        markerCaption: "FOX X-MEN",
+        markerTitle: "SHARED HISTORY",
+        mergeBefore: "x-men-origins-wolverine-2009",
+        mergeIntoUniverse: "Earth-41578",
+        offset: [0, 0],
+        showUniverseMarker: true,
+        universe: "Shared Fox history",
     },
     {
         anchorBefore: "wandavision",
