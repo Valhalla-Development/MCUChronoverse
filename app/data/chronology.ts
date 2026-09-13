@@ -1319,7 +1319,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         slug: "avengers-doomsday",
         status: "announced",
         title: "Avengers: Doomsday",
-        universe: "TBD",
+        universe: "Earth-616",
     },
     {
         chronologyOrder: 1040,

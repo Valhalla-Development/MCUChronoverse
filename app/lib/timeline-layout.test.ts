@@ -50,14 +50,14 @@ describe("timeline branches", () => {
             ["Multiverse", ["what-if-season-1", "what-if-season-2", "what-if-season-3"]],
             ["Earth-89521", ["marvel-zombies"]],
             ["Earth-828", ["the-fantastic-four-first-steps"]],
-            ["TBD", ["avengers-doomsday", "avengers-secret-wars"]],
+            ["TBD", ["avengers-secret-wars"]],
         ]);
         for (const order of ["chronology", "release"] as const) {
             const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
             const layout = createTimelineLayout(ordered);
             const [main] = layout.streams;
             expect(main.universeMarker).toBe("Earth-616");
-            expect(main.entries).toHaveLength(76);
+            expect(main.entries).toHaveLength(77);
             expect(main.entries.every((entry) => entry.universe === "Earth-616")).toBe(true);
             expect(layout.streams.flatMap((stream) => stream.entries)).toHaveLength(104);
             for (const [universe, slugs] of expected) {
@@ -282,7 +282,7 @@ describe("timeline branches", () => {
         expect(layout.streams[0].points.slice(0, mainEntries.length)).toEqual(original.positions);
         expect(original.cardDepthOffsets.every((offset) => offset === 0)).toBe(true);
         expect(layout.cardDepthOffsets.filter((offset) => offset !== 0)).toEqual(
-            Array.from({ length: 28 }, () => 1.7)
+            Array.from({ length: 27 }, () => 1.7)
         );
         const withoutTail = createTimelineLayout(
             entries.filter((entry) => entry.universe !== "TBD")

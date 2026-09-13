@@ -204,10 +204,10 @@ describe("timeline filters", () => {
             "fantastic-four": 1,
             "fox-x-men": 14,
             "marvel-zombies": 1,
-            mcu: 76,
+            mcu: 77,
             multiverse: 5,
             "sony-spider-man": 5,
-            unconfirmed: 2,
+            unconfirmed: 1,
         } as const;
         for (const [universe, count] of Object.entries(expectedCounts)) {
             expect(
