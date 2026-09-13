@@ -5,7 +5,6 @@ export interface TimelineBranch {
     anchorBefore?: string;
     /** Keep billboard artwork clear of the stream when viewed from above or below. */
     cardDepthOffset: number;
-    connectionLabel?: string;
     /** Separate histories that share a lane when their crossover is filtered out. */
     detachedOffsetX?: number;
     entrySlugs?: readonly string[];
@@ -43,7 +42,6 @@ const universeBranches: readonly TimelineBranch[] = [
     },
     {
         cardDepthOffset: 1.7,
-        connectionLabel: "VIEWING ORDER",
         detachedOffsetX: -38,
         markerCaption: "REVISED FOX HISTORY",
         mergeBefore: "avengers-doomsday",
@@ -88,10 +86,7 @@ const universeBranches: readonly TimelineBranch[] = [
         anchorBefore: "wandavision",
         cardDepthOffset: 1.7,
         detachedOffsetX: -14,
-        markerCaption: "MANY REALITIES",
-        markerTitle: "MULTIVERSE",
         offset: [6.4, -5.6],
-        showUniverseMarker: true,
         universe: "Multiverse",
     },
     {
@@ -114,10 +109,7 @@ const universeBranches: readonly TimelineBranch[] = [
         anchorBefore: "visionquest",
         cardDepthOffset: 1.7,
         detachedOffsetX: 18,
-        markerCaption: "UNIVERSE",
-        markerTitle: "UNCONFIRMED",
         offset: [6.4, -5.6],
-        showUniverseMarker: true,
         universe: "TBD",
     },
 ];

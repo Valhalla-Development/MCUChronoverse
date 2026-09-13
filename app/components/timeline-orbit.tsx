@@ -1570,20 +1570,11 @@ interface TimelineSceneProps {
 
 const EARTH_MARKER_PREFIX = /^Earth-/;
 
-function UniverseMarker({
-    stream,
-    atConnection = false,
-}: {
-    stream: TimelineStream;
-    atConnection?: boolean;
-}) {
+function UniverseMarker({ stream }: { stream: TimelineStream }) {
     const billboard = useRef<Group | null>(null);
     const position = useMemo(
-        () =>
-            atConnection
-                ? (stream.points.at(-1) as Vector3).clone().add(new Vector3(0, -0.6, 0))
-                : stream.points[0].clone().add(new Vector3(-1.25, 0.12, 0)),
-        [stream.points, atConnection]
+        () => stream.points[0].clone().add(new Vector3(-1.25, 0.12, 0)),
+        [stream.points]
     );
     useFrame(({ camera }) => {
         const group = billboard.current as Group;
@@ -1602,20 +1593,16 @@ function UniverseMarker({
                 letterSpacing={0.18}
                 position={[0, 0.16, 0]}
             >
-                {atConnection ? "CONTINUE WATCHING" : (stream.markerCaption ?? "EARTH")}
+                {stream.markerCaption ?? "EARTH"}
             </Text>
             <Text
                 anchorX="center"
                 anchorY="middle"
                 color="#ffe4c7"
                 font={GEIST_MONO_FONT_URL}
-                fontSize={
-                    !atConnection && stream.universeMarker?.startsWith("Earth-") ? 0.19 : 0.12
-                }
+                fontSize={stream.universeMarker?.startsWith("Earth-") ? 0.19 : 0.12}
             >
-                {atConnection
-                    ? stream.connectionLabel
-                    : stream.universeMarker?.replace(EARTH_MARKER_PREFIX, "")}
+                {stream.universeMarker?.replace(EARTH_MARKER_PREFIX, "")}
             </Text>
             <mesh position={[0, -0.17, 0]}>
                 <planeGeometry args={[0.76, 0.009]} />
@@ -1657,9 +1644,6 @@ function TimelineScene({
             {layout.streams.map((stream) => (
                 <group key={stream.id}>
                     {stream.universeMarker ? <UniverseMarker stream={stream} /> : null}
-                    {stream.connectionLabel ? (
-                        <UniverseMarker atConnection stream={stream} />
-                    ) : null}
                     <TimelineEnergy
                         compact={compact}
                         curve={stream.curve}

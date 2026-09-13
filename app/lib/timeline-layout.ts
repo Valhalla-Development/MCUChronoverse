@@ -11,7 +11,6 @@ import type { TimelineEntry } from "../data/types";
 import { timelineNodePosition } from "./timeline";
 
 export interface TimelineStream {
-    connectionLabel?: string;
     curve: Curve<Vector3>;
     entries: readonly TimelineEntry[];
     id: string;
@@ -140,7 +139,6 @@ function connectionTo(target: TimelineStream | undefined, branch: TimelineBranch
         return;
     }
     return {
-        label: branch.connectionLabel,
         point: target.curve.getPoint(progress),
         tangent: target.curve.getTangent(progress),
     };
@@ -260,7 +258,6 @@ export function createTimelineLayout(
             );
         }
         streams.push({
-            connectionLabel: connection?.label,
             curve: createTimelineCurve(points),
             entries: branchEntries,
             id: branch.id ?? branch.universe,

@@ -68,7 +68,11 @@ describe("timeline branches", () => {
                     streams.flatMap((stream) => stream.entries.map((entry) => entry.slug))
                 ).toEqual(slugs);
                 for (const stream of streams) {
-                    expect(stream.universeMarker).toBeTruthy();
+                    if (["Multiverse", "TBD"].includes(universe)) {
+                        expect(stream.universeMarker).toBeUndefined();
+                    } else {
+                        expect(stream.universeMarker).toBeTruthy();
+                    }
                     expect(stream.mergeFadeLength).toBe(2);
                 }
             }
@@ -197,19 +201,11 @@ describe("timeline branches", () => {
             expect(
                 fork.curve.getPoints(200).every((point) => point.toArray().every(Number.isFinite))
             ).toBe(true);
-            expect(revised.connectionLabel).toBe("VIEWING ORDER");
             for (const slug of ["x-men-first-class-2011", "x-men-days-of-future-past-2014"]) {
                 expect(
                     createTimelineLayout(ordered.filter((entry) => entry.slug !== slug)).connections
                 ).toHaveLength(0);
             }
-            const hiddenDestination = createTimelineLayout(
-                ordered.filter((entry) => entry.slug !== "avengers-doomsday")
-            );
-            expect(
-                hiddenDestination.streams.find((stream) => stream.id === revised.id)
-                    ?.connectionLabel
-            ).toBeUndefined();
         }
     });
     test("joins the Fox viewing sequence before Doomsday without changing its home reality", () => {
