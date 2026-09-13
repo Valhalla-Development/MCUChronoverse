@@ -1,9 +1,17 @@
-import { CatmullRomCurve3, type Curve, LineCurve3, Vector3 } from "three";
+import {
+    CatmullRomCurve3,
+    CubicBezierCurve3,
+    type Curve,
+    CurvePath,
+    LineCurve3,
+    Vector3,
+} from "three";
 import { type TimelineBranch, timelineBranches } from "../data/timeline-branches";
 import type { TimelineEntry } from "../data/types";
 import { timelineNodePosition } from "./timeline";
 
 export interface TimelineStream {
+    connectionLabel?: string;
     curve: Curve<Vector3>;
     entries: readonly TimelineEntry[];
     id: string;
@@ -16,6 +24,7 @@ export interface TimelineStream {
 
 export interface TimelineLayout {
     cardDepthOffsets: number[];
+    connections: TimelineStream[];
     positions: Vector3[];
     streams: TimelineStream[];
 }
@@ -130,7 +139,67 @@ function connectionTo(target: TimelineStream | undefined, branch: TimelineBranch
     if (!target || progress === undefined) {
         return;
     }
-    return { point: target.curve.getPoint(progress), tangent: target.curve.getTangent(progress) };
+    return {
+        label: branch.connectionLabel,
+        point: target.curve.getPoint(progress),
+        tangent: target.curve.getTangent(progress),
+    };
+}
+
+function createHistoryConnections(
+    streams: readonly TimelineStream[],
+    branches: readonly TimelineBranch[]
+): TimelineStream[] {
+    return branches.flatMap((branch) => {
+        if (!(branch.forkBefore && branch.forkIntoUniverse)) {
+            return [];
+        }
+        const source = streams.find((stream) => stream.id === (branch.id ?? branch.universe));
+        const target = streams.find((stream) => stream.id === branch.forkIntoUniverse);
+        const destination = connectionTo(target, {
+            ...branch,
+            mergeAfter: undefined,
+            mergeBefore: branch.forkBefore,
+        });
+        const start = source?.points[source.nodePointIndices.at(-1) ?? 0];
+        if (!(start && destination)) {
+            // A filtered-out shared past or reset must not leave a dangling connection.
+            return [];
+        }
+        const end = destination.point;
+        // Bezier handles keep the fork monotonic without the small backward hook
+        // a Catmull-Rom transition can introduce at a level starting tangent.
+        const shelf = end.clone();
+        shelf.x = start.x + Math.min(5, (end.x - start.x) * 0.5);
+        const curve = new CurvePath<Vector3>();
+        curve.add(
+            new CubicBezierCurve3(
+                start.clone(),
+                start.clone().add(new Vector3(2, 0, 0)),
+                shelf.clone().add(new Vector3(-2, 0, 0)),
+                shelf
+            )
+        );
+        curve.add(
+            new CubicBezierCurve3(
+                shelf,
+                shelf.clone().lerp(end, 0.5),
+                end.clone().addScaledVector(destination.tangent, -0.75),
+                end
+            )
+        );
+        const points = curve.getPoints(Math.max(8, Math.ceil(start.distanceTo(end))));
+        return [
+            {
+                curve,
+                entries: [],
+                id: `${source.id}:fork`,
+                mergeFadeLength: 2,
+                nodePointIndices: [],
+                points,
+            },
+        ];
+    });
 }
 
 export function createTimelineLayout(
@@ -191,6 +260,7 @@ export function createTimelineLayout(
             );
         }
         streams.push({
+            connectionLabel: connection?.label,
             curve: createTimelineCurve(points),
             entries: branchEntries,
             id: branch.id ?? branch.universe,
@@ -214,6 +284,7 @@ export function createTimelineLayout(
             (entry) =>
                 branches.find((branch) => branch.universe === entry.universe)?.cardDepthOffset ?? 0
         ),
+        connections: createHistoryConnections(streams, branches),
         positions: entries.map((entry) => positionsBySlug.get(entry.slug) as Vector3),
         streams,
     };

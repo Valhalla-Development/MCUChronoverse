@@ -178,10 +178,47 @@ describe("timeline branches", () => {
             ).toBeUndefined();
         }
     });
+    test("forks the shared Fox past into both histories without duplicate cards", () => {
+        for (const order of ["chronology", "release"] as const) {
+            const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
+            const layout = createTimelineLayout(ordered);
+            const shared = layout.streams.find((stream) => stream.id === "Shared Fox history");
+            const revised = layout.streams.find((stream) => stream.id === "Earth-10005");
+            const [fork] = layout.connections;
+            if (!(shared && revised && fork)) {
+                throw new Error("Shared past must connect to the revised history");
+            }
+            expect(shared.entries.map((entry) => entry.slug)).toEqual(["x-men-first-class-2011"]);
+            expect(fork.points[0]).toEqual(shared.points[0]);
+            const reset = revised.entries.findIndex((entry) => entry.timelineRole === "junction");
+            expect(fork.points.at(-1)).toEqual(
+                revised.curve.getPoint(Math.max(reset - 0.5, 0) / (revised.points.length - 1))
+            );
+            expect(
+                fork.curve.getPoints(200).every((point) => point.toArray().every(Number.isFinite))
+            ).toBe(true);
+            expect(revised.connectionLabel).toBe("VIEWING ORDER");
+            for (const slug of ["x-men-first-class-2011", "x-men-days-of-future-past-2014"]) {
+                expect(
+                    createTimelineLayout(ordered.filter((entry) => entry.slug !== slug)).connections
+                ).toHaveLength(0);
+            }
+            const hiddenDestination = createTimelineLayout(
+                ordered.filter((entry) => entry.slug !== "agatha-all-along")
+            );
+            expect(
+                hiddenDestination.streams.find((stream) => stream.id === revised.id)
+                    ?.connectionLabel
+            ).toBeUndefined();
+        }
+    });
     test("joins the Fox viewing sequence before Agatha without changing its home reality", () => {
         const foxEntries = entries.filter((entry) => entry.universe === "Earth-10005");
         const previous = createTimelineLayout(
-            entries.filter((entry) => !["Earth-10005", "Earth-41578", "Shared Fox history"].includes(entry.universe))
+            entries.filter(
+                (entry) =>
+                    !["Earth-10005", "Earth-41578", "Shared Fox history"].includes(entry.universe)
+            )
         );
         for (const order of ["chronology", "release"] as const) {
             const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
@@ -387,6 +424,7 @@ describe("timeline branches", () => {
     test("supports empty, main-only, branch-only, and single-card filtered views", () => {
         expect(createTimelineLayout([])).toEqual({
             cardDepthOffsets: [],
+            connections: [],
             positions: [],
             streams: [],
         });

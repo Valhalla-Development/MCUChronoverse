@@ -1568,11 +1568,22 @@ interface TimelineSceneProps {
     zoomDistance: number;
 }
 
-function UniverseMarker({ stream }: { stream: TimelineStream }) {
+const EARTH_MARKER_PREFIX = /^Earth-/;
+
+function UniverseMarker({
+    stream,
+    atConnection = false,
+}: {
+    stream: TimelineStream;
+    atConnection?: boolean;
+}) {
     const billboard = useRef<Group | null>(null);
     const position = useMemo(
-        () => stream.points[0].clone().add(new Vector3(-1.25, 0.12, 0)),
-        [stream.points]
+        () =>
+            atConnection
+                ? (stream.points.at(-1) as Vector3).clone().add(new Vector3(0, -0.6, 0))
+                : stream.points[0].clone().add(new Vector3(-1.25, 0.12, 0)),
+        [stream.points, atConnection]
     );
     useFrame(({ camera }) => {
         const group = billboard.current as Group;
@@ -1591,18 +1602,20 @@ function UniverseMarker({ stream }: { stream: TimelineStream }) {
                 letterSpacing={0.18}
                 position={[0, 0.16, 0]}
             >
-                {stream.markerCaption ?? "EARTH"}
+                {atConnection ? "CONTINUE WATCHING" : (stream.markerCaption ?? "EARTH")}
             </Text>
             <Text
                 anchorX="center"
                 anchorY="middle"
                 color="#ffe4c7"
                 font={GEIST_MONO_FONT_URL}
-                fontSize={stream.universeMarker?.startsWith("Earth-") ? 0.19 : 0.12}
+                fontSize={
+                    !atConnection && stream.universeMarker?.startsWith("Earth-") ? 0.19 : 0.12
+                }
             >
-                {stream.universeMarker?.startsWith("Earth-")
-                    ? stream.universeMarker.slice(6)
-                    : stream.universeMarker}
+                {atConnection
+                    ? stream.connectionLabel
+                    : stream.universeMarker?.replace(EARTH_MARKER_PREFIX, "")}
             </Text>
             <mesh position={[0, -0.17, 0]}>
                 <planeGeometry args={[0.76, 0.009]} />
@@ -1644,6 +1657,9 @@ function TimelineScene({
             {layout.streams.map((stream) => (
                 <group key={stream.id}>
                     {stream.universeMarker ? <UniverseMarker stream={stream} /> : null}
+                    {stream.connectionLabel ? (
+                        <UniverseMarker atConnection stream={stream} />
+                    ) : null}
                     <TimelineEnergy
                         compact={compact}
                         curve={stream.curve}
@@ -1659,6 +1675,17 @@ function TimelineScene({
                         stream={stream}
                     />
                 </group>
+            ))}
+            {layout.connections.map((connection) => (
+                <TimelineEnergy
+                    compact={compact}
+                    curve={connection.curve}
+                    eventCount={connection.points.length}
+                    key={connection.id}
+                    mergeFadeLength={connection.mergeFadeLength}
+                    qualityFactor={qualityFactor}
+                    reducedMotion={reducedMotion}
+                />
             ))}
             <TimelineCards
                 cardDepthOffsets={layout.cardDepthOffsets}

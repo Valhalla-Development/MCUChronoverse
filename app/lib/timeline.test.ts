@@ -175,6 +175,30 @@ describe("Fox X-Men chronology", () => {
 });
 
 describe("timeline filters", () => {
+    test("finds shared history and the reset through either Earth number", () => {
+        for (const query of ["Earth-10005", "Earth-41578"]) {
+            const results = filterTimeline(chronology, { ...emptyTimelineFilters, query });
+            expect(results.some((entry) => entry.slug === "x-men-first-class-2011")).toBe(true);
+            expect(results.some((entry) => entry.slug === "x-men-days-of-future-past-2014")).toBe(
+                true
+            );
+        }
+        const chronological = filterTimeline(chronology, {
+            ...emptyTimelineFilters,
+            universes: ["fox-x-men"],
+        });
+        expect(chronological.slice(-2).map((entry) => entry.slug)).toEqual([
+            "deadpool-and-wolverine",
+            "logan-2017",
+        ]);
+        const release = filterTimeline(chronological, {
+            ...emptyTimelineFilters,
+            order: "release",
+        });
+        expect(release.findIndex((entry) => entry.slug === "logan-2017")).toBeLessThan(
+            release.findIndex((entry) => entry.slug === "deadpool-and-wolverine")
+        );
+    });
     test("groups entries into clear universe choices", () => {
         const expectedCounts = {
             "fantastic-four": 1,

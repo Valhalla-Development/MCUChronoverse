@@ -5,9 +5,13 @@ export interface TimelineBranch {
     anchorBefore?: string;
     /** Keep billboard artwork clear of the stream when viewed from above or below. */
     cardDepthOffset: number;
+    connectionLabel?: string;
     /** Separate histories that share a lane when their crossover is filtered out. */
     detachedOffsetX?: number;
     entrySlugs?: readonly string[];
+    /** A second continuation for histories that share a common past. */
+    forkBefore?: string;
+    forkIntoUniverse?: string;
     id?: string;
     markerCaption?: string;
     markerTitle?: string;
@@ -39,6 +43,7 @@ const universeBranches: readonly TimelineBranch[] = [
     },
     {
         cardDepthOffset: 1.7,
+        connectionLabel: "VIEWING ORDER",
         detachedOffsetX: -38,
         markerCaption: "REVISED FOX HISTORY",
         mergeBefore: "agatha-all-along",
@@ -59,6 +64,8 @@ const universeBranches: readonly TimelineBranch[] = [
     {
         cardDepthOffset: 1.7,
         detachedOffsetX: -85,
+        forkBefore: "x-men-days-of-future-past-2014",
+        forkIntoUniverse: "Earth-10005",
         markerCaption: "FOX X-MEN",
         markerTitle: "SHARED HISTORY",
         mergeBefore: "x-men-origins-wolverine-2009",
