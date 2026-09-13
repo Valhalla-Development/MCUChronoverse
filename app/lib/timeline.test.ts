@@ -119,13 +119,16 @@ describe("Fox X-Men chronology", () => {
             ["logan-2017", "tt3315342"],
         ];
         const ordered = filterTimeline(chronology, emptyTimelineFilters);
-        const start = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
-        expect(ordered.slice(start, start + 15).map((entry) => entry.slug)).toEqual([
-            "what-if-season-2",
+        const start = ordered.findIndex((entry) => entry.slug === "visionquest");
+        expect(ordered.slice(start, start + 16).map((entry) => entry.slug)).toEqual([
+            "visionquest",
             ...expected.slice(0, -1).map(([slug]) => slug),
             "deadpool-and-wolverine",
             "logan-2017",
+            "avengers-doomsday",
         ]);
+        const formerStart = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
+        expect(ordered[formerStart + 1]?.slug).toBe("agatha-all-along");
         const fox = filterTimeline(chronology, {
             ...emptyTimelineFilters,
             query: "Fox X-Men Universe",
