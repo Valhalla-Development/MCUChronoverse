@@ -16,6 +16,8 @@ export interface TimelineBranch {
     markerTitle?: string;
     /** Join the continuation beyond the final main-stream entry. */
     mergeAfter?: string;
+    /** Shared history precedes the entire target stream in either display order. */
+    mergeAtStart?: boolean;
     /** A viewing-order junction joins streams without changing universe identities. */
     mergeBefore?: string;
     /** Resolve a time-travel connection against another universe's stream. */
@@ -66,6 +68,7 @@ const universeBranches: readonly TimelineBranch[] = [
         forkIntoUniverse: "Earth-10005",
         markerCaption: "FOX X-MEN",
         markerTitle: "SHARED HISTORY",
+        mergeAtStart: true,
         mergeBefore: "x-men-origins-wolverine-2009",
         mergeIntoUniverse: "Earth-41578",
         offset: [0, 0],

@@ -1,13 +1,69 @@
 import { describe, expect, test } from "bun:test";
 import { chronology } from "../data/chronology";
 import { timelineBranches } from "../data/timeline-branches";
-import { emptyTimelineFilters, filterTimeline, timelineNodePosition } from "./timeline";
+import {
+    emptyTimelineFilters,
+    filterTimeline,
+    timelineNodePosition,
+    universeFilters,
+} from "./timeline";
 import { createTimelineLayout } from "./timeline-layout";
 
 const entries = filterTimeline(chronology, emptyTimelineFilters);
 const sony = entries.filter((entry) => entry.universe === "Earth-96283");
 
 describe("timeline branches", () => {
+    test("keeps card-sized clearance across both orders, universe filters, and missing anchors", () => {
+        for (const order of ["chronology", "release"] as const) {
+            const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
+            const cases = [
+                ordered,
+                ...universeFilters.map(({ value }) =>
+                    filterTimeline(chronology, {
+                        ...emptyTimelineFilters,
+                        order,
+                        universes: [value],
+                    })
+                ),
+                ...ordered.map((hidden) => ordered.filter((entry) => entry !== hidden)),
+            ];
+            for (const visible of cases) {
+                const layout = createTimelineLayout(visible);
+                for (let i = 0; i < visible.length; i += 1) {
+                    for (let j = i + 1; j < visible.length; j += 1) {
+                        const delta = layout.positions[i].clone().sub(layout.positions[j]);
+                        // Include room beyond the 1.32 x 1.86 poster for borders and labels.
+                        if (
+                            Math.abs(delta.x) < 1.5 &&
+                            Math.abs(delta.y) < 2.2 &&
+                            Math.abs(delta.z) < 2.2
+                        ) {
+                            throw new Error(
+                                `${order}: ${visible[i].slug} overlaps ${visible[j].slug}`
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    test("places shared history before the entire original stream in both display orders", () => {
+        for (const order of ["chronology", "release"] as const) {
+            const ordered = filterTimeline(chronology, { ...emptyTimelineFilters, order });
+            const layout = createTimelineLayout(ordered);
+            const shared = layout.streams.find((stream) => stream.id === "Shared Fox history");
+            const original = layout.streams.find((stream) => stream.id === "Earth-41578");
+            if (!(shared && original)) {
+                throw new Error("Both streams must exist");
+            }
+            expect(shared.points.at(-1)).toEqual(original.points[0]);
+            expect(original.points[0].x - shared.points[0].x).toBeGreaterThan(6);
+            expect(original.entries[0].slug).toBe(
+                order === "release" ? "x-men-2000" : "x-men-origins-wolverine-2009"
+            );
+        }
+    });
     test("merges each relocated season at its original chronological destination", () => {
         const destinations = [
             ["loki-season-1", "wandavision"],
@@ -383,9 +439,13 @@ describe("timeline branches", () => {
             const crossover = target.entries.findIndex(
                 (entry) => entry.slug === config?.mergeBefore
             );
-            const tangent = target.curve.getTangent(
-                config.mergeAfter ? 1 : Math.max(crossover - 0.5, 0) / (target.points.length - 1)
-            );
+            let progress = config.mergeAfter
+                ? 1
+                : Math.max(crossover - 0.5, 0) / (target.points.length - 1);
+            if (config.mergeAtStart) {
+                progress = 0;
+            }
+            const tangent = target.curve.getTangent(progress);
             expect(branch.curve.getTangent(1).dot(tangent)).toBeGreaterThan(0.999);
             expect(branch.mergeFadeLength).toBe(2);
         }

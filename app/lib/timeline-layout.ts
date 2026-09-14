@@ -102,6 +102,9 @@ function entriesForBranch(
 }
 
 function mergeProgress(target: TimelineStream, branch: TimelineBranch): number | undefined {
+    if (branch.mergeAtStart) {
+        return target.entries.length ? 0 : undefined;
+    }
     if (branch.mergeAfter) {
         return target.entries.at(-1)?.slug === branch.mergeAfter ? 1 : undefined;
     }
@@ -157,6 +160,7 @@ function createHistoryConnections(
         const destination = connectionTo(target, {
             ...branch,
             mergeAfter: undefined,
+            mergeAtStart: false,
             mergeBefore: branch.forkBefore,
         });
         const start = source?.points[source.nodePointIndices.at(-1) ?? 0];
@@ -198,6 +202,41 @@ function createHistoryConnections(
             },
         ];
     });
+}
+
+function separateDetachedPoints(
+    points: Vector3[],
+    streams: readonly TimelineStream[],
+    junction?: Vector3
+): void {
+    if (junction) {
+        return;
+    }
+    const occupied = streams.flatMap((stream) =>
+        stream.nodePointIndices.map((index) => stream.points[index])
+    );
+    // Missing destinations use fallback shelves. Move only those shelves, keeping
+    // connected streams and the main timeline fixed when filters change.
+    let collision = true;
+    while (collision) {
+        collision = false;
+        for (const point of points) {
+            const obstacle = occupied.find(
+                (other) =>
+                    Math.abs(point.x - other.x) < 2.5 &&
+                    Math.abs(point.y - other.y) < 2.2 &&
+                    Math.abs(point.z - other.z) < 2.2
+            );
+            if (obstacle) {
+                const shift = obstacle.x - Math.max(...points.map((item) => item.x)) - 2.6;
+                for (const item of points) {
+                    item.x += shift;
+                }
+                collision = true;
+                break;
+            }
+        }
+    }
 }
 
 export function createTimelineLayout(
@@ -243,6 +282,7 @@ export function createTimelineLayout(
             new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
         const [offsetY, offsetZ] = branch.offset;
         const points = createBranchPoints(branch, branchEntries.length, origin);
+        separateDetachedPoints(points, streams, junction);
         if (junction && connection) {
             // Hide the merge when its target is filtered out, rather than imply a
             // crossover with an unrelated visible title. The alternate stream stays separate.
