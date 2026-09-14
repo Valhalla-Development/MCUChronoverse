@@ -22,23 +22,243 @@ describe("chronology", () => {
     });
 });
 
+describe("Sony chronology", () => {
+    test("places the seeded trilogy between Eternals and No Way Home without MCU membership", () => {
+        const sony = chronology.filter((entry) => entry.universe === "Earth-96283");
+        expect(
+            sony.map((entry) => [entry.slug, entry.placement, entry.releaseDate, entry.imdbUrl])
+        ).toEqual([
+            ["spider-man-2002", "2002", "2002-05-03", "https://www.imdb.com/title/tt0145487/"],
+            ["spider-man-2-2004", "2004", "2004-06-30", "https://www.imdb.com/title/tt0316654/"],
+            ["spider-man-3-2007", "2007", "2007-05-04", "https://www.imdb.com/title/tt0413300/"],
+        ]);
+        const ordered = filterTimeline(chronology, emptyTimelineFilters);
+        const andrew = chronology.filter((entry) => entry.universe === "Earth-120703");
+        expect(
+            andrew.map((entry) => [entry.title, entry.placement, entry.releaseDate, entry.imdbUrl])
+        ).toEqual([
+            [
+                "The Amazing Spider-Man",
+                "2012",
+                "2012-07-03",
+                "https://www.imdb.com/title/tt0948470/",
+            ],
+            [
+                "The Amazing Spider-Man 2",
+                "2014",
+                "2014-05-02",
+                "https://www.imdb.com/title/tt1872181/",
+            ],
+        ]);
+        const eternalsIndex = ordered.findIndex((entry) => entry.slug === "eternals");
+        expect(ordered.slice(eternalsIndex, eternalsIndex + 7).map((entry) => entry.slug)).toEqual([
+            "eternals",
+            ...sony.map((entry) => entry.slug),
+            ...andrew.map((entry) => entry.slug),
+            "spider-man-no-way-home",
+        ]);
+        const captainIndex = ordered.findIndex((entry) => entry.slug === "captain-marvel");
+        expect(ordered[captainIndex + 1].slug).toBe("iron-man");
+        for (const entry of [...sony, ...andrew]) {
+            expect(entry.phase).toBeUndefined();
+            expect(entry.saga).toBe("Sony Spider-Man Universe");
+            expect(entry.description.length).toBeGreaterThan(30);
+            expect(entry.genres?.length).toBeGreaterThan(0);
+            expect(entry.posterUrl?.startsWith("https://image.tmdb.org/t/p/")).toBe(true);
+            expect(entry.rating).toBeGreaterThan(0);
+            expect(entry.runtime.length).toBeGreaterThan(0);
+            expect(entry.traktUrl).toBe(`https://app.trakt.tv/movies/${entry.slug}`);
+            expect(isWatchable(entry)).toBe(true);
+        }
+    });
+
+    test("supports universe search and explicit franchise filters", () => {
+        const filters = { ...emptyTimelineFilters, query: "Earth-96283" };
+        expect(filterTimeline(chronology, filters)).toHaveLength(3);
+        expect(filterTimeline(chronology, { ...filters, phases: ["Phase One"] })).toHaveLength(0);
+        const sony = { ...emptyTimelineFilters, universes: ["sony-spider-man"] as const };
+        const parsed = parseTimelineFilters(
+            serializeTimelineFilters({
+                ...sony,
+                universes: [...sony.universes],
+            })
+        );
+        expect(parsed.universes).toEqual([...sony.universes]);
+        expect(filterTimeline(chronology, parsed)).toHaveLength(5);
+        expect(
+            filterTimeline(chronology, { ...filters, order: "release" }).map(
+                (entry) => entry.placement
+            )
+        ).toEqual(["2002", "2004", "2007"]);
+    });
+
+    test("still rejects duplicate ordering and invalid dates", () => {
+        expect(
+            validateChronology([chronology[0], { ...chronology[0], releaseDate: "invalid" }]).map(
+                (issue) => issue.message
+            )
+        ).toEqual(["Duplicate chronology order 10", "Duplicate slug", "Invalid release date"]);
+    });
+});
+
+const foxExpected = [
+    ["x-men-first-class-2011", "tt1270798"],
+    ["x-men-days-of-future-past-2014", "tt1877832"],
+    ["x-men-origins-wolverine-2009", "tt0458525"],
+    ["x-men-apocalypse-2016", "tt3385516"],
+    ["dark-phoenix-2019", "tt6565702"],
+    ["x-men-2000", "tt0120903"],
+    ["x2-2003", "tt0290334"],
+    ["x-men-the-last-stand-2006", "tt0376994"],
+    ["the-wolverine-2013", "tt1430132"],
+    ["deadpool-2016", "tt1431045"],
+    ["deadpool-2-2018", "tt5463162"],
+    ["the-new-mutants-2020", "tt4682266"],
+    ["logan-2017", "tt3315342"],
+] as const;
+const originalFoxHistory = new Set([
+    "x-men-origins-wolverine-2009",
+    "x-men-2000",
+    "x2-2003",
+    "x-men-the-last-stand-2006",
+    "the-wolverine-2013",
+]);
+const fox = filterTimeline(chronology, {
+    ...emptyTimelineFilters,
+    query: "Fox X-Men Universe",
+});
+
+describe("Fox X-Men chronology", () => {
+    test("orders the Fox stories by their main setting", () => {
+        const ordered = filterTimeline(chronology, emptyTimelineFilters);
+        const start = ordered.findIndex((entry) => entry.slug === "visionquest");
+        expect(ordered.slice(start, start + 16).map((entry) => entry.slug)).toEqual([
+            "visionquest",
+            ...foxExpected.slice(0, -1).map(([slug]) => slug),
+            "deadpool-and-wolverine",
+            "logan-2017",
+            "avengers-doomsday",
+        ]);
+        const formerStart = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
+        expect(ordered.at(formerStart + 1)?.slug).toBe("agatha-all-along");
+        expect(fox.at(-1)?.slug).toBe("logan-2017");
+    });
+
+    test("uses deterministic identities and confirmed placements", () => {
+        expect(fox.map((entry) => [entry.slug, entry.imdbUrl])).toEqual(
+            foxExpected.map(([slug, imdb]) => [slug, `https://www.imdb.com/title/${imdb}/`])
+        );
+        expect(fox.find((entry) => entry.slug === "logan-2017")?.placement).toBe("2029");
+    });
+
+    test("keeps complete metadata and separates both histories", () => {
+        for (const entry of fox) {
+            let universe = originalFoxHistory.has(entry.slug) ? "Earth-41578" : "Earth-10005";
+            if (entry.timelineRole === "shared") {
+                universe = "Shared Fox history";
+            }
+            expect(entry.universe).toBe(universe);
+            expect(entry.phase).toBeUndefined();
+            expect(entry.note).toBeTruthy();
+            expect(entry.description.length).toBeGreaterThan(30);
+            expect(entry.genres?.length).toBeGreaterThan(0);
+            expect(entry.posterUrl?.startsWith("https://image.tmdb.org/t/p/")).toBe(true);
+            expect(entry.traktUrl.startsWith("https://app.trakt.tv/movies/")).toBe(true);
+            expect(entry.rating).toBeGreaterThan(0);
+            expect(entry.runtime).toBeTruthy();
+            expect(isWatchable(entry)).toBe(true);
+        }
+    });
+
+    test("supports Fox filters and release order", () => {
+        expect(
+            filterTimeline(fox, { ...emptyTimelineFilters, phases: ["Phase Five"] })
+        ).toHaveLength(0);
+        expect(
+            filterTimeline(fox, {
+                ...emptyTimelineFilters,
+                universes: ["fox-x-men"],
+            })
+        ).toHaveLength(13);
+        const releaseOrder = filterTimeline(fox, { ...emptyTimelineFilters, order: "release" });
+        expect(releaseOrder.map((entry) => entry.releaseDate)).toEqual(
+            [...fox].map((entry) => entry.releaseDate).sort()
+        );
+    });
+});
+
 describe("timeline filters", () => {
+    test("finds shared history and the reset through either Earth number", () => {
+        for (const query of ["Earth-10005", "Earth-41578"]) {
+            const results = filterTimeline(chronology, { ...emptyTimelineFilters, query });
+            expect(results.some((entry) => entry.slug === "x-men-first-class-2011")).toBe(true);
+            expect(results.some((entry) => entry.slug === "x-men-days-of-future-past-2014")).toBe(
+                true
+            );
+        }
+        const chronological = filterTimeline(chronology, {
+            ...emptyTimelineFilters,
+            universes: ["fox-x-men"],
+        });
+        expect(chronological.slice(-2).map((entry) => entry.slug)).toEqual([
+            "deadpool-and-wolverine",
+            "logan-2017",
+        ]);
+        const release = filterTimeline(chronological, {
+            ...emptyTimelineFilters,
+            order: "release",
+        });
+        expect(release.findIndex((entry) => entry.slug === "logan-2017")).toBeLessThan(
+            release.findIndex((entry) => entry.slug === "deadpool-and-wolverine")
+        );
+    });
+    test("groups entries into clear universe choices", () => {
+        const expectedCounts = {
+            "fantastic-four": 1,
+            "fox-x-men": 14,
+            "marvel-zombies": 1,
+            mcu: 77,
+            multiverse: 5,
+            "sony-spider-man": 5,
+            unconfirmed: 1,
+        } as const;
+        for (const [universe, count] of Object.entries(expectedCounts)) {
+            expect(
+                filterTimeline(chronology, {
+                    ...emptyTimelineFilters,
+                    universes: [universe as (typeof emptyTimelineFilters.universes)[number]],
+                })
+            ).toHaveLength(count);
+        }
+        expect(
+            filterTimeline(chronology, {
+                ...emptyTimelineFilters,
+                phases: ["Phase Four"],
+                universes: ["mcu"],
+            }).every((entry) => entry.phase === "Phase Four" && entry.universe === "Earth-616")
+        ).toBe(true);
+    });
+
     test("filters by search, type, and phase", () => {
         const entries = filterTimeline(chronology, {
             order: "chronology",
             phases: ["Phase One"],
             query: "iron",
             types: ["film"],
+            universes: ["mcu"],
         });
         expect(entries.map((entry) => entry.slug)).toEqual(["iron-man", "iron-man-2"]);
     });
 
     test("ignores unknown URL values", () => {
         const filters = parseTimelineFilters(
-            new URLSearchParams("types=film,game&phases=Phase%20One,Phase%20Nine")
+            new URLSearchParams(
+                "types=film,game&phases=Phase%20One,Phase%20Nine&universes=fox-x-men,unknown"
+            )
         );
         expect(filters.types).toEqual(["film"]);
         expect(filters.phases).toEqual(["Phase One"]);
+        expect(filters.universes).toEqual(["fox-x-men"]);
         expect(filters.order).toBe("chronology");
     });
 

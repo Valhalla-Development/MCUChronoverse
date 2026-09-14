@@ -23,7 +23,6 @@ import {
     type Camera,
     CatmullRomCurve3,
     Color,
-    type Curve,
     DynamicDrawUsage,
     Euler,
     Frustum,
@@ -46,8 +45,12 @@ import {
 } from "three";
 import { configureTextBuilder } from "troika-three-text";
 import type { TimelineEntry } from "../data/types";
-import { timelineNodePosition } from "../lib/timeline";
 import { createTimelineConnectorVolume } from "../lib/timeline-connector-volume";
+import {
+    createTimelineLayout,
+    type TimelineLayout,
+    type TimelineStream,
+} from "../lib/timeline-layout";
 import { cardAccentColours, getTimelineNodeAccent } from "../lib/timeline-node-accent";
 import {
     createTimelineNodeCoreMaterial,
@@ -445,19 +448,20 @@ interface TimelineOrbitProps {
 
 interface TimelineNodeProps {
     billboardRef: RefCallback<Group>;
+    cardDepthOffset: number;
     cardRef: RefCallback<Group>;
-    count: number;
     entry: TimelineEntry;
     highlighted: boolean;
-    index: number;
     onCardPointerOut: (event: ThreeEvent<PointerEvent>) => void;
     onCardPointerOver: (event: ThreeEvent<PointerEvent>) => void;
     onCardSelect: (event: ThreeEvent<MouseEvent>) => void;
+    position: Vector3;
     watched: boolean;
 }
 
 interface TimelinePosterCardProps {
     billboardRef: RefCallback<Group>;
+    cardDepthOffset: number;
     cardRef: RefCallback<Group>;
     entry: TimelineEntry;
     highlighted: boolean;
@@ -526,6 +530,7 @@ function PosterFallback({
 }
 
 function TimelinePosterCard({
+    cardDepthOffset,
     billboardRef,
     cardRef,
     entry,
@@ -555,7 +560,10 @@ function TimelinePosterCard({
     const watchedBadgeY = CARD_BASE_HEIGHT / 2 - 0.16;
 
     return (
-        <group position={[0, cardHeight / 2 + CARD_GAP_FROM_ORB, 0]} ref={billboardRef}>
+        <group
+            position={[0, cardHeight / 2 + CARD_GAP_FROM_ORB, cardDepthOffset]}
+            ref={billboardRef}
+        >
             <group ref={cardRef} renderOrder={CARD_RENDER_ORDER_BASE}>
                 {/* biome-ignore lint/a11y/noStaticElementInteractions: The hidden mesh is the card's scene hit target. */}
                 <mesh
@@ -936,10 +944,11 @@ function TimelineNodeGlow({ instances, reducedMotion, selected }: InstancedTimel
 }
 
 interface TimelineNodeFilamentsProps extends InstancedTimelineRingsProps {
-    curve: Curve<Vector3>;
+    stream: TimelineStream;
 }
 
-function TimelineNodeFilaments({ curve, instances, reducedMotion }: TimelineNodeFilamentsProps) {
+function TimelineNodeFilaments({ stream, instances, reducedMotion }: TimelineNodeFilamentsProps) {
+    const { curve, nodePointIndices, points } = stream;
     const meshRef = useRef<InstancedMesh>(null);
     const material = useMemo(CONNECTOR_EFFECT.arm.createMaterial, []);
     useEffect(() => () => material.dispose(), [material]);
@@ -955,19 +964,23 @@ function TimelineNodeFilaments({ curve, instances, reducedMotion }: TimelineNode
         const targetDirection = new Vector3();
         const armReach = NODE_FILAMENT_CURVE.getPoint(1).length();
         const segmentFraction = 0.82 / 2.2;
-        const finalIndex = Math.max(instances.length - 1, 1);
+        const finalIndex = Math.max(points.length - 1, 1);
         let armIndex = 0;
         instances.forEach(({ entry, position }, index) => {
+            const nodePointIndex = nodePointIndices.at(index);
+            if (nodePointIndex === undefined) {
+                return;
+            }
             for (const direction of [-1, 1]) {
                 // End anchors only draw the arm that joins the existing stream.
                 if (
-                    (index === 0 && direction === -1) ||
-                    (index === instances.length - 1 && direction === 1)
+                    (nodePointIndex === 0 && direction === -1) ||
+                    (nodePointIndex === points.length - 1 && direction === 1)
                 ) {
                     continue;
                 }
                 const curveProgress = MathUtils.clamp(
-                    (index + direction * segmentFraction) / finalIndex,
+                    (nodePointIndex + direction * segmentFraction) / finalIndex,
                     0,
                     1
                 );
@@ -988,7 +1001,7 @@ function TimelineNodeFilaments({ curve, instances, reducedMotion }: TimelineNode
         if (mesh.instanceColor) {
             mesh.instanceColor.needsUpdate = true;
         }
-    }, [curve, instances]);
+    }, [curve, instances, nodePointIndices, points]);
     useFrame(({ clock }) => {
         material.uniforms.uTime.value = reducedMotion ? 0 : clock.elapsedTime;
         material.uniforms.uMotion.value = reducedMotion ? 0 : 1;
@@ -1004,34 +1017,34 @@ function TimelineNodeFilaments({ curve, instances, reducedMotion }: TimelineNode
 }
 
 interface InstancedTimelineNodesProps {
-    count: number;
-    curve: Curve<Vector3>;
-    entries: readonly TimelineEntry[];
     onSelect: (slug: string) => void;
     reducedMotion: boolean;
     selectedSlug?: string;
+    stream: TimelineStream;
 }
 
 function InstancedTimelineNodes({
-    count,
-    curve,
-    entries,
+    stream,
     onSelect,
     selectedSlug,
     reducedMotion,
 }: InstancedTimelineNodesProps) {
+    const { entries, points, nodePointIndices } = stream;
     const [hovered, setHovered] = useState(false);
     useCursor(hovered);
     const instances = useMemo(
         () =>
             entries.map((entry, index) => {
-                const position = timelineNodePosition(index, count);
+                const position = points.at(nodePointIndices.at(index) ?? -1);
+                if (!position) {
+                    throw new Error(`Missing node position for ${entry.slug}`);
+                }
                 return {
                     entry,
                     position: new Vector3(position.x, position.y + NODE_LIFT, position.z),
                 };
             }),
-        [count, entries]
+        [entries, points, nodePointIndices]
     );
     const selected = instances.find(({ entry }) => entry.slug === selectedSlug);
     useLayoutEffect(() => {
@@ -1068,9 +1081,9 @@ function InstancedTimelineNodes({
     return (
         <>
             <TimelineNodeFilaments
-                curve={curve}
                 instances={instances}
                 reducedMotion={reducedMotion}
+                stream={stream}
             />
             <TimelineNodeGlow
                 instances={instances}
@@ -1108,23 +1121,22 @@ function InstancedTimelineNodes({
 
 // Cards remain individual GPU layers while one controller batches their billboard transforms.
 const TimelineNode = memo(function TimelineNodeView({
+    cardDepthOffset,
     billboardRef,
     cardRef,
-    count,
+    position,
     entry,
     highlighted,
-    index,
     onCardPointerOut,
     onCardPointerOver,
     onCardSelect,
     watched,
 }: TimelineNodeProps) {
-    const position = timelineNodePosition(index, count);
-
     return (
         <group position={[position.x, position.y, position.z]}>
             <TimelinePosterCard
                 billboardRef={billboardRef}
+                cardDepthOffset={cardDepthOffset}
                 cardRef={cardRef}
                 entry={entry}
                 highlighted={highlighted}
@@ -1144,9 +1156,11 @@ interface TimelineCardRegistration {
 }
 
 interface TimelineCardsProps {
+    cardDepthOffsets: readonly number[];
     entries: readonly TimelineEntry[];
     focusIndex: number;
     onSelect: (slug: string) => void;
+    positions: readonly Vector3[];
     reducedMotion: boolean;
     selectedSlug?: string;
     watchedSlugs: readonly string[];
@@ -1162,6 +1176,8 @@ function getTimelineCardRenderOrder(cardDepth: number, anchorDepth: number, sele
 }
 
 function TimelineCards({
+    cardDepthOffsets,
+    positions,
     entries,
     focusIndex,
     onSelect,
@@ -1347,20 +1363,25 @@ function TimelineCards({
                 renderOrder={3}
             />
             {entries.map((entry, index) => {
+                const registration = registrations.at(index);
+                const position = positions.at(index);
+                if (!(registration && position)) {
+                    throw new Error(`Missing card layout for ${entry.slug}`);
+                }
                 const selected = selectedSlug === entry.slug;
                 const highlighted = selected || focusIndex === index || hoveredSlug === entry.slug;
                 return (
                     <TimelineNode
-                        billboardRef={registrations[index].billboardRef}
-                        cardRef={registrations[index].cardRef}
-                        count={entries.length}
+                        billboardRef={registration.billboardRef}
+                        cardDepthOffset={cardDepthOffsets.at(index) ?? 0}
+                        cardRef={registration.cardRef}
                         entry={entry}
                         highlighted={highlighted}
-                        index={index}
                         key={entry.slug}
                         onCardPointerOut={handlePointerOut}
                         onCardPointerOver={handlePointerOver}
                         onCardSelect={handleSelect}
+                        position={position}
                         watched={watchedSlugSet.has(entry.slug)}
                     />
                 );
@@ -1542,24 +1563,13 @@ function CameraRig({
     return null;
 }
 
-function createTimelineCurve(points: readonly Vector3[]): Curve<Vector3> {
-    const first = points[0] ?? new Vector3(-2, 0, 0);
-    const last = points.at(-1) ?? new Vector3(2, 0, 0);
-    if (points.length < 3) {
-        return new LineCurve3(
-            first,
-            last.equals(first) ? first.clone().add(new Vector3(0.001, 0, 0)) : last
-        );
-    }
-    return new CatmullRomCurve3([...points], false, "catmullrom", 0.42);
-}
-
 interface TimelineSceneProps {
     compact: boolean;
     entries: readonly TimelineEntry[];
     focusIndex: number;
     focusKey: number;
     focusPosition: Vector3;
+    layout: TimelineLayout;
     onSelect: (slug: string) => void;
     onZoomDistanceChange: (distance: number) => void;
     qualityFactor: number;
@@ -1570,7 +1580,59 @@ interface TimelineSceneProps {
     zoomDistance: number;
 }
 
+const EARTH_MARKER_PREFIX = /^Earth-/;
+
+function UniverseMarker({ stream }: { stream: TimelineStream }) {
+    const billboard = useRef<Group>(undefined);
+    const captureBillboard = useCallback<RefCallback<Group>>((group) => {
+        billboard.current = group ?? undefined;
+    }, []);
+    const position = useMemo(
+        () => (stream.points.at(0) ?? new Vector3()).clone().add(new Vector3(-1.25, 0.12, 0)),
+        [stream.points]
+    );
+    useFrame(({ camera }) => {
+        const group = billboard.current;
+        // biome-ignore lint/suspicious/noUnnecessaryConditions: the ref is unset before mount.
+        if (!group) {
+            return;
+        }
+        // Stream labels billboard independently; movie rendering keeps its existing budget.
+        group.visible = camera.position.distanceToSquared(position) < 625;
+        group.quaternion.copy(camera.quaternion);
+    });
+    return (
+        <group position={position} ref={captureBillboard}>
+            <Text
+                anchorX="center"
+                anchorY="middle"
+                color="#ffad66"
+                font={GEIST_MONO_FONT_URL}
+                fontSize={0.075}
+                letterSpacing={0.18}
+                position={[0, 0.16, 0]}
+            >
+                {stream.markerCaption ?? "EARTH"}
+            </Text>
+            <Text
+                anchorX="center"
+                anchorY="middle"
+                color="#ffe4c7"
+                font={GEIST_MONO_FONT_URL}
+                fontSize={stream.universeMarker?.startsWith("Earth-") ? 0.19 : 0.12}
+            >
+                {stream.universeMarker?.replace(EARTH_MARKER_PREFIX, "")}
+            </Text>
+            <mesh position={[0, -0.17, 0]}>
+                <planeGeometry args={[0.76, 0.009]} />
+                <meshBasicMaterial color="#ff943d" toneMapped={false} />
+            </mesh>
+        </group>
+    );
+}
+
 function TimelineScene({
+    layout,
     compact,
     entries,
     focusIndex,
@@ -1585,15 +1647,9 @@ function TimelineScene({
     zoomDistance,
     sceneKey,
 }: TimelineSceneProps) {
-    const points = useMemo(
-        () =>
-            entries.map((_, index) => {
-                const position = timelineNodePosition(index, entries.length);
-                return new Vector3(position.x, position.y, position.z);
-            }),
-        [entries]
-    );
-    const curve = useMemo(() => createTimelineCurve(points), [points]);
+    const points =
+        layout.streams.find((stream) => stream.id === "main")?.points ?? layout.positions;
+    const focusedEntry = entries.find((_entry, index) => index === focusIndex);
     return (
         <>
             <color args={["#000000"]} attach="background" />
@@ -1605,25 +1661,42 @@ function TimelineScene({
             <group renderOrder={-10_000}>
                 <CosmicBackground nodes={points} reducedMotion={reducedMotion} />
             </group>
-            <TimelineEnergy
-                compact={compact}
-                curve={curve}
-                eventCount={entries.length}
-                qualityFactor={qualityFactor}
-                reducedMotion={reducedMotion}
-            />
-            <InstancedTimelineNodes
-                count={entries.length}
-                curve={curve}
-                entries={entries}
-                onSelect={onSelect}
-                reducedMotion={reducedMotion}
-                selectedSlug={selectedSlug ?? entries[focusIndex]?.slug}
-            />
+            {layout.streams.map((stream) => (
+                <group key={stream.id}>
+                    {stream.universeMarker ? <UniverseMarker stream={stream} /> : null}
+                    <TimelineEnergy
+                        compact={compact}
+                        curve={stream.curve}
+                        eventCount={stream.points.length}
+                        mergeFadeLength={stream.mergeFadeLength}
+                        qualityFactor={qualityFactor}
+                        reducedMotion={reducedMotion}
+                    />
+                    <InstancedTimelineNodes
+                        onSelect={onSelect}
+                        reducedMotion={reducedMotion}
+                        selectedSlug={selectedSlug ?? focusedEntry?.slug}
+                        stream={stream}
+                    />
+                </group>
+            ))}
+            {layout.connections.map((connection) => (
+                <TimelineEnergy
+                    compact={compact}
+                    curve={connection.curve}
+                    eventCount={connection.points.length}
+                    key={connection.id}
+                    mergeFadeLength={connection.mergeFadeLength}
+                    qualityFactor={qualityFactor}
+                    reducedMotion={reducedMotion}
+                />
+            ))}
             <TimelineCards
+                cardDepthOffsets={layout.cardDepthOffsets}
                 entries={entries}
                 focusIndex={focusIndex}
                 onSelect={onSelect}
+                positions={layout.positions}
                 reducedMotion={reducedMotion}
                 selectedSlug={selectedSlug}
                 watchedSlugs={watchedSlugs}
@@ -1696,15 +1769,16 @@ export function TimelineOrbit({
         []
     );
     const sceneKey = useMemo(() => entries.map((entry) => entry.slug).join("|"), [entries]);
+    const layout = useMemo(() => createTimelineLayout(entries), [entries]);
     const safeFocusIndex = Math.min(Math.max(focusIndex, 0), Math.max(entries.length - 1, 0));
     const focusPosition = useMemo(() => {
-        const nodePosition = timelineNodePosition(safeFocusIndex, entries.length);
+        const nodePosition = layout.positions.at(safeFocusIndex) ?? new Vector3();
         return new Vector3(
             nodePosition.x,
             nodePosition.y + TIMELINE_CARD_FOCUS_OFFSET_Y,
-            nodePosition.z
+            nodePosition.z + (layout.cardDepthOffsets.at(safeFocusIndex) ?? 0)
         );
-    }, [entries.length, safeFocusIndex]);
+    }, [layout, safeFocusIndex]);
     const handleZoomDistanceChange = useCallback((nextDistance: number) => {
         const roundedDistance = Math.round(nextDistance * 10) / 10;
         setZoomDistance((current) =>
@@ -1800,6 +1874,7 @@ export function TimelineOrbit({
                             focusIndex={safeFocusIndex}
                             focusKey={focusKey}
                             focusPosition={focusPosition}
+                            layout={layout}
                             onSelect={onSelect}
                             onZoomDistanceChange={handleZoomDistanceChange}
                             qualityFactor={qualityFactor}

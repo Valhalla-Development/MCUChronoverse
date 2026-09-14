@@ -10,11 +10,27 @@ export const timelineOrders = ["chronology", "release"] as const;
 
 export type TimelineOrder = (typeof timelineOrders)[number];
 
+export const phaseFilters = phases;
+export type TimelinePhaseFilter = McuPhase;
+
+export const universeFilters = [
+    { label: "MCU", value: "mcu" },
+    { label: "Sony Spider-Man", value: "sony-spider-man" },
+    { label: "Fox X-Men", value: "fox-x-men" },
+    { label: "TVA & Multiverse", value: "multiverse" },
+    { label: "Marvel Zombies", value: "marvel-zombies" },
+    { label: "Fantastic Four", value: "fantastic-four" },
+    { label: "Unconfirmed", value: "unconfirmed" },
+] as const;
+export type TimelineUniverseFilter = (typeof universeFilters)[number]["value"];
+const universeFilterValues = universeFilters.map((filter) => filter.value);
+
 export interface TimelineFilters {
     order: TimelineOrder;
-    phases: McuPhase[];
+    phases: TimelinePhaseFilter[];
     query: string;
     types: ContentType[];
+    universes: TimelineUniverseFilter[];
 }
 
 export const emptyTimelineFilters: TimelineFilters = {
@@ -22,6 +38,7 @@ export const emptyTimelineFilters: TimelineFilters = {
     phases: [],
     query: "",
     types: [],
+    universes: [],
 };
 
 export function isWatchable(entry: TimelineEntry) {
@@ -44,9 +61,10 @@ export function parseTimelineFilters(params: SearchParamsReader): TimelineFilter
     const order = params.get("order");
     return {
         order: order === "release" ? order : "chronology",
-        phases: parseList(params.get("phases"), phases),
+        phases: parseList(params.get("phases"), phaseFilters),
         query: params.get("q")?.trim() ?? "",
         types: parseList(params.get("types"), contentTypes),
+        universes: parseList(params.get("universes"), universeFilterValues),
     };
 }
 
@@ -64,6 +82,9 @@ export function serializeTimelineFilters(filters: TimelineFilters): URLSearchPar
     if (filters.phases.length > 0) {
         params.set("phases", filters.phases.join(","));
     }
+    if (filters.universes.length > 0) {
+        params.set("universes", filters.universes.join(","));
+    }
     return params;
 }
 
@@ -73,27 +94,73 @@ export function filterTimeline(
 ): TimelineEntry[] {
     const query = filters.query.trim().toLocaleLowerCase("en-GB");
     return entries
-        .filter((entry) => {
-            const matchesQuery =
-                query.length === 0 ||
-                entry.title.toLocaleLowerCase("en-GB").includes(query) ||
-                entry.description.toLocaleLowerCase("en-GB").includes(query);
-            const matchesType =
-                filters.types.length === 0 || filters.types.includes(entry.contentType);
-            const matchesPhase =
-                filters.phases.length === 0 ||
-                (entry.phase !== undefined && filters.phases.includes(entry.phase));
-            return matchesQuery && matchesType && matchesPhase;
-        })
-        .sort((left, right) => {
-            if (filters.order === "release") {
-                return (
-                    left.releaseDate.localeCompare(right.releaseDate) ||
-                    left.chronologyOrder - right.chronologyOrder
-                );
-            }
-            return left.chronologyOrder - right.chronologyOrder;
-        });
+        .filter((entry) => entryMatchesFilters(entry, filters, query))
+        .sort((left, right) => compareTimelineEntries(left, right, filters.order));
+}
+
+function entryMatchesQuery(entry: TimelineEntry, query: string): boolean {
+    if (query.length === 0) {
+        return true;
+    }
+    const searchableValues = [entry.title, entry.description, entry.universe, entry.saga];
+    return (
+        searchableValues.some((value) => value.toLocaleLowerCase("en-GB").includes(query)) ||
+        Boolean(
+            entry.relatedUniverses?.some((universe) =>
+                universe.toLocaleLowerCase("en-GB").includes(query)
+            )
+        )
+    );
+}
+
+function entryMatchesFilters(
+    entry: TimelineEntry,
+    filters: TimelineFilters,
+    query: string
+): boolean {
+    const matchesType = filters.types.length === 0 || filters.types.includes(entry.contentType);
+    const matchesPhase =
+        filters.phases.length === 0 ||
+        (entry.phase !== undefined && filters.phases.includes(entry.phase));
+    const matchesUniverse =
+        filters.universes.length === 0 || filters.universes.includes(universeFilterForEntry(entry));
+    return entryMatchesQuery(entry, query) && matchesType && matchesPhase && matchesUniverse;
+}
+
+function compareTimelineEntries(
+    left: TimelineEntry,
+    right: TimelineEntry,
+    order: TimelineOrder
+): number {
+    if (order === "release") {
+        return (
+            left.releaseDate.localeCompare(right.releaseDate) ||
+            left.chronologyOrder - right.chronologyOrder
+        );
+    }
+    return left.chronologyOrder - right.chronologyOrder;
+}
+
+export function universeFilterForEntry(entry: TimelineEntry): TimelineUniverseFilter {
+    if (entry.universe === "Earth-616") {
+        return "mcu";
+    }
+    if (["Earth-96283", "Earth-120703"].includes(entry.universe)) {
+        return "sony-spider-man";
+    }
+    if (["Earth-10005", "Earth-41578", "Shared Fox history"].includes(entry.universe)) {
+        return "fox-x-men";
+    }
+    if (entry.universe === "Earth-89521") {
+        return "marvel-zombies";
+    }
+    if (entry.universe === "Earth-828") {
+        return "fantastic-four";
+    }
+    if (entry.universe === "TBD") {
+        return "unconfirmed";
+    }
+    return "multiverse";
 }
 
 export interface TimelineNodePosition {

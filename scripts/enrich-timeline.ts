@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { getTitleDetailsByIMDBId, getTitleDetailsByName, type ITitle } from "@valhalladev/movier";
 import { isMetadataCacheRecordStale } from "../app/data/metadata-freshness";
 import { log } from "../app/lib/console";
+import { fetchSeededMovieMetadata } from "./tmdb-metadata";
 
 interface CacheRecord {
     error?: string;
@@ -102,7 +103,13 @@ const lookupTitle = async (
     const imdbId = imdbUrl?.match(imdbIdPattern)?.[1];
     if (imdbId) {
         // Existing IMDb IDs are curated identifiers and avoid ambiguous title matches.
-        return getTitleDetailsByIMDBId(imdbId, { tmdbReadAccessToken: token });
+        const resolved = await getTitleDetailsByIMDBId(imdbId, {
+            tmdbReadAccessToken: token,
+        });
+        if (resolved.mainSource.sourceId !== imdbId) {
+            throw new Error(`Movier returned a different IMDb identity for ${imdbId}`);
+        }
+        return resolved;
     }
 
     const baseTitle = title.replace(seasonSuffix, "");
@@ -161,15 +168,21 @@ for (const entry of curatedChronology) {
 
     try {
         // Each item is written immediately and delayed to keep the enrichment run API-friendly.
-        // biome-ignore lint/performance/noAwaitInLoops: The script intentionally processes one title at a time.
-        const title = await lookupTitle(entry.title, entry.releaseDate, entry.imdbUrl);
+        const metadata =
+            entry.contentType === "film" && entry.imdbUrl
+                ? // biome-ignore lint/performance/noAwaitInLoops: Provider lookups are sequential and rate-limited.
+                  await fetchSeededMovieMetadata(entry.imdbUrl, token)
+                : selectTitleData(
+                      await lookupTitle(entry.title, entry.releaseDate, entry.imdbUrl),
+                      ""
+                  );
         // biome-ignore lint/performance/noAwaitInLoops: Trakt lookups share the sequential rate limit.
-        const traktUrl = await lookupTraktUrl(title.mainSource.sourceUrl);
+        const traktUrl = await lookupTraktUrl(metadata.imdbUrl ?? "");
 
         cache[entry.slug] = {
             fetchedAt: new Date().toISOString(),
             requestedTitle: entry.title,
-            source: selectTitleData(title, traktUrl),
+            source: { ...metadata, traktUrl },
             status: "resolved",
         };
         resolved += 1;
@@ -196,9 +209,18 @@ for (const entry of curatedChronology) {
 log.info(`Finished. Resolved: ${resolved}, skipped: ${skipped}, failed: ${failed}.`);
 log.info(`Cached metadata: ${cachePath}`);
 
+// Format only the generated cache; enrichment must not rewrite application source files.
+// biome-ignore lint/correctness/noUndeclaredVariables: This script runs in the Bun runtime.
+const formatProcess = Bun.spawn(["bun", "x", "biome", "format", "--write", cachePath], {
+    stderr: "inherit",
+    stdout: "inherit",
+});
+if ((await formatProcess.exited) !== 0) {
+    process.exit(1);
+}
 log.info("Checking enriched data with the project lint command.");
 // biome-ignore lint/correctness/noUndeclaredVariables: This script runs in the Bun runtime.
-const lintProcess = Bun.spawn(["bun", "run", "lint:fix"], {
+const lintProcess = Bun.spawn(["bun", "run", "lint"], {
     stderr: "inherit",
     stdin: "inherit",
     stdout: "inherit",
@@ -206,4 +228,8 @@ const lintProcess = Bun.spawn(["bun", "run", "lint:fix"], {
 const lintExitCode = await lintProcess.exited;
 if (lintExitCode !== 0) {
     process.exit(lintExitCode);
+}
+
+if (failed > 0) {
+    process.exit(1);
 }

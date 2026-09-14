@@ -17,8 +17,6 @@ import {
     type ContentType,
     contentTypeLabels,
     contentTypes,
-    type McuPhase,
-    phases,
     type TimelineEntry,
 } from "../data/types";
 import { useWatchProgress } from "../hooks/use-watch-progress";
@@ -27,10 +25,14 @@ import {
     filterTimeline,
     isWatchable,
     parseTimelineFilters,
+    phaseFilters,
     serializeTimelineFilters,
     type TimelineFilters,
     type TimelineOrder,
+    type TimelinePhaseFilter,
+    type TimelineUniverseFilter,
     timelineOrders,
+    universeFilters,
 } from "../lib/timeline";
 import { AuthMenu } from "./auth-menu";
 import { UiIcon } from "./ui-icon";
@@ -74,8 +76,12 @@ function isContentType(value: string | undefined): value is ContentType {
     return contentTypes.some((type) => type === value);
 }
 
-function isMcuPhase(value: string | undefined): value is McuPhase {
-    return phases.some((phase) => phase === value);
+function isTimelinePhaseFilter(value: string | undefined): value is TimelinePhaseFilter {
+    return phaseFilters.some((phase) => phase === value);
+}
+
+function isTimelineUniverseFilter(value: string | undefined): value is TimelineUniverseFilter {
+    return universeFilters.some((filter) => filter.value === value);
 }
 
 const contentTypeNames: Record<ContentType, string> = {
@@ -98,15 +104,251 @@ interface TimelineDetailProps {
     watched: boolean;
 }
 
-function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDetailProps) {
-    const watchable = isWatchable(entry);
+function TimelineUniverse({ entry }: { entry: TimelineEntry }) {
+    const label = { junction: "Timeline junction", shared: "Shared history" };
+    const universes = entry.timelineRole === "shared" ? [] : [entry.universe];
+    const value = entry.relatedUniverses
+        ? [...new Set([...universes, ...entry.relatedUniverses])].join(" / ")
+        : entry.universe;
+    return (
+        <>
+            <span>{entry.timelineRole ? label[entry.timelineRole] : "Universe"}</span>
+            <strong>{value}</strong>
+        </>
+    );
+}
+
+function TimelineDetailPoster({ entry }: { entry: TimelineEntry }) {
+    return (
+        <motion.div
+            className="timeline-detail-poster-shell"
+            layoutId={`timeline-poster-${entry.slug}`}
+            transition={{ damping: 30, stiffness: 280, type: "spring" }}
+        >
+            {entry.posterUrl ? (
+                <>
+                    <Image
+                        alt=""
+                        aria-hidden="true"
+                        className="timeline-detail-poster-ambient"
+                        fill
+                        sizes="(max-width: 640px) 108px, 192px"
+                        src={entry.posterUrl}
+                    />
+                    <Image
+                        alt={`${entry.title} poster`}
+                        className="timeline-detail-poster"
+                        fill
+                        sizes="(max-width: 640px) 108px, 192px"
+                        src={entry.posterUrl}
+                    />
+                </>
+            ) : (
+                <div className="timeline-detail-poster-fallback">
+                    <span>Poster unavailable</span>
+                </div>
+            )}
+            <div className="timeline-detail-poster-shade" />
+            <span className="timeline-detail-order">
+                #{String(entry.chronologyOrder / 10).padStart(2, "0")}
+            </span>
+        </motion.div>
+    );
+}
+
+function TimelineDetailHeading({ entry, onClose }: Pick<TimelineDetailProps, "entry" | "onClose">) {
+    return (
+        <div className="timeline-detail-heading">
+            <div>
+                <div className="timeline-detail-kicker">
+                    <p className="timeline-detail-eyebrow">
+                        {entry.placement}
+                        <span aria-hidden="true">
+                            <UiIcon name="diamond" />
+                        </span>
+                        {contentTypeNames[entry.contentType]}
+                    </p>
+                    <span className="timeline-detail-saga" data-saga={entry.saga}>
+                        <UiIcon name="sparkle" />
+                        {entry.saga}
+                    </span>
+                </div>
+                <h1 className="timeline-detail-title">{entry.title}</h1>
+            </div>
+            <button
+                aria-label="Close event details"
+                className="focus-ring timeline-detail-close"
+                onClick={onClose}
+                type="button"
+            >
+                <UiIcon name="close" />
+            </button>
+        </div>
+    );
+}
+
+function TimelineDetailMetadata({ entry }: { entry: TimelineEntry }) {
+    return (
+        <>
+            <div className="timeline-detail-facts">
+                {entry.rating === undefined ? null : (
+                    <div className="timeline-detail-rating">
+                        <span aria-hidden="true" className="timeline-detail-star">
+                            <UiIcon name="star" />
+                        </span>
+                        <strong>{entry.rating.toFixed(1)}</strong>
+                        <span>/ 10</span>
+                    </div>
+                )}
+                <span>{entry.runtime}</span>
+                <span>{entry.phase ?? "No MCU phase"}</span>
+                <span>{entry.releaseDate.slice(0, 4)}</span>
+            </div>
+            {entry.creditScenes ? (
+                <div className="timeline-detail-credits">
+                    <span aria-hidden="true" className="timeline-detail-credits-mark">
+                        <UiIcon name="sparkle" />
+                    </span>
+                    <span className="timeline-detail-credits-label">Credit scenes</span>
+                    <dl className="timeline-detail-credits-statuses">
+                        <div data-present={entry.creditScenes.during}>
+                            <dt>During</dt>
+                            <dd>{entry.creditScenes.during ? "Yes" : "No"}</dd>
+                        </div>
+                        <div data-present={entry.creditScenes.after}>
+                            <dt>After</dt>
+                            <dd>{entry.creditScenes.after ? "Yes" : "No"}</dd>
+                        </div>
+                    </dl>
+                </div>
+            ) : null}
+        </>
+    );
+}
+
+function TimelineDetailStory({ entry }: { entry: TimelineEntry }) {
+    return (
+        <>
+            <p className="timeline-detail-description">{entry.description}</p>
+            {entry.note ? <p className="timeline-detail-note">{entry.note}</p> : null}
+            {entry.genres && entry.genres.length > 0 ? (
+                <div className="timeline-detail-genres">
+                    {entry.genres.map((genre) => (
+                        <span key={genre}>{genre}</span>
+                    ))}
+                </div>
+            ) : null}
+        </>
+    );
+}
+
+function TimelineDetailWatch({
+    onToggleWatched,
+    watchable,
+    watched,
+}: Omit<TimelineDetailProps, "entry" | "onClose"> & { watchable: boolean }) {
     let watchAction = "Unavailable";
     let watchLabel = "Not released yet";
     if (watchable) {
         watchAction = watched ? "Undo" : "Mark watched";
         watchLabel = watched ? "Watched" : "Not watched yet";
     }
+    return (
+        <button
+            aria-pressed={watchable && watched}
+            className="focus-ring timeline-detail-watch"
+            data-unreleased={!watchable}
+            data-watched={watched}
+            disabled={!watchable}
+            onClick={onToggleWatched}
+            type="button"
+        >
+            <span aria-hidden="true" className="timeline-detail-watch-check">
+                <UiIcon name={watchable ? "check" : "minus"} />
+            </span>
+            <span className="timeline-detail-watch-copy">
+                <span>Watch progress</span>
+                <strong>{watchLabel}</strong>
+            </span>
+            <span className="timeline-detail-watch-action">{watchAction}</span>
+        </button>
+    );
+}
 
+function TraktLogo() {
+    return (
+        <svg
+            aria-label="Trakt"
+            className="timeline-detail-trakt-mark"
+            role="img"
+            viewBox="0 0 48 48"
+        >
+            <defs>
+                <radialGradient
+                    cx="48.46"
+                    cy="-.95"
+                    gradientUnits="userSpaceOnUse"
+                    id="trakt-logo-gradient"
+                    r="64.84"
+                >
+                    <stop offset="0" stopColor="#9f42c6" />
+                    <stop offset=".53" stopColor="#aa39ad" />
+                    <stop offset=".82" stopColor="#cf2061" />
+                    <stop offset="1" stopColor="#f50613" />
+                </radialGradient>
+            </defs>
+            <path
+                d="M48 11.26v25.47C48 42.95 42.95 48 36.73 48H11.26C5.04 48 0 42.95 0 36.73V11.26C0 5.04 5.04 0 11.26 0h25.47a11.24 11.24 0 0 1 9.62 5.4c1.06 1.72 1.65 3.74 1.65 5.86Z"
+                fill="url(#trakt-logo-gradient)"
+            />
+            <path
+                d="m13.62 17.97 7.92 7.92 1.47-1.47-7.92-7.92-1.47 1.47Zm14.39 14.4 1.47-1.46-2.16-2.16L47.64 8.43c-.19-.75-.46-1.46-.79-2.14L24.39 28.75l3.62 3.62Zm-15.09-13.7-1.46 1.46 14.4 14.4 1.46-1.47L23 28.75 46.35 5.4c-.36-.6-.78-1.16-1.25-1.68L21.54 27.28l-8.62-8.61Zm34.95-9.09L28.7 28.75l1.47 1.46L48 12.38v-1.12c0-.57-.04-1.14-.13-1.68ZM25.16 22.27l-7.92-7.92-1.47 1.47 7.92 7.92 1.47-1.47Zm16.16 12.85c0 3.42-2.78 6.2-6.2 6.2H12.88c-3.42 0-6.2-2.78-6.2-6.2V12.88c0-3.42 2.78-6.21 6.2-6.21h20.78V4.6H12.88c-4.56 0-8.28 3.71-8.28 8.28v22.24c0 4.56 3.71 8.28 8.28 8.28h22.24c4.56 0 8.28-3.71 8.28-8.28v-3.51h-2.07v3.51Z"
+                fill="#fff"
+            />
+        </svg>
+    );
+}
+
+function TimelineDetailFooter({ entry }: { entry: TimelineEntry }) {
+    return (
+        <div className="timeline-detail-footer">
+            <div className="timeline-detail-universe">
+                <TimelineUniverse entry={entry} />
+            </div>
+            {entry.imdbUrl ? (
+                <div className="timeline-detail-links">
+                    <a
+                        className="focus-ring timeline-detail-imdb"
+                        href={entry.imdbUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                    >
+                        <span className="timeline-detail-imdb-mark">IMDb</span>
+                        <span>Open on IMDb</span>
+                        <span aria-hidden="true" className="timeline-detail-arrow">
+                            <UiIcon name="external-link" />
+                        </span>
+                    </a>
+                    <a
+                        className="focus-ring timeline-detail-imdb timeline-detail-trakt"
+                        href={entry.traktUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                    >
+                        <TraktLogo />
+                        <span>Open on Trakt</span>
+                        <span aria-hidden="true" className="timeline-detail-arrow">
+                            <UiIcon name="external-link" />
+                        </span>
+                    </a>
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
+function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDetailProps) {
+    const watchable = isWatchable(entry);
     return (
         <motion.aside
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -118,197 +360,22 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
         >
             <div className="timeline-detail-glow" />
             <div className="timeline-detail-grid">
-                <motion.div
-                    className="timeline-detail-poster-shell"
-                    layoutId={`timeline-poster-${entry.slug}`}
-                    transition={{ damping: 30, stiffness: 280, type: "spring" }}
-                >
-                    {entry.posterUrl ? (
-                        <>
-                            <Image
-                                alt=""
-                                aria-hidden="true"
-                                className="timeline-detail-poster-ambient"
-                                fill
-                                sizes="(max-width: 640px) 108px, 192px"
-                                src={entry.posterUrl}
-                            />
-                            <Image
-                                alt={`${entry.title} poster`}
-                                className="timeline-detail-poster"
-                                fill
-                                sizes="(max-width: 640px) 108px, 192px"
-                                src={entry.posterUrl}
-                            />
-                        </>
-                    ) : (
-                        <div className="timeline-detail-poster-fallback">
-                            <span>Poster unavailable</span>
-                        </div>
-                    )}
-                    <div className="timeline-detail-poster-shade" />
-                    <span className="timeline-detail-order">
-                        #{String(entry.chronologyOrder / 10).padStart(2, "0")}
-                    </span>
-                </motion.div>
+                <TimelineDetailPoster entry={entry} />
                 <motion.div
                     animate={{ opacity: 1, x: 0 }}
                     className="timeline-detail-content"
                     initial={{ opacity: 0, x: -12 }}
                     transition={{ delay: 0.12, duration: 0.24 }}
                 >
-                    <div className="timeline-detail-heading">
-                        <div>
-                            <div className="timeline-detail-kicker">
-                                <p className="timeline-detail-eyebrow">
-                                    {entry.placement}
-                                    <span aria-hidden="true">
-                                        <UiIcon name="diamond" />
-                                    </span>
-                                    {contentTypeNames[entry.contentType]}
-                                </p>
-                                <span className="timeline-detail-saga" data-saga={entry.saga}>
-                                    <UiIcon name="sparkle" />
-                                    {entry.saga}
-                                </span>
-                            </div>
-                            <h1 className="timeline-detail-title">{entry.title}</h1>
-                        </div>
-                        <button
-                            aria-label="Close event details"
-                            className="focus-ring timeline-detail-close"
-                            onClick={onClose}
-                            type="button"
-                        >
-                            <UiIcon name="close" />
-                        </button>
-                    </div>
-
-                    <div className="timeline-detail-facts">
-                        {entry.rating === undefined ? null : (
-                            <div className="timeline-detail-rating">
-                                <span aria-hidden="true" className="timeline-detail-star">
-                                    <UiIcon name="star" />
-                                </span>
-                                <strong>{entry.rating.toFixed(1)}</strong>
-                                <span>/ 10</span>
-                            </div>
-                        )}
-                        <span>{entry.runtime}</span>
-                        {entry.phase ? <span>{entry.phase}</span> : null}
-                        <span>{entry.releaseDate.slice(0, 4)}</span>
-                    </div>
-
-                    {entry.creditScenes ? (
-                        <div className="timeline-detail-credits">
-                            <span aria-hidden="true" className="timeline-detail-credits-mark">
-                                <UiIcon name="sparkle" />
-                            </span>
-                            <span className="timeline-detail-credits-label">Credit scenes</span>
-                            <dl className="timeline-detail-credits-statuses">
-                                <div data-present={entry.creditScenes.during}>
-                                    <dt>During</dt>
-                                    <dd>{entry.creditScenes.during ? "Yes" : "No"}</dd>
-                                </div>
-                                <div data-present={entry.creditScenes.after}>
-                                    <dt>After</dt>
-                                    <dd>{entry.creditScenes.after ? "Yes" : "No"}</dd>
-                                </div>
-                            </dl>
-                        </div>
-                    ) : null}
-
-                    <p className="timeline-detail-description">{entry.description}</p>
-
-                    {entry.genres && entry.genres.length > 0 ? (
-                        <div className="timeline-detail-genres">
-                            {entry.genres.map((genre) => (
-                                <span key={genre}>{genre}</span>
-                            ))}
-                        </div>
-                    ) : null}
-
-                    <button
-                        aria-pressed={watchable && watched}
-                        className="focus-ring timeline-detail-watch"
-                        data-unreleased={!watchable}
-                        data-watched={watched}
-                        disabled={!watchable}
-                        onClick={onToggleWatched}
-                        type="button"
-                    >
-                        <span aria-hidden="true" className="timeline-detail-watch-check">
-                            <UiIcon name={watchable ? "check" : "minus"} />
-                        </span>
-                        <span className="timeline-detail-watch-copy">
-                            <span>Watch progress</span>
-                            <strong>{watchLabel}</strong>
-                        </span>
-                        <span className="timeline-detail-watch-action">{watchAction}</span>
-                    </button>
-
-                    <div className="timeline-detail-footer">
-                        <div className="timeline-detail-universe">
-                            <span>Universe</span>
-                            <strong>{entry.universe}</strong>
-                        </div>
-                        {entry.imdbUrl ? (
-                            <div className="timeline-detail-links">
-                                <a
-                                    className="focus-ring timeline-detail-imdb"
-                                    href={entry.imdbUrl}
-                                    rel="noreferrer"
-                                    target="_blank"
-                                >
-                                    <span className="timeline-detail-imdb-mark">IMDb</span>
-                                    <span>Open on IMDb</span>
-                                    <span aria-hidden="true" className="timeline-detail-arrow">
-                                        <UiIcon name="external-link" />
-                                    </span>
-                                </a>
-                                <a
-                                    className="focus-ring timeline-detail-imdb timeline-detail-trakt"
-                                    href={entry.traktUrl}
-                                    rel="noreferrer"
-                                    target="_blank"
-                                >
-                                    <svg
-                                        aria-label="Trakt"
-                                        className="timeline-detail-trakt-mark"
-                                        role="img"
-                                        viewBox="0 0 48 48"
-                                    >
-                                        <defs>
-                                            <radialGradient
-                                                cx="48.46"
-                                                cy="-.95"
-                                                gradientUnits="userSpaceOnUse"
-                                                id="trakt-logo-gradient"
-                                                r="64.84"
-                                            >
-                                                <stop offset="0" stopColor="#9f42c6" />
-                                                <stop offset=".53" stopColor="#aa39ad" />
-                                                <stop offset=".82" stopColor="#cf2061" />
-                                                <stop offset="1" stopColor="#f50613" />
-                                            </radialGradient>
-                                        </defs>
-                                        <path
-                                            d="M48 11.26v25.47C48 42.95 42.95 48 36.73 48H11.26C5.04 48 0 42.95 0 36.73V11.26C0 5.04 5.04 0 11.26 0h25.47a11.24 11.24 0 0 1 9.62 5.4c1.06 1.72 1.65 3.74 1.65 5.86Z"
-                                            fill="url(#trakt-logo-gradient)"
-                                        />
-                                        <path
-                                            d="m13.62 17.97 7.92 7.92 1.47-1.47-7.92-7.92-1.47 1.47Zm14.39 14.4 1.47-1.46-2.16-2.16L47.64 8.43c-.19-.75-.46-1.46-.79-2.14L24.39 28.75l3.62 3.62Zm-15.09-13.7-1.46 1.46 14.4 14.4 1.46-1.47L23 28.75 46.35 5.4c-.36-.6-.78-1.16-1.25-1.68L21.54 27.28l-8.62-8.61Zm34.95-9.09L28.7 28.75l1.47 1.46L48 12.38v-1.12c0-.57-.04-1.14-.13-1.68ZM25.16 22.27l-7.92-7.92-1.47 1.47 7.92 7.92 1.47-1.47Zm16.16 12.85c0 3.42-2.78 6.2-6.2 6.2H12.88c-3.42 0-6.2-2.78-6.2-6.2V12.88c0-3.42 2.78-6.21 6.2-6.21h20.78V4.6H12.88c-4.56 0-8.28 3.71-8.28 8.28v22.24c0 4.56 3.71 8.28 8.28 8.28h22.24c4.56 0 8.28-3.71 8.28-8.28v-3.51h-2.07v3.51Z"
-                                            fill="#fff"
-                                        />
-                                    </svg>
-                                    <span>Open on Trakt</span>
-                                    <span aria-hidden="true" className="timeline-detail-arrow">
-                                        <UiIcon name="external-link" />
-                                    </span>
-                                </a>
-                            </div>
-                        ) : null}
-                    </div>
+                    <TimelineDetailHeading entry={entry} onClose={onClose} />
+                    <TimelineDetailMetadata entry={entry} />
+                    <TimelineDetailStory entry={entry} />
+                    <TimelineDetailWatch
+                        onToggleWatched={onToggleWatched}
+                        watchable={watchable}
+                        watched={watched}
+                    />
+                    <TimelineDetailFooter entry={entry} />
                 </motion.div>
             </div>
         </motion.aside>
@@ -401,6 +468,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
     const activeFilterCount =
         filters.types.length +
         filters.phases.length +
+        filters.universes.length +
         (filters.query ? 1 : 0) +
         Number(filters.order === "release");
     let accountActionLabel = "Checking account...";
@@ -483,10 +551,23 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
     const handlePhaseToggle = useCallback(
         (event: MouseEvent<HTMLButtonElement>) => {
             const phase = event.currentTarget.dataset.value;
-            if (!isMcuPhase(phase)) {
+            if (!isTimelinePhaseFilter(phase)) {
                 return;
             }
             updateFilters({ ...filters, phases: toggleValue(filters.phases, phase) });
+        },
+        [filters, updateFilters]
+    );
+    const handleUniverseToggle = useCallback(
+        (event: MouseEvent<HTMLButtonElement>) => {
+            const universe = event.currentTarget.dataset.value;
+            if (!isTimelineUniverseFilter(universe)) {
+                return;
+            }
+            updateFilters({
+                ...filters,
+                universes: toggleValue(filters.universes, universe),
+            });
         },
         [filters, updateFilters]
     );
@@ -842,7 +923,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                                 <fieldset className="timeline-filter-group">
                                     <legend>Phase</legend>
                                     <div className="timeline-filter-phases">
-                                        {phases.map((phase, index) => {
+                                        {phaseFilters.map((phase, index) => {
                                             const active = filters.phases.includes(phase);
                                             return (
                                                 <button
@@ -857,6 +938,29 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                                                         {String(index + 1).padStart(2, "0")}
                                                     </span>
                                                     {phase}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </fieldset>
+
+                                <fieldset className="timeline-filter-group">
+                                    <legend>Universe</legend>
+                                    <div className="timeline-filter-phases">
+                                        {universeFilters.map((universe) => {
+                                            const active = filters.universes.includes(
+                                                universe.value
+                                            );
+                                            return (
+                                                <button
+                                                    aria-pressed={active}
+                                                    className="focus-ring timeline-filter-phase-option"
+                                                    data-value={universe.value}
+                                                    key={universe.value}
+                                                    onClick={handleUniverseToggle}
+                                                    type="button"
+                                                >
+                                                    {universe.label}
                                                 </button>
                                             );
                                         })}

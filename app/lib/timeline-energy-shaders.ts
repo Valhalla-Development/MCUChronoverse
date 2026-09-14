@@ -28,17 +28,22 @@ export const temporalCoreVertexShader = /* glsl */ `
     }
 `;
 
-export const temporalCoreFragmentShader = /* glsl */ `
+export function createTemporalCoreFragmentShader(merge = false) {
+    return /* glsl */ `
     uniform float uTime;
+    ${merge ? "uniform float uEndX; uniform float uMergeFadeLength;" : ""}
     varying vec3 vPosition;
     ${energyNoise}
 
     void main() {
         float heat = noise3(vPosition * vec3(3.4, 0.8, 0.8) - vec3(uTime * 0.24, 0, 0));
         vec3 ivory = mix(vec3(1.0, 0.88, 0.57), vec3(1.0, 0.985, 0.87), heat);
-        gl_FragColor = vec4(ivory, 1.0);
+        gl_FragColor = vec4(ivory, ${merge ? "smoothstep(0.0, uMergeFadeLength, uEndX - vPosition.x)" : "1.0"});
     }
 `;
+}
+
+export const temporalCoreFragmentShader = createTemporalCoreFragmentShader();
 
 export const temporalPlasmaVertexShader = /* glsl */ `
     varying vec3 vSurface;
@@ -49,14 +54,15 @@ export const temporalPlasmaVertexShader = /* glsl */ `
     }
 `;
 
+const plasmaShaderTokens = {
+    camera: "__TIMELINE_CAMERA__",
+    curveTransform: "__TIMELINE_CURVE_TRANSFORM__",
+    declarations: "__TIMELINE_DECLARATIONS__",
+    emissionTransform: "__TIMELINE_EMISSION_TRANSFORM__",
+} as const;
+
 /** Keep the volume integration identical for the main stream and its local connector curves. */
-export function createTemporalPlasmaFragmentShader({
-    camera = "cameraPosition",
-    curveTransform = "",
-    declarations = "",
-    emissionTransform = "",
-} = {}) {
-    return /* glsl */ `
+const temporalPlasmaFragmentShaderTemplate = /* glsl */ `
     uniform float uTime;
     uniform float uRadius;
     uniform float uNodeSpacing;
@@ -66,7 +72,7 @@ export function createTemporalPlasmaFragmentShader({
     uniform vec3 uBoundsMax;
     varying vec3 vSurface;
     ${energyNoise}
-    ${declarations}
+    ${plasmaShaderTokens.declarations}
 
     vec4 curveAt(float x) {
         float progress = clamp((x - uBoundsMin.x) / (uBoundsMax.x - uBoundsMin.x), 0.0, 1.0);
@@ -75,12 +81,12 @@ export function createTemporalPlasmaFragmentShader({
         vec4 a = texture2D(uCurve, vec2((first + 0.5) / uCurveSize, 0.5));
         vec4 b = texture2D(uCurve, vec2((min(first + 1.0, uCurveSize - 1.0) + 0.5) / uCurveSize, 0.5));
         vec4 curveSample = mix(a, b, fract(index));
-        ${curveTransform}
+        ${plasmaShaderTokens.curveTransform}
         return curveSample;
     }
 
     void main() {
-        vec3 cameraOrigin = ${camera};
+        vec3 cameraOrigin = ${plasmaShaderTokens.camera};
         vec3 ray = normalize(vSurface - cameraOrigin);
         // A closed proxy supplies one exit face from every angle, including from inside.
         // Clip parallel ray components explicitly instead of dividing by a near-zero angle.
@@ -182,10 +188,23 @@ export function createTemporalPlasmaFragmentShader({
         emission += vec3(0.065, 0.012, 0.002) * atmosphere * (0.65 + heat * 0.35);
         emission += vec3(0.11, 0.039, 0.005) * nodeHeat * exp(-radius * radius * 32.0);
         float edgeFade = 1.0 - smoothstep(uRadius * 0.72, uRadius, radius);
-        ${emissionTransform}
+        ${plasmaShaderTokens.emissionTransform}
         gl_FragColor = vec4(emission * edgeFade, 1.0);
     }
 `;
+
+/** Supply the few expressions that differ between the main stream and connector materials. */
+export function createTemporalPlasmaFragmentShader({
+    camera = "cameraPosition",
+    curveTransform = "",
+    declarations = "",
+    emissionTransform = "",
+} = {}) {
+    return temporalPlasmaFragmentShaderTemplate
+        .replace(plasmaShaderTokens.camera, () => camera)
+        .replace(plasmaShaderTokens.curveTransform, () => curveTransform)
+        .replace(plasmaShaderTokens.declarations, () => declarations)
+        .replace(plasmaShaderTokens.emissionTransform, () => emissionTransform);
 }
 
 export const temporalPlasmaFragmentShader = createTemporalPlasmaFragmentShader();

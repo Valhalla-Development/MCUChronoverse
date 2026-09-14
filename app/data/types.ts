@@ -23,7 +23,11 @@ export type McuPhase = (typeof phases)[number];
 
 export type ContentStatus = "released" | "announced";
 
-export type Saga = "Infinity Saga" | "Multiverse Saga";
+export type Saga =
+    | "Infinity Saga"
+    | "Multiverse Saga"
+    | "Sony Spider-Man Universe"
+    | "Fox X-Men Universe";
 
 export interface CreditScenesInfo {
     after: boolean;
@@ -42,11 +46,14 @@ export interface TimelineEntry {
     placement: string;
     posterUrl?: string;
     rating?: number;
+    /** Other histories represented by a shared story or a time-travel junction. */
+    relatedUniverses?: readonly string[];
     releaseDate: string;
     runtime: string;
     saga: Saga;
     slug: string;
     status: ContentStatus;
+    timelineRole?: "shared" | "junction";
     title: string;
     traktUrl: string;
     universe: string;
