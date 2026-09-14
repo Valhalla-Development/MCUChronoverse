@@ -735,6 +735,7 @@ a {
 .timeline-detail-note {
   margin: 0.75rem 0 0;
   font-size: 0.75rem;
+  font-style: italic;
   line-height: 1.55;
   color: rgb(244 241 232 / 70%);
 }
