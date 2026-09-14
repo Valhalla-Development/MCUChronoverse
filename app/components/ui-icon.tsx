@@ -9,6 +9,7 @@ type UiIconName =
     | "cloud-sync"
     | "diamond"
     | "external-link"
+    | "globe"
     | "minus"
     | "reset"
     | "search"
@@ -36,6 +37,13 @@ const iconPaths: Record<UiIconName, ReactNode> = {
     ),
     diamond: <path d="m8 2.5 5.5 5.5L8 13.5 2.5 8 8 2.5Z" />,
     "external-link": <path d="M4 12 12 4M6 4h6v6" />,
+    globe: (
+        <>
+            <circle cx="8" cy="8" r="6" />
+            <ellipse cx="8" cy="8" rx="2.5" ry="6" />
+            <path d="M2 8h12" />
+        </>
+    ),
     minus: <path d="M3 8h10" />,
     reset: <path d="M4.2 5.2A5 5 0 1 1 3 9M3 4v4h4" />,
     search: <path d="m11.5 11.5 2.5 2.5m-1.5-7.5a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z" />,

@@ -441,12 +441,22 @@ a {
 }
 
 .timeline-detail-card {
-  overflow: hidden;
+  position: absolute;
+  bottom: 9rem;
+  left: 1.75rem;
+  z-index: 100;
+  width: min(70rem, calc(100% - 3.5rem));
+  max-height: calc(100dvh - 16rem);
+  overflow: auto;
+  overscroll-behavior: contain;
   color: var(--ink);
+  scrollbar-color: #71617f #101017;
+  scrollbar-width: thin;
   background:
-    linear-gradient(135deg, rgb(17 18 22 / 96%), rgb(4 5 7 / 91%)),
-    radial-gradient(circle at 20% 0%, rgb(255 139 61 / 16%), transparent 45%);
-  border: 1px solid rgb(255 255 255 / 15%);
+    radial-gradient(ellipse at 100% 0%, rgb(106 72 155 / 17%), transparent 48%),
+    radial-gradient(ellipse at 0% 100%, rgb(197 134 56 / 9%), transparent 50%),
+    linear-gradient(135deg, rgb(18 20 29 / 98%), rgb(6 8 13 / 97%));
+  border: 1px solid rgb(179 173 218 / 38%);
   border-radius: 1.15rem;
   box-shadow:
     0 30px 100px rgb(0 0 0 / 68%),
@@ -486,16 +496,22 @@ a {
 .timeline-detail-grid {
   position: relative;
   display: grid;
-  grid-template-columns: 12rem minmax(0, 1fr);
-  min-height: 18rem;
+  grid-template-columns: clamp(13rem, 24vw, 17rem) minmax(0, 1fr);
+  gap: clamp(1.25rem, 3vw, 2.25rem);
+  min-height: 27rem;
+  padding: 1.5rem;
 }
 
 .timeline-detail-poster-shell {
   position: relative;
-  min-height: 100%;
+  min-height: 24rem;
   overflow: hidden;
   background: #0b0c0f;
-  border-right: 1px solid rgb(255 255 255 / 10%);
+  border: 1px solid rgb(221 181 105 / 48%);
+  border-radius: 0.65rem;
+  box-shadow:
+    0 0 0 5px rgb(255 255 255 / 3%),
+    0 12px 32px rgb(0 0 0 / 35%);
   isolation: isolate;
 }
 
@@ -555,7 +571,7 @@ a {
   z-index: 3;
   padding: 0.3rem 0.45rem;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   color: #ffd18a;
   letter-spacing: 0.14em;
   background: rgb(3 4 6 / 72%);
@@ -568,7 +584,7 @@ a {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 1.4rem 1.5rem 1.25rem;
+  padding: 0.5rem 0 0;
 }
 
 .timeline-detail-heading {
@@ -576,6 +592,7 @@ a {
   gap: 1rem;
   align-items: flex-start;
   justify-content: space-between;
+  padding-right: 2.75rem;
 }
 
 .timeline-detail-kicker {
@@ -587,12 +604,13 @@ a {
 
 .timeline-detail-eyebrow {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.55rem;
   align-items: center;
   margin: 0;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.62rem;
-  color: #ffb05e;
+  font-size: 0.7rem;
+  color: #eec775;
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }
@@ -607,10 +625,10 @@ a {
   display: inline-flex;
   gap: 0.32rem;
   align-items: center;
-  padding: 0.24rem 0.48rem 0.22rem;
+  padding: 0.35rem 0.65rem;
   overflow: hidden;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.56rem;
+  font-size: 0.62rem;
   font-weight: 650;
   color: #ffe4ad;
   text-transform: uppercase;
@@ -653,21 +671,26 @@ a {
 }
 
 .timeline-detail-title {
-  max-width: 30rem;
-  margin: 0.6rem 0 0;
-  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  max-width: 100%;
+  margin: 0.9rem 0 0;
+  font-size: clamp(1.8rem, 3.6vw, 3.25rem);
   font-weight: 650;
-  line-height: 1.04;
+  line-height: 1.08;
   letter-spacing: -0.045em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
 .timeline-detail-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
-  color: rgb(244 241 232 / 38%);
+  width: 2.75rem;
+  height: 2.75rem;
+  color: #bfc0d3;
   cursor: pointer;
   background: rgb(255 255 255 / 3%);
   border: 1px solid rgb(255 255 255 / 12%);
@@ -693,8 +716,8 @@ a {
   align-items: center;
   margin-top: 0.85rem;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.62rem;
-  color: rgb(244 241 232 / 38%);
+  font-size: 0.75rem;
+  color: #a6a5b7;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -708,11 +731,11 @@ a {
   display: inline-flex;
   gap: 0.24rem;
   align-items: baseline;
-  color: rgb(244 241 232 / 42%);
+  color: #a6a5b7;
 }
 
 .timeline-detail-rating strong {
-  font-size: 0.76rem;
+  font-size: 1rem;
   color: #fff1c7;
   letter-spacing: 0;
 }
@@ -723,22 +746,19 @@ a {
 }
 
 .timeline-detail-description {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
   margin: 1rem 0 0;
-  overflow: hidden;
-  -webkit-line-clamp: 4;
-  font-size: 0.82rem;
+  font-size: 0.98rem;
   line-height: 1.62;
-  color: rgb(244 241 232 / 61%);
+  color: #bfc0cf;
 }
 
 .timeline-detail-note {
+  padding-left: 0.75rem;
   margin: 0.75rem 0 0;
   font-size: 0.75rem;
-  font-style: italic;
   line-height: 1.55;
   color: rgb(244 241 232 / 70%);
+  border-left: 2px solid rgb(189 152 255 / 45%);
 }
 
 .timeline-detail-credits {
@@ -810,14 +830,14 @@ a {
 }
 
 .timeline-detail-genres span {
-  padding: 0.28rem 0.52rem;
+  padding: 0.4rem 0.75rem;
   font-family: var(--font-geist-mono), monospace;
   font-size: 0.6rem;
-  color: rgb(244 241 232 / 48%);
+  color: #bfc0d3;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   background: rgb(255 255 255 / 3%);
-  border: 1px solid rgb(255 255 255 / 9%);
+  border: 1px solid rgb(181 179 211 / 28%);
   border-radius: 999px;
 }
 
@@ -828,9 +848,9 @@ a {
   gap: 0.7rem;
   align-items: center;
   width: 100%;
-  min-height: 3.1rem;
-  padding: 0.55rem 0.7rem;
-  margin-top: 0.9rem;
+  min-height: 5.25rem;
+  padding: 0.9rem 1rem;
+  margin-top: 1.5rem;
   overflow: hidden;
   text-align: left;
   cursor: pointer;
@@ -862,15 +882,17 @@ a {
   background:
     linear-gradient(105deg, rgb(255 154 73 / 14%), rgb(255 181 94 / 3%)),
     rgb(255 255 255 / 2%);
-  border-color: rgb(255 173 85 / 48%);
-  box-shadow: 0 10px 32px rgb(255 117 44 / 8%);
+  border-color: rgb(242 192 104 / 75%);
+  box-shadow:
+    0 0 22px rgb(255 174 65 / 10%),
+    0 0 0 3px rgb(244 194 102 / 5%) inset;
 }
 
 .timeline-detail-watch-check {
   display: grid;
   place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
   font-size: 0.68rem;
   color: transparent;
   border: 1px solid rgb(255 255 255 / 22%);
@@ -902,14 +924,14 @@ a {
 
 .timeline-detail-watch-copy > span {
   font-size: 0.58rem;
-  color: rgb(244 241 232 / 28%);
+  color: #aaa2a0;
   letter-spacing: 0.17em;
 }
 
 .timeline-detail-watch-copy strong {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.7rem;
+  font-size: 1rem;
   font-weight: 500;
   color: rgb(244 241 232 / 68%);
   letter-spacing: 0.06em;
@@ -921,11 +943,17 @@ a {
 }
 
 .timeline-detail-watch-action {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
   font-family: var(--font-geist-mono), monospace;
   font-size: 0.58rem;
-  color: rgb(244 241 232 / 34%);
+  color: #c3b7a7;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+  border: 1px solid rgb(204 178 133 / 25%);
+  border-radius: 999px;
   transition: color 180ms ease;
 }
 
@@ -1355,32 +1383,48 @@ a {
   align-items: flex-end;
   justify-content: space-between;
   padding-top: 1rem;
-  margin-top: auto;
+  margin-top: 1.25rem;
+  border-top: 1px solid rgb(178 166 203 / 14%);
 }
 
 .timeline-detail-universe {
   display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
+  gap: 0.65rem;
+  align-items: center;
+  min-width: 0;
   font-family: var(--font-geist-mono), monospace;
   text-transform: uppercase;
 }
 
+.timeline-detail-universe > .ui-icon {
+  width: 1.6rem;
+  height: 1.6rem;
+  color: #87849f;
+}
+
+.timeline-detail-universe > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  overflow-wrap: anywhere;
+}
+
 .timeline-detail-universe span {
   font-size: 0.6rem;
-  color: rgb(244 241 232 / 26%);
+  color: #a6a5b7;
   letter-spacing: 0.15em;
 }
 
 .timeline-detail-universe strong {
   font-size: 0.64rem;
   font-weight: 500;
-  color: rgb(244 241 232 / 58%);
+  color: #e0dce9;
   letter-spacing: 0.1em;
 }
 
 .timeline-detail-links {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
   margin-left: auto;
@@ -1390,13 +1434,13 @@ a {
   display: inline-flex;
   gap: 0.55rem;
   align-items: center;
-  min-height: 2.25rem;
-  padding: 0.38rem 0.55rem 0.38rem 0.42rem;
+  min-height: 3rem;
+  padding: 0.65rem 0.8rem;
   font-size: 0.69rem;
   font-weight: 650;
   color: rgb(255 255 255 / 72%);
-  background: rgb(255 255 255 / 4%);
-  border: 1px solid rgb(255 255 255 / 12%);
+  background: linear-gradient(135deg, rgb(245 197 24 / 9%), transparent);
+  border: 1px solid rgb(224 183 92 / 40%);
   border-radius: 0.55rem;
   transition:
     color 180ms ease,
@@ -1432,6 +1476,15 @@ a {
 
 .timeline-detail-imdb:hover .timeline-detail-arrow {
   transform: translate(2px, -2px);
+}
+
+.timeline-detail-trakt {
+  background: linear-gradient(135deg, rgb(173 93 249 / 12%), transparent);
+  border-color: rgb(185 134 246 / 45%);
+}
+
+.timeline-detail-trakt .timeline-detail-arrow {
+  color: #d9b8ff;
 }
 
 .timeline-detail-trakt:hover {
@@ -2289,59 +2342,94 @@ a {
     overflow-y: auto;
   }
 
+  .timeline-detail-card {
+    bottom: 8rem;
+    left: 0.75rem;
+    width: calc(100% - 1.5rem);
+    max-height: calc(100dvh - 13rem);
+    border-radius: 1rem;
+  }
+
   .timeline-detail-grid {
-    grid-template-columns: 6.75rem minmax(0, 1fr);
-    min-height: 16.5rem;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 1rem;
+    min-height: 0;
+    padding: 1rem;
   }
 
-  .timeline-detail-content {
-    padding: 1rem 0.9rem 0.85rem;
+  .timeline-detail-poster-shell {
+    align-self: start;
+    min-height: 9rem;
   }
 
-  .timeline-detail-title {
-    margin-top: 0.45rem;
-    font-size: 1.25rem;
-  }
-
-  .timeline-detail-kicker {
-    gap: 0.35rem 0.5rem;
-  }
-
-  .timeline-detail-saga {
-    padding: 0.2rem 0.4rem 0.18rem;
+  .timeline-detail-poster-fallback {
+    min-height: 9rem;
     font-size: 0.5rem;
   }
 
+  .timeline-detail-order {
+    bottom: 0.35rem;
+    left: 0.35rem;
+    font-size: 0.55rem;
+  }
+
+  .timeline-detail-content {
+    display: contents;
+  }
+
+  .timeline-detail-heading {
+    align-self: center;
+    padding-right: 1.8rem;
+  }
+
+  .timeline-detail-close {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .timeline-detail-title {
+    margin-top: 0.6rem;
+    font-size: clamp(1.3rem, 5vw, 1.8rem);
+  }
+
+  .timeline-detail-eyebrow {
+    gap: 0.3rem;
+    font-size: 0.56rem;
+    letter-spacing: 0.06em;
+  }
+
+  .timeline-detail-saga {
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
+  }
+
+  .timeline-detail-content > :not(.timeline-detail-heading) {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+
   .timeline-detail-description {
-    margin-top: 0.75rem;
-    -webkit-line-clamp: 3;
-    font-size: 0.72rem;
-    line-height: 1.5;
+    font-size: 0.88rem;
   }
 
   .timeline-detail-watch {
-    min-height: 2.65rem;
-    margin-top: 0.65rem;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .timeline-detail-watch-copy strong {
+    font-size: 0.78rem;
+    white-space: normal;
   }
 
   .timeline-detail-watch-action {
-    display: none;
-  }
-
-  .timeline-detail-genres span:nth-child(n + 4) {
-    display: none;
-  }
-
-  .timeline-detail-footer {
-    padding-top: 0.7rem;
-  }
-
-  .timeline-detail-universe {
-    display: none;
+    padding: 0.45rem;
+    font-size: 0.5rem;
   }
 
   .timeline-detail-links {
     width: 100%;
+    margin-left: 0;
   }
 
   .timeline-detail-imdb {

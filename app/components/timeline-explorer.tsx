@@ -132,14 +132,14 @@ function TimelineDetailPoster({ entry }: { entry: TimelineEntry }) {
                         aria-hidden="true"
                         className="timeline-detail-poster-ambient"
                         fill
-                        sizes="(max-width: 640px) 108px, 192px"
+                        sizes="(max-width: 640px) 96px, (max-width: 900px) 208px, 272px"
                         src={entry.posterUrl}
                     />
                     <Image
                         alt={`${entry.title} poster`}
                         className="timeline-detail-poster"
                         fill
-                        sizes="(max-width: 640px) 108px, 192px"
+                        sizes="(max-width: 640px) 96px, (max-width: 900px) 208px, 272px"
                         src={entry.posterUrl}
                     />
                 </>
@@ -173,7 +173,9 @@ function TimelineDetailHeading({ entry, onClose }: Pick<TimelineDetailProps, "en
                         {entry.saga}
                     </span>
                 </div>
-                <h1 className="timeline-detail-title">{entry.title}</h1>
+                <h1 className="timeline-detail-title" id="timeline-detail-title">
+                    {entry.title}
+                </h1>
             </div>
             <button
                 aria-label="Close event details"
@@ -270,7 +272,10 @@ function TimelineDetailWatch({
                 <span>Watch progress</span>
                 <strong>{watchLabel}</strong>
             </span>
-            <span className="timeline-detail-watch-action">{watchAction}</span>
+            <span className="timeline-detail-watch-action">
+                {watchable ? <UiIcon name={watched ? "undo" : "check"} /> : null}
+                {watchAction}
+            </span>
         </button>
     );
 }
@@ -313,7 +318,10 @@ function TimelineDetailFooter({ entry }: { entry: TimelineEntry }) {
     return (
         <div className="timeline-detail-footer">
             <div className="timeline-detail-universe">
-                <TimelineUniverse entry={entry} />
+                <UiIcon name="globe" />
+                <div>
+                    <TimelineUniverse entry={entry} />
+                </div>
             </div>
             {entry.imdbUrl ? (
                 <div className="timeline-detail-links">
@@ -352,7 +360,8 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
     return (
         <motion.aside
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="timeline-detail-card absolute bottom-36 left-4 z-100 w-[min(47rem,calc(100%-2rem))] sm:bottom-40 sm:left-7 sm:w-[min(47rem,calc(100%-3.5rem))]"
+            aria-labelledby="timeline-detail-title"
+            className="timeline-detail-card"
             data-timeline-detail="true"
             exit={{ opacity: 0, scale: 0.97, y: 10 }}
             initial={{ opacity: 0, scale: 0.94, y: 18 }}
