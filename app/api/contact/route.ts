@@ -8,7 +8,9 @@ import { siteOrigin } from "../../lib/site-origin";
 
 export const runtime = "nodejs";
 
-const githubRepositoryPattern = /^[A-Za-z\d](?:[A-Za-z\d.-]{0,38})?\/[A-Za-z\d_.-]+$/;
+const alphaNumericCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const githubOwnerCharacters = `${alphaNumericCharacters}.-`;
+const githubRepositoryCharacters = `${githubOwnerCharacters}_`;
 const developmentTurnstileSecret = "1x0000000000000000000000000000000AA";
 const requestWindowMs = 10 * 60 * 1000;
 const requestLimit = 10;
@@ -25,6 +27,21 @@ interface TurnstileResult {
 interface GitHubIssueResult {
     html_url?: string;
     number?: number;
+}
+
+function isGitHubRepository(value: string): boolean {
+    const [owner, repository, extra] = value.split("/");
+    return (
+        extra === undefined &&
+        owner !== undefined &&
+        repository !== undefined &&
+        owner.length >= 1 &&
+        owner.length <= 39 &&
+        repository.length >= 1 &&
+        alphaNumericCharacters.includes(owner.charAt(0)) &&
+        [...owner].every((character) => githubOwnerCharacters.includes(character)) &&
+        [...repository].every((character) => githubRepositoryCharacters.includes(character))
+    );
 }
 
 function response(body: object, status: number, headers?: HeadersInit) {
@@ -144,7 +161,7 @@ async function createGitHubIssue(title: string, body: string): Promise<GitHubIss
         throw new Error("GITHUB_ISSUES_TOKEN is required");
     }
     const repository = process.env.GITHUB_ISSUES_REPOSITORY;
-    if (!(repository && githubRepositoryPattern.test(repository))) {
+    if (!(repository && isGitHubRepository(repository))) {
         throw new Error("GITHUB_ISSUES_REPOSITORY must be a valid owner/repository value");
     }
 
