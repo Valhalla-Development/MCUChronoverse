@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
-import type { MouseEventHandler, RefObject } from "react";
+import { type MouseEventHandler, type RefObject, useCallback } from "react";
 import type { TimelineEntry } from "../data/types";
 import { isWatchable } from "../lib/timeline";
 import { UiIcon } from "./ui-icon";
@@ -108,24 +108,28 @@ function WatchProgressTile({
     );
 }
 
-export function WatchProgressMenu({
-    accountActionLabel,
-    accountReady,
-    containerRef,
-    nextEntries,
-    onAccountAction,
-    onEntrySelect,
-    onEntryToggle,
-    onReset,
-    onToggleOpen,
-    open,
-    pendingSlug,
-    signedIn,
-    syncError,
-    totalWatchedCount,
-    visibleEntryCount,
-    visibleWatchedCount,
-}: WatchProgressMenuProps) {
+export function WatchProgressMenu(props: WatchProgressMenuProps) {
+    const {
+        accountActionLabel,
+        accountReady,
+        containerRef,
+        nextEntries,
+        onAccountAction,
+        onEntrySelect,
+        onEntryToggle,
+        onReset,
+        onToggleOpen,
+        open,
+        pendingSlug,
+        signedIn,
+        syncError,
+        totalWatchedCount,
+        visibleEntryCount,
+        visibleWatchedCount,
+    } = props;
+    const handleAccountAction = useCallback(() => {
+        Promise.resolve(onAccountAction()).catch(() => undefined);
+    }, [onAccountAction]);
     const progress = visibleEntryCount
         ? `${(visibleWatchedCount / visibleEntryCount) * 100}%`
         : "0%";
@@ -180,7 +184,7 @@ export function WatchProgressMenu({
                                 aria-label={accountActionLabel}
                                 className="focus-ring timeline-watchlist-account"
                                 disabled={!accountReady}
-                                onClick={onAccountAction}
+                                onClick={handleAccountAction}
                                 type="button"
                             >
                                 <UiIcon name={signedIn ? "sign-out" : "cloud-sync"} />

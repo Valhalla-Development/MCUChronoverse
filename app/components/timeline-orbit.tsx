@@ -733,7 +733,7 @@ function InstancedNodeSphereGroup({
 
     const handleSelect = useCallback(
         (event: ThreeEvent<MouseEvent>) => {
-            const instance = instances[event.instanceId ?? -1];
+            const instance = instances.at(event.instanceId ?? -1);
             if (!instance) {
                 return;
             }
@@ -876,8 +876,12 @@ function InstancedTimelineRings({
         ]
     );
 
-    useLayoutEffect(() => updateRings(0), [updateRings]);
-    useFrame(({ clock }) => updateRings(reducedMotion ? 0 : clock.elapsedTime));
+    useLayoutEffect(() => {
+        updateRings(0);
+    }, [updateRings]);
+    useFrame(({ clock }) => {
+        updateRings(reducedMotion ? 0 : clock.elapsedTime);
+    });
 
     return (
         <>
@@ -1186,8 +1190,8 @@ function TimelineCards({
     watchedSlugs,
 }: TimelineCardsProps) {
     const [hoveredSlug, setHoveredSlug] = useState<string>();
-    const billboardRefs = useRef<Array<Group | null>>([]);
-    const cardRefs = useRef<Array<Group | null>>([]);
+    const billboardRefs = useRef<(Group | null)[]>([]);
+    const cardRefs = useRef<(Group | null)[]>([]);
     const anchorViewPosition = useMemo(() => new Vector3(), []);
     const culling = useMemo(
         () => ({ frustum: new Frustum(), projection: new Matrix4(), sphere: new Sphere() }),
@@ -1195,7 +1199,12 @@ function TimelineCards({
     );
     const connectionRef = useRef<InstancedMesh>(null);
     const connectionMaterial = useMemo(CONNECTOR_EFFECT.card.createMaterial, []);
-    useEffect(() => () => connectionMaterial.dispose(), [connectionMaterial]);
+    useEffect(
+        () => () => {
+            connectionMaterial.dispose();
+        },
+        [connectionMaterial]
+    );
     const connection = useMemo(
         () => ({
             direction: new Vector3(),
@@ -1298,7 +1307,7 @@ function TimelineCards({
         connectionMaterial.uniforms.uMotion.value = reducedMotion ? 0 : 1;
         culling.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
         culling.frustum.setFromProjectionMatrix(culling.projection);
-        let animationMoving = false;
+        let maximumAnimationDelta = 0;
         entries.forEach((entry, index) => {
             const billboard = billboardRefs.current[index];
             const card = cardRefs.current[index];
@@ -1331,9 +1340,11 @@ function TimelineCards({
             card.visible = visible;
             updateConnection(billboard, card, index, visible);
             if (!visible) {
-                animationMoving ||=
-                    Math.abs(nextScale - targetScale) > 0.001 ||
-                    Math.abs(nextOffsetY - targetOffsetY) > 0.001;
+                maximumAnimationDelta = Math.max(
+                    maximumAnimationDelta,
+                    Math.abs(nextScale - targetScale),
+                    Math.abs(nextOffsetY - targetOffsetY)
+                );
                 return;
             }
             registrations[index].worldPosition.applyMatrix4(camera.matrixWorldInverse);
@@ -1344,12 +1355,14 @@ function TimelineCards({
                 anchorViewPosition.z,
                 selected
             );
-            animationMoving ||=
-                Math.abs(nextScale - targetScale) > 0.001 ||
-                Math.abs(nextOffsetY - targetOffsetY) > 0.001;
+            maximumAnimationDelta = Math.max(
+                maximumAnimationDelta,
+                Math.abs(nextScale - targetScale),
+                Math.abs(nextOffsetY - targetOffsetY)
+            );
         });
         (connectionRef.current as InstancedMesh).instanceMatrix.needsUpdate = true;
-        if (animationMoving) {
+        if (maximumAnimationDelta > 0.001) {
             invalidate();
         }
     });
@@ -1735,7 +1748,9 @@ function DemandFrameLoop() {
             animationFrame = window.requestAnimationFrame(requestFrame);
         };
         animationFrame = window.requestAnimationFrame(requestFrame);
-        return () => window.cancelAnimationFrame(animationFrame);
+        return () => {
+            window.cancelAnimationFrame(animationFrame);
+        };
     }, [invalidate]);
 
     return null;
@@ -1744,7 +1759,7 @@ function DemandFrameLoop() {
 function supportsWebGl(): boolean {
     try {
         const canvas = document.createElement("canvas");
-        return Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+        return Boolean(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
     } catch {
         return false;
     }
@@ -1827,7 +1842,9 @@ export function TimelineOrbit({
         };
         updateCompactMode();
         compactMediaQuery.addEventListener("change", updateCompactMode);
-        return () => compactMediaQuery.removeEventListener("change", updateCompactMode);
+        return () => {
+            compactMediaQuery.removeEventListener("change", updateCompactMode);
+        };
     }, []);
 
     if (webGlSupported === null) {

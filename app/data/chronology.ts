@@ -14,7 +14,7 @@ interface TitleMetadataRecord {
     status: "failed" | "resolved";
 }
 
-const metadataBySlug = titleMetadata as Record<string, TitleMetadataRecord>;
+const metadataBySlug = titleMetadata as Partial<Record<string, TitleMetadataRecord>>;
 const requiredMetadataFields = [
     "description",
     "genres",

@@ -424,7 +424,9 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
             }
         };
         window.addEventListener("keydown", handleEscape);
-        return () => window.removeEventListener("keydown", handleEscape);
+        return () => {
+            window.removeEventListener("keydown", handleEscape);
+        };
     }, []);
 
     useEffect(
@@ -448,7 +450,9 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
         };
 
         document.addEventListener("pointerdown", handleOutsidePointerDown, true);
-        return () => document.removeEventListener("pointerdown", handleOutsidePointerDown, true);
+        return () => {
+            document.removeEventListener("pointerdown", handleOutsidePointerDown, true);
+        };
     }, []);
 
     const updateFilters = useCallback(
@@ -463,8 +467,8 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
 
     const visibleEntries = useMemo(() => filterTimeline(entries, filters), [entries, filters]);
     const safeTimelineIndex = Math.min(timelineIndex, Math.max(visibleEntries.length - 1, 0));
-    const activeEntry = visibleEntries[safeTimelineIndex];
-    const nextEntry = visibleEntries[safeTimelineIndex + 1];
+    const activeEntry = visibleEntries.at(safeTimelineIndex);
+    const nextEntry = visibleEntries.at(safeTimelineIndex + 1);
     const activeFilterCount =
         filters.types.length +
         filters.phases.length +
@@ -496,7 +500,9 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
         setFiltersOpen(false);
         setWatchlistOpen((current) => !current);
     }, []);
-    const closeDetail = useCallback(() => setSelectedEntry(null), []);
+    const closeDetail = useCallback(() => {
+        setSelectedEntry(null);
+    }, []);
     const resetWatchStatus = useCallback(() => {
         clearTimeout(pendingWatchTimeout.current ?? undefined);
         setPendingWatchSlug(null);
@@ -523,7 +529,9 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
         },
         [selectedEntry]
     );
-    const resetFilters = useCallback(() => updateFilters(emptyTimelineFilters), [updateFilters]);
+    const resetFilters = useCallback(() => {
+        updateFilters(emptyTimelineFilters);
+    }, [updateFilters]);
     const handleSearchChange = useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
             updateFilters({ ...filters, query: event.currentTarget.value });
@@ -541,11 +549,12 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
         [filters, updateFilters]
     );
     const handleOrderChange = useCallback(
-        (event: MouseEvent<HTMLButtonElement>) =>
+        (event: MouseEvent<HTMLButtonElement>) => {
             updateFilters({
                 ...filters,
                 order: event.currentTarget.dataset.value as TimelineOrder,
-            }),
+            });
+        },
         [filters, updateFilters]
     );
     const handlePhaseToggle = useCallback(

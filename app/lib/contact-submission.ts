@@ -30,6 +30,16 @@ interface ParseResult {
     submission?: ContactSubmission;
 }
 
+interface ContactFields {
+    category: string | null;
+    context: string | null;
+    correction: string | null;
+    entrySlug: string | null;
+    problem: string | null;
+    source: string | null;
+    turnstileToken: string | null;
+}
+
 const chronologyBySlug = new Map(chronology.map((entry) => [entry.slug, entry]));
 
 function readString(value: unknown): string | null {
@@ -57,58 +67,115 @@ function safeIssueText(value: string): string {
     return value.replaceAll("@", "@\u200B").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
+function readContactFields(input: Record<string, unknown>): ContactFields {
+    return {
+        category: readString(input.category),
+        context: readString(input.context),
+        correction: readString(input.correction),
+        entrySlug: readString(input.entrySlug),
+        problem: readString(input.problem),
+        source: readString(input.source),
+        turnstileToken: readString(input.turnstileToken),
+    };
+}
+
+function categoryError(category: string | null): string | undefined {
+    return category && contactCategories.includes(category as ContactSubmission["category"])
+        ? undefined
+        : "Choose what needs attention.";
+}
+
+function boundedTextError(
+    value: string | null,
+    minimum: number,
+    maximum: number,
+    message: string
+): string | undefined {
+    return value && value.length >= minimum && value.length <= maximum ? undefined : message;
+}
+
+function contactFieldError(fields: ContactFields): string | undefined {
+    const errors = [
+        categoryError(fields.category),
+        boundedTextError(
+            fields.problem,
+            10,
+            2000,
+            "Describe the current problem in between 10 and 2,000 characters."
+        ),
+        boundedTextError(
+            fields.correction,
+            10,
+            2000,
+            "Describe the suggested change in between 10 and 2,000 characters."
+        ),
+        fields.context !== null && fields.context.length <= 1000
+            ? undefined
+            : "Additional context must be no longer than 1,000 characters.",
+        fields.source !== null && fields.source.length <= 500 && isAllowedSource(fields.source)
+            ? undefined
+            : "Supporting evidence must be a valid HTTP or HTTPS link.",
+        fields.turnstileToken && fields.turnstileToken.length <= 2048
+            ? undefined
+            : "Complete the verification before submitting.",
+    ];
+    return errors.find((error) => error !== undefined);
+}
+
+function contactEntry(fields: ContactFields) {
+    if (!(fields.category && fields.entrySlug && entryContactCategories.has(fields.category))) {
+        return;
+    }
+    return chronologyBySlug.get(fields.entrySlug);
+}
+
+function normalizedField(value: string | null): string {
+    return value ?? "";
+}
+
+function contactEntryTitle(entry: ReturnType<typeof contactEntry>): string {
+    return entry?.title ?? "Not applicable";
+}
+
+function entryError(fields: ContactFields, entry: ReturnType<typeof contactEntry>) {
+    return fields.category && entryContactCategories.has(fields.category) && !entry
+        ? "Select the timeline entry this report is about."
+        : undefined;
+}
+
+function validSubmission(
+    fields: ContactFields,
+    entry: ReturnType<typeof contactEntry>
+): ContactSubmission {
+    return {
+        category: fields.category as ContactSubmission["category"],
+        context: normalizedField(fields.context),
+        correction: normalizedField(fields.correction),
+        entryTitle: contactEntryTitle(entry),
+        problem: normalizedField(fields.problem),
+        source: normalizedField(fields.source),
+        turnstileToken: normalizedField(fields.turnstileToken),
+    };
+}
+
 export function parseContactSubmission(value: unknown): ParseResult {
     if (!value || typeof value !== "object") {
         return { error: "The suggestion could not be read." };
     }
 
-    const input = value as Record<string, unknown>;
-    const category = readString(input.category);
-    const context = readString(input.context);
-    const correction = readString(input.correction);
-    const entrySlug = readString(input.entrySlug);
-    const problem = readString(input.problem);
-    const source = readString(input.source);
-    const turnstileToken = readString(input.turnstileToken);
-
-    if (!(category && contactCategories.includes(category as ContactSubmission["category"]))) {
-        return { error: "Choose what needs attention." };
-    }
-    if (!problem || problem.length < 10 || problem.length > 2000) {
-        return { error: "Describe the current problem in between 10 and 2,000 characters." };
-    }
-    if (!correction || correction.length < 10 || correction.length > 2000) {
-        return { error: "Describe the suggested change in between 10 and 2,000 characters." };
-    }
-    if (context === null || context.length > 1000) {
-        return { error: "Additional context must be no longer than 1,000 characters." };
-    }
-    if (source === null || source.length > 500 || !isAllowedSource(source)) {
-        return { error: "Supporting evidence must be a valid HTTP or HTTPS link." };
-    }
-    if (!turnstileToken || turnstileToken.length > 2048) {
-        return { error: "Complete the verification before submitting." };
+    const fields = readContactFields(value as Record<string, unknown>);
+    const error = contactFieldError(fields);
+    if (error) {
+        return { error };
     }
 
-    const entry =
-        entryContactCategories.has(category) && entrySlug
-            ? chronologyBySlug.get(entrySlug)
-            : undefined;
-    if (entryContactCategories.has(category) && !entry) {
-        return { error: "Select the timeline entry this report is about." };
+    const entry = contactEntry(fields);
+    const missingEntryError = entryError(fields, entry);
+    if (missingEntryError) {
+        return { error: missingEntryError };
     }
 
-    return {
-        submission: {
-            category: category as ContactSubmission["category"],
-            context,
-            correction,
-            entryTitle: entry?.title ?? "Not applicable",
-            problem,
-            source,
-            turnstileToken,
-        },
-    };
+    return { submission: validSubmission(fields, entry) };
 }
 
 export function buildContactIssue(submission: ContactSubmission): {

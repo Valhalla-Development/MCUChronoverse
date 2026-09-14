@@ -31,10 +31,10 @@ interface TraktSearchResult {
     show?: {
         ids: { slug?: string };
     };
-    type: "movie" | "show";
+    type: string;
 }
 
-type MetadataCache = Record<string, CacheRecord>;
+type MetadataCache = Partial<Record<string, CacheRecord>>;
 
 const cachePath = resolve(import.meta.dir, "../app/data/title-metadata.json");
 // biome-ignore lint/correctness/noUndeclaredVariables: This script runs in the Bun runtime.
@@ -87,8 +87,11 @@ const lookupTraktUrl = async (imdbUrl: string): Promise<string> => {
 
     const results = (await response.json()) as TraktSearchResult[];
     const result = results.find((item) => item.type === "movie" || item.type === "show");
-    const slug = result?.type === "movie" ? result.movie?.ids.slug : result?.show?.ids.slug;
-    if (!(result && slug)) {
+    if (!result) {
+        throw new Error(`Trakt returned no movie or show for ${imdbId}`);
+    }
+    const slug = result.type === "movie" ? result.movie?.ids.slug : result.show?.ids.slug;
+    if (!slug) {
         throw new Error(`Trakt returned no movie or show for ${imdbId}`);
     }
 
@@ -128,7 +131,7 @@ const lookupTitle = async (
         }
     }
 
-    throw lastError ?? new Error(`No result found for ${title}`);
+    throw lastError instanceof Error ? lastError : new Error(`No result found for ${title}`);
 };
 
 const requireEnvironmentVariable = (name: "TMDB_READ_ACCESS_TOKEN" | "TRAKT_CLIENT_ID") => {

@@ -8,7 +8,9 @@ import { siteOrigin } from "../../lib/site-origin";
 
 export const runtime = "nodejs";
 
-const githubRepositoryPattern = /^[A-Za-z\d](?:[A-Za-z\d.-]{0,38})?\/[A-Za-z\d_.-]+$/;
+const alphaNumericCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const githubOwnerCharacters = `${alphaNumericCharacters}.-`;
+const githubRepositoryCharacters = `${githubOwnerCharacters}_`;
 const developmentTurnstileSecret = "1x0000000000000000000000000000000AA";
 const requestWindowMs = 10 * 60 * 1000;
 const requestLimit = 10;
@@ -25,6 +27,22 @@ interface TurnstileResult {
 interface GitHubIssueResult {
     html_url?: string;
     number?: number;
+}
+
+function isGitHubRepository(value: string): boolean {
+    const separatorIndex = value.indexOf("/");
+    if (separatorIndex <= 0 || separatorIndex !== value.lastIndexOf("/")) {
+        return false;
+    }
+    const owner = value.slice(0, separatorIndex);
+    const repository = value.slice(separatorIndex + 1);
+    return (
+        owner.length <= 39 &&
+        repository.length >= 1 &&
+        alphaNumericCharacters.includes(owner.charAt(0)) &&
+        [...owner].every((character) => githubOwnerCharacters.includes(character)) &&
+        [...repository].every((character) => githubRepositoryCharacters.includes(character))
+    );
 }
 
 function response(body: object, status: number, headers?: HeadersInit) {
@@ -144,7 +162,7 @@ async function createGitHubIssue(title: string, body: string): Promise<GitHubIss
         throw new Error("GITHUB_ISSUES_TOKEN is required");
     }
     const repository = process.env.GITHUB_ISSUES_REPOSITORY;
-    if (!(repository && githubRepositoryPattern.test(repository))) {
+    if (!(repository && isGitHubRepository(repository))) {
         throw new Error("GITHUB_ISSUES_REPOSITORY must be a valid owner/repository value");
     }
 
@@ -168,7 +186,7 @@ async function createGitHubIssue(title: string, body: string): Promise<GitHubIss
     return (await githubResponse.json()) as GitHubIssueResult;
 }
 
-export async function POST(request: NextRequest) {
+function requestValidationResponse(request: NextRequest) {
     if (!hasTrustedOrigin(request)) {
         return response({ error: "This submission origin is not allowed." }, 403);
     }
@@ -180,81 +198,104 @@ export async function POST(request: NextRequest) {
     if (contentLength > maximumRequestBytes) {
         return response({ error: "That suggestion is too large to submit." }, 413);
     }
+    return null;
+}
 
-    let address: string;
-    let addressKey: string;
-    try {
-        address = clientAddress(request);
-        addressKey = rateLimitKey(address);
-    } catch (error) {
-        log.error("Contact protection is not configured", error);
-        return response({ error: "The suggestion service is not configured right now." }, 503);
-    }
-    if (process.env.NODE_ENV === "production") {
-        const rateLimit = await checkDurableContactRateLimit(`request:${addressKey}`, {
-            limit: requestLimit,
-            windowMs: requestWindowMs,
-        }).catch((error: unknown) => {
-            log.error("Contact rate limiting is unavailable", error);
-            return null;
-        });
-        if (!rateLimit) {
-            return response({ error: "The suggestion service is unavailable right now." }, 503);
-        }
-        if (!rateLimit.allowed) {
-            return response(
-                {
-                    error: "Too many suggestions were sent from this connection. Try again shortly.",
-                },
-                429,
-                { "Retry-After": String(rateLimit.retryAfterSeconds) }
-            );
-        }
-    }
+function clientContext(request: NextRequest) {
+    const address = clientAddress(request);
+    return { address, addressKey: rateLimitKey(address) };
+}
 
+async function requestRateLimitResponse(addressKey: string) {
+    if (process.env.NODE_ENV !== "production") {
+        return null;
+    }
+    const rateLimit = await checkDurableContactRateLimit(`request:${addressKey}`, {
+        limit: requestLimit,
+        windowMs: requestWindowMs,
+    }).catch((error: unknown) => {
+        log.error("Contact rate limiting is unavailable", error);
+        return null;
+    });
+    if (!rateLimit) {
+        return response({ error: "The suggestion service is unavailable right now." }, 503);
+    }
+    return rateLimit.allowed
+        ? null
+        : response(
+              {
+                  error: "Too many suggestions were sent from this connection. Try again shortly.",
+              },
+              429,
+              { "Retry-After": String(rateLimit.retryAfterSeconds) }
+          );
+}
+
+async function submissionRateLimitResponse(addressKey: string) {
+    if (process.env.NODE_ENV !== "production") {
+        return null;
+    }
+    const rateLimit = await checkDurableContactRateLimit(`submission:${addressKey}`, {
+        limit: submissionLimit,
+        windowMs: submissionWindowMs,
+    });
+    return rateLimit.allowed
+        ? null
+        : response(
+              {
+                  error: "This connection has reached the hourly suggestion limit. Try again later.",
+              },
+              429,
+              { "Retry-After": String(rateLimit.retryAfterSeconds) }
+          );
+}
+
+async function submitContactRequest(request: NextRequest, address: string, addressKey: string) {
     const bodyResult = await readContactPayload(request);
     if (!bodyResult.ok) {
         return bodyResult.response;
     }
-
     const parsed = parseContactSubmission(bodyResult.value);
     if (!parsed.submission) {
         return response({ error: parsed.error ?? "Check the suggestion and try again." }, 400);
     }
+    const verified = await verifyTurnstile(parsed.submission.turnstileToken, address);
+    if (!verified) {
+        return response({ error: "Verification expired or failed. Please try again." }, 400);
+    }
+    const rateLimitResponse = await submissionRateLimitResponse(addressKey);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
+    const issue = buildContactIssue(parsed.submission);
+    const createdIssue = await createGitHubIssue(issue.title, issue.body);
+    if (!(createdIssue.html_url && createdIssue.number)) {
+        throw new Error("GitHub returned an incomplete issue response");
+    }
+    log.ok(`Timeline suggestion #${createdIssue.number} was created`);
+    return response({ issueNumber: createdIssue.number, issueUrl: createdIssue.html_url }, 201);
+}
+
+export async function POST(request: NextRequest) {
+    const validationResponse = requestValidationResponse(request);
+    if (validationResponse) {
+        return validationResponse;
+    }
+
+    let context: ReturnType<typeof clientContext>;
+    try {
+        context = clientContext(request);
+    } catch (error) {
+        log.error("Contact protection is not configured", error);
+        return response({ error: "The suggestion service is not configured right now." }, 503);
+    }
+    const rateLimitResponse = await requestRateLimitResponse(context.addressKey);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
 
     try {
-        const verified = await verifyTurnstile(parsed.submission.turnstileToken, address);
-        if (!verified) {
-            return response({ error: "Verification expired or failed. Please try again." }, 400);
-        }
-
-        if (process.env.NODE_ENV === "production") {
-            const submissionRateLimit = await checkDurableContactRateLimit(
-                `submission:${addressKey}`,
-                {
-                    limit: submissionLimit,
-                    windowMs: submissionWindowMs,
-                }
-            );
-            if (!submissionRateLimit.allowed) {
-                return response(
-                    {
-                        error: "This connection has reached the hourly suggestion limit. Try again later.",
-                    },
-                    429,
-                    { "Retry-After": String(submissionRateLimit.retryAfterSeconds) }
-                );
-            }
-        }
-
-        const issue = buildContactIssue(parsed.submission);
-        const createdIssue = await createGitHubIssue(issue.title, issue.body);
-        if (!(createdIssue.html_url && createdIssue.number)) {
-            throw new Error("GitHub returned an incomplete issue response");
-        }
-
-        log.ok(`Timeline suggestion #${createdIssue.number} was created`);
-        return response({ issueNumber: createdIssue.number, issueUrl: createdIssue.html_url }, 201);
+        return await submitContactRequest(request, context.address, context.addressKey);
     } catch (error) {
         log.error("Timeline suggestion could not be created", error);
         return response(

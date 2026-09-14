@@ -1,14 +1,11 @@
-import { readFileSync } from "node:fs";
 import { isMetadataCacheRecordStale, type MetadataCacheRecord } from "./app/data/metadata-freshness";
 import titleMetadata from "./app/data/title-metadata.json";
 import { log } from "./app/lib/console";
 import { isSupabaseConfigured } from "./app/lib/supabase/config";
+import packageMetadata from "./package.json";
 
 const globalForBoot = globalThis as typeof globalThis & { __portalBooted?: boolean };
 
-const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as {
-    version: string;
-};
 const metadataRecords = titleMetadata as Record<string, MetadataCacheRecord>;
 
 function runtimeLabel(): string {
@@ -39,7 +36,7 @@ export function registerNode(): void {
         origin,
         pid: String(process.pid),
         runtime: runtimeLabel(),
-        version: `v${pkg.version}`,
+        version: `v${packageMetadata.version}`,
     });
     const staleMetadataCount = Object.values(metadataRecords).filter((record) =>
         isMetadataCacheRecordStale(record)
