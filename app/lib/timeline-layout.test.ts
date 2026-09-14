@@ -134,8 +134,8 @@ describe("timeline branches", () => {
             }
             for (const stream of layout.streams) {
                 stream.entries.forEach((entry, index) => {
-                    expect(layout.positions[ordered.indexOf(entry)]).toEqual(
-                        stream.points[stream.nodePointIndices[index]]
+                    expect(layout.positions.at(ordered.indexOf(entry))).toEqual(
+                        stream.points.at(stream.nodePointIndices.at(index) ?? -1)
                     );
                 });
             }

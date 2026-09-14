@@ -967,16 +967,20 @@ function TimelineNodeFilaments({ stream, instances, reducedMotion }: TimelineNod
         const finalIndex = Math.max(points.length - 1, 1);
         let armIndex = 0;
         instances.forEach(({ entry, position }, index) => {
+            const nodePointIndex = nodePointIndices.at(index);
+            if (nodePointIndex === undefined) {
+                return;
+            }
             for (const direction of [-1, 1]) {
                 // End anchors only draw the arm that joins the existing stream.
                 if (
-                    (nodePointIndices[index] === 0 && direction === -1) ||
-                    (nodePointIndices[index] === points.length - 1 && direction === 1)
+                    (nodePointIndex === 0 && direction === -1) ||
+                    (nodePointIndex === points.length - 1 && direction === 1)
                 ) {
                     continue;
                 }
                 const curveProgress = MathUtils.clamp(
-                    (nodePointIndices[index] + direction * segmentFraction) / finalIndex,
+                    (nodePointIndex + direction * segmentFraction) / finalIndex,
                     0,
                     1
                 );
@@ -1031,7 +1035,10 @@ function InstancedTimelineNodes({
     const instances = useMemo(
         () =>
             entries.map((entry, index) => {
-                const position = points[nodePointIndices[index]];
+                const position = points.at(nodePointIndices.at(index) ?? -1);
+                if (!position) {
+                    throw new Error(`Missing node position for ${entry.slug}`);
+                }
                 return {
                     entry,
                     position: new Vector3(position.x, position.y + NODE_LIFT, position.z),
@@ -1356,20 +1363,25 @@ function TimelineCards({
                 renderOrder={3}
             />
             {entries.map((entry, index) => {
+                const registration = registrations.at(index);
+                const position = positions.at(index);
+                if (!(registration && position)) {
+                    throw new Error(`Missing card layout for ${entry.slug}`);
+                }
                 const selected = selectedSlug === entry.slug;
                 const highlighted = selected || focusIndex === index || hoveredSlug === entry.slug;
                 return (
                     <TimelineNode
-                        billboardRef={registrations[index].billboardRef}
-                        cardDepthOffset={cardDepthOffsets[index]}
-                        cardRef={registrations[index].cardRef}
+                        billboardRef={registration.billboardRef}
+                        cardDepthOffset={cardDepthOffsets.at(index) ?? 0}
+                        cardRef={registration.cardRef}
                         entry={entry}
                         highlighted={highlighted}
                         key={entry.slug}
                         onCardPointerOut={handlePointerOut}
                         onCardPointerOver={handlePointerOver}
                         onCardSelect={handleSelect}
-                        position={positions[index]}
+                        position={position}
                         watched={watchedSlugSet.has(entry.slug)}
                     />
                 );
@@ -1571,19 +1583,26 @@ interface TimelineSceneProps {
 const EARTH_MARKER_PREFIX = /^Earth-/;
 
 function UniverseMarker({ stream }: { stream: TimelineStream }) {
-    const billboard = useRef<Group | null>(null);
+    const billboard = useRef<Group>(undefined);
+    const captureBillboard = useCallback<RefCallback<Group>>((group) => {
+        billboard.current = group ?? undefined;
+    }, []);
     const position = useMemo(
-        () => stream.points[0].clone().add(new Vector3(-1.25, 0.12, 0)),
+        () => (stream.points.at(0) ?? new Vector3()).clone().add(new Vector3(-1.25, 0.12, 0)),
         [stream.points]
     );
     useFrame(({ camera }) => {
-        const group = billboard.current as Group;
+        const group = billboard.current;
+        // biome-ignore lint/suspicious/noUnnecessaryConditions: the ref is unset before mount.
+        if (!group) {
+            return;
+        }
         // Stream labels billboard independently; movie rendering keeps its existing budget.
         group.visible = camera.position.distanceToSquared(position) < 625;
         group.quaternion.copy(camera.quaternion);
     });
     return (
-        <group position={position} ref={billboard}>
+        <group position={position} ref={captureBillboard}>
             <Text
                 anchorX="center"
                 anchorY="middle"
@@ -1752,11 +1771,11 @@ export function TimelineOrbit({
     const layout = useMemo(() => createTimelineLayout(entries), [entries]);
     const safeFocusIndex = Math.min(Math.max(focusIndex, 0), Math.max(entries.length - 1, 0));
     const focusPosition = useMemo(() => {
-        const nodePosition = layout.positions[safeFocusIndex] ?? new Vector3();
+        const nodePosition = layout.positions.at(safeFocusIndex) ?? new Vector3();
         return new Vector3(
             nodePosition.x,
             nodePosition.y + TIMELINE_CARD_FOCUS_OFFSET_Y,
-            nodePosition.z + (layout.cardDepthOffsets[safeFocusIndex] ?? 0)
+            nodePosition.z + (layout.cardDepthOffsets.at(safeFocusIndex) ?? 0)
         );
     }, [layout, safeFocusIndex]);
     const handleZoomDistanceChange = useCallback((nextDistance: number) => {

@@ -101,52 +101,59 @@ describe("Sony chronology", () => {
     });
 });
 
+const foxExpected = [
+    ["x-men-first-class-2011", "tt1270798"],
+    ["x-men-days-of-future-past-2014", "tt1877832"],
+    ["x-men-origins-wolverine-2009", "tt0458525"],
+    ["x-men-apocalypse-2016", "tt3385516"],
+    ["dark-phoenix-2019", "tt6565702"],
+    ["x-men-2000", "tt0120903"],
+    ["x2-2003", "tt0290334"],
+    ["x-men-the-last-stand-2006", "tt0376994"],
+    ["the-wolverine-2013", "tt1430132"],
+    ["deadpool-2016", "tt1431045"],
+    ["deadpool-2-2018", "tt5463162"],
+    ["the-new-mutants-2020", "tt4682266"],
+    ["logan-2017", "tt3315342"],
+] as const;
+const originalFoxHistory = new Set([
+    "x-men-origins-wolverine-2009",
+    "x-men-2000",
+    "x2-2003",
+    "x-men-the-last-stand-2006",
+    "the-wolverine-2013",
+]);
+const fox = filterTimeline(chronology, {
+    ...emptyTimelineFilters,
+    query: "Fox X-Men Universe",
+});
+
 describe("Fox X-Men chronology", () => {
-    test("orders the Fox stories by their main setting, with Logan after the contemporary crossover", () => {
-        const expected = [
-            ["x-men-first-class-2011", "tt1270798"],
-            ["x-men-days-of-future-past-2014", "tt1877832"],
-            ["x-men-origins-wolverine-2009", "tt0458525"],
-            ["x-men-apocalypse-2016", "tt3385516"],
-            ["dark-phoenix-2019", "tt6565702"],
-            ["x-men-2000", "tt0120903"],
-            ["x2-2003", "tt0290334"],
-            ["x-men-the-last-stand-2006", "tt0376994"],
-            ["the-wolverine-2013", "tt1430132"],
-            ["deadpool-2016", "tt1431045"],
-            ["deadpool-2-2018", "tt5463162"],
-            ["the-new-mutants-2020", "tt4682266"],
-            ["logan-2017", "tt3315342"],
-        ];
+    test("orders the Fox stories by their main setting", () => {
         const ordered = filterTimeline(chronology, emptyTimelineFilters);
         const start = ordered.findIndex((entry) => entry.slug === "visionquest");
         expect(ordered.slice(start, start + 16).map((entry) => entry.slug)).toEqual([
             "visionquest",
-            ...expected.slice(0, -1).map(([slug]) => slug),
+            ...foxExpected.slice(0, -1).map(([slug]) => slug),
             "deadpool-and-wolverine",
             "logan-2017",
             "avengers-doomsday",
         ]);
         const formerStart = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
-        expect(ordered[formerStart + 1]?.slug).toBe("agatha-all-along");
-        const fox = filterTimeline(chronology, {
-            ...emptyTimelineFilters,
-            query: "Fox X-Men Universe",
-        });
+        expect(ordered.at(formerStart + 1)?.slug).toBe("agatha-all-along");
+        expect(fox.at(-1)?.slug).toBe("logan-2017");
+    });
+
+    test("uses deterministic identities and confirmed placements", () => {
         expect(fox.map((entry) => [entry.slug, entry.imdbUrl])).toEqual(
-            expected.map(([slug, imdb]) => [slug, `https://www.imdb.com/title/${imdb}/`])
+            foxExpected.map(([slug, imdb]) => [slug, `https://www.imdb.com/title/${imdb}/`])
         );
         expect(fox.find((entry) => entry.slug === "logan-2017")?.placement).toBe("2029");
-        expect(fox.at(-1)?.slug).toBe("logan-2017");
+    });
+
+    test("keeps complete metadata and separates both histories", () => {
         for (const entry of fox) {
-            const originalHistory = [
-                "x-men-origins-wolverine-2009",
-                "x-men-2000",
-                "x2-2003",
-                "x-men-the-last-stand-2006",
-                "the-wolverine-2013",
-            ];
-            let universe = originalHistory.includes(entry.slug) ? "Earth-41578" : "Earth-10005";
+            let universe = originalFoxHistory.has(entry.slug) ? "Earth-41578" : "Earth-10005";
             if (entry.timelineRole === "shared") {
                 universe = "Shared Fox history";
             }
@@ -161,6 +168,9 @@ describe("Fox X-Men chronology", () => {
             expect(entry.runtime).toBeTruthy();
             expect(isWatchable(entry)).toBe(true);
         }
+    });
+
+    test("supports Fox filters and release order", () => {
         expect(
             filterTimeline(fox, { ...emptyTimelineFilters, phases: ["Phase Five"] })
         ).toHaveLength(0);

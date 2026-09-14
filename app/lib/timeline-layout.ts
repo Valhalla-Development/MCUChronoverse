@@ -42,12 +42,13 @@ function createTimelineCurve(points: readonly Vector3[]): Curve<Vector3> {
 
 function branchJunction(main: TimelineStream, mergeBefore?: string): Vector3 | undefined {
     const index = main.entries.findIndex((entry) => entry.slug === mergeBefore);
-    if (index < 0) {
+    const nodePointIndex = main.nodePointIndices.at(index);
+    if (index < 0 || nodePointIndex === undefined) {
         return undefined;
     }
     // The same crossover remains the anchor in chronology and release order.
     return main.curve.getPoint(
-        Math.max(main.nodePointIndices[index] - 0.5, 0) / Math.max(main.points.length - 1, 1)
+        Math.max(nodePointIndex - 0.5, 0) / Math.max(main.points.length - 1, 1)
     );
 }
 
@@ -109,9 +110,10 @@ function mergeProgress(target: TimelineStream, branch: TimelineBranch): number |
         return target.entries.at(-1)?.slug === branch.mergeAfter ? 1 : undefined;
     }
     const index = target.entries.findIndex((entry) => entry.slug === branch.mergeBefore);
-    return index < 0
+    const nodePointIndex = target.nodePointIndices.at(index);
+    return index < 0 || nodePointIndex === undefined
         ? undefined
-        : Math.max(target.nodePointIndices[index] - 0.5, 0) / Math.max(target.points.length - 1, 1);
+        : Math.max(nodePointIndex - 0.5, 0) / Math.max(target.points.length - 1, 1);
 }
 
 function extendMainStream(
@@ -163,9 +165,12 @@ function createHistoryConnections(
             mergeAtStart: false,
             mergeBefore: branch.forkBefore,
         });
-        const start = source?.points[source.nodePointIndices.at(-1) ?? 0];
-        if (!(start && destination)) {
+        if (!(source && destination)) {
             // A filtered-out shared past or reset must not leave a dangling connection.
+            return [];
+        }
+        const start = source.points.at(source.nodePointIndices.at(-1) ?? 0);
+        if (!start) {
             return [];
         }
         const end = destination.point;
@@ -213,7 +218,10 @@ function separateDetachedPoints(
         return;
     }
     const occupied = streams.flatMap((stream) =>
-        stream.nodePointIndices.map((index) => stream.points[index])
+        stream.nodePointIndices.flatMap((index) => {
+            const point = stream.points.at(index);
+            return point ? [point] : [];
+        })
     );
     // Missing destinations use fallback shelves. Move only those shelves, keeping
     // connected streams and the main timeline fixed when filters change.
@@ -239,10 +247,10 @@ function separateDetachedPoints(
     }
 }
 
-export function createTimelineLayout(
+function validateAssignedUniverses(
     entries: readonly TimelineEntry[],
-    branches: readonly TimelineBranch[] = timelineBranches
-): TimelineLayout {
+    branches: readonly TimelineBranch[]
+): void {
     const branchUniverses = new Set(branches.map((branch) => branch.universe));
     const unassigned = entries.find(
         (entry) => entry.universe !== "Earth-616" && !branchUniverses.has(entry.universe)
@@ -250,6 +258,13 @@ export function createTimelineLayout(
     if (unassigned) {
         throw new Error(`Missing timeline branch for ${unassigned.universe}`);
     }
+}
+
+function createMainStream(
+    entries: readonly TimelineEntry[],
+    branches: readonly TimelineBranch[]
+): TimelineStream {
+    const branchUniverses = new Set(branches.map((branch) => branch.universe));
     const mainEntries = entries.filter((entry) => !branchUniverses.has(entry.universe));
     const mainPoints = mainEntries.map((_, index) => {
         const point = timelineNodePosition(index, mainEntries.length);
@@ -257,7 +272,7 @@ export function createTimelineLayout(
     });
     // Reserve a card-free continuation for entries after the last known Earth-616 story.
     extendMainStream(mainPoints, mainEntries, entries, branches);
-    const main: TimelineStream = {
+    return {
         curve: createTimelineCurve(mainPoints),
         entries: mainEntries,
         id: "main",
@@ -265,56 +280,98 @@ export function createTimelineLayout(
         points: mainPoints,
         universeMarker: "Earth-616",
     };
-    const streams = mainEntries.length ? [main] : [];
-    for (const branch of orderBranches(branches)) {
-        const branchEntries = entriesForBranch(entries, branch);
-        if (!branchEntries.length) {
-            continue;
-        }
-        const target = branch.mergeIntoUniverse
-            ? streams.find((stream) => stream.id === branch.mergeIntoUniverse)
-            : main;
-        const connection = connectionTo(target, branch);
-        const junction = connection?.point;
-        const origin =
-            junction ??
-            branchJunction(main, branch.anchorBefore) ??
-            new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
-        const [offsetY, offsetZ] = branch.offset;
-        const points = createBranchPoints(branch, branchEntries.length, origin);
-        separateDetachedPoints(points, streams, junction);
-        if (junction && connection) {
-            // Hide the merge when its target is filtered out, rather than imply a
-            // crossover with an unrelated visible title. The alternate stream stays separate.
-            const { tangent } = connection;
-            // Approach along the main tangent so the join cannot hook above the stream.
-            points.push(
-                junction.clone().add(new Vector3(-5.2, offsetY, offsetZ)),
-                junction.clone().add(new Vector3(-2.5, offsetY * 0.5, offsetZ * 0.5)),
-                junction.clone().add(new Vector3(-1.5, offsetY * 0.12, offsetZ * 0.12)),
-                junction.clone().addScaledVector(tangent, -0.75),
-                junction.clone().addScaledVector(tangent, -0.35),
-                junction
-            );
-        }
-        streams.push({
-            curve: createTimelineCurve(points),
-            entries: branchEntries,
-            id: branch.id ?? branch.universe,
-            markerCaption: branch.markerCaption,
-            mergeFadeLength: junction ? 2 : undefined,
-            nodePointIndices: branchEntries.map((_, index) => index),
-            points,
-            universeMarker: branch.showUniverseMarker
-                ? (branch.markerTitle ?? branch.universe)
-                : undefined,
-        });
+}
+
+function appendMergePoints(
+    points: Vector3[],
+    junction: Vector3,
+    tangent: Vector3,
+    offset: readonly [number, number]
+): void {
+    const [offsetY, offsetZ] = offset;
+    points.push(
+        junction.clone().add(new Vector3(-5.2, offsetY, offsetZ)),
+        junction.clone().add(new Vector3(-2.5, offsetY * 0.5, offsetZ * 0.5)),
+        junction.clone().add(new Vector3(-1.5, offsetY * 0.12, offsetZ * 0.12)),
+        junction.clone().addScaledVector(tangent, -0.75),
+        junction.clone().addScaledVector(tangent, -0.35),
+        junction
+    );
+}
+
+function createBranchStream(
+    entries: readonly TimelineEntry[],
+    branch: TimelineBranch,
+    main: TimelineStream,
+    streams: readonly TimelineStream[]
+): TimelineStream | undefined {
+    const branchEntries = entriesForBranch(entries, branch);
+    if (!branchEntries.length) {
+        return undefined;
     }
+    const target = branch.mergeIntoUniverse
+        ? streams.find((stream) => stream.id === branch.mergeIntoUniverse)
+        : main;
+    const connection = connectionTo(target, branch);
+    const junction = connection?.point;
+    const origin =
+        junction ??
+        branchJunction(main, branch.anchorBefore) ??
+        new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
+    const points = createBranchPoints(branch, branchEntries.length, origin);
+    separateDetachedPoints(points, streams, junction);
+    if (junction && connection) {
+        // Approach along the target tangent and hide the merge if the target is filtered out.
+        appendMergePoints(points, junction, connection.tangent, branch.offset);
+    }
+    return {
+        curve: createTimelineCurve(points),
+        entries: branchEntries,
+        id: branch.id ?? branch.universe,
+        markerCaption: branch.markerCaption,
+        mergeFadeLength: junction ? 2 : undefined,
+        nodePointIndices: branchEntries.map((_, index) => index),
+        points,
+        universeMarker: branch.showUniverseMarker
+            ? (branch.markerTitle ?? branch.universe)
+            : undefined,
+    };
+}
+
+function positionsForEntries(
+    entries: readonly TimelineEntry[],
+    streams: readonly TimelineStream[]
+): Vector3[] {
     const positionsBySlug = new Map<string, Vector3>();
     for (const stream of streams) {
         stream.entries.forEach((entry, index) => {
-            positionsBySlug.set(entry.slug, stream.points[stream.nodePointIndices[index]]);
+            const position = stream.points.at(stream.nodePointIndices.at(index) ?? -1);
+            if (position) {
+                positionsBySlug.set(entry.slug, position);
+            }
         });
+    }
+    return entries.map((entry) => {
+        const position = positionsBySlug.get(entry.slug);
+        if (!position) {
+            throw new Error(`Missing timeline position for ${entry.slug}`);
+        }
+        return position;
+    });
+}
+
+export function createTimelineLayout(
+    entries: readonly TimelineEntry[],
+    branches: readonly TimelineBranch[] = timelineBranches
+): TimelineLayout {
+    validateAssignedUniverses(entries, branches);
+    const main = createMainStream(entries, branches);
+    const streams: TimelineStream[] = main.entries.length ? [main] : [];
+    for (const branch of orderBranches(branches)) {
+        const stream = createBranchStream(entries, branch, main, streams);
+        if (stream) {
+            streams.push(stream);
+        }
     }
     return {
         cardDepthOffsets: entries.map(
@@ -322,7 +379,7 @@ export function createTimelineLayout(
                 branches.find((branch) => branch.universe === entry.universe)?.cardDepthOffset ?? 0
         ),
         connections: createHistoryConnections(streams, branches),
-        positions: entries.map((entry) => positionsBySlug.get(entry.slug) as Vector3),
+        positions: positionsForEntries(entries, streams),
         streams,
     };
 }
