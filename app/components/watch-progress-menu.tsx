@@ -108,24 +108,25 @@ function WatchProgressTile({
     );
 }
 
-export function WatchProgressMenu({
-    accountActionLabel,
-    accountReady,
-    containerRef,
-    nextEntries,
-    onAccountAction,
-    onEntrySelect,
-    onEntryToggle,
-    onReset,
-    onToggleOpen,
-    open,
-    pendingSlug,
-    signedIn,
-    syncError,
-    totalWatchedCount,
-    visibleEntryCount,
-    visibleWatchedCount,
-}: WatchProgressMenuProps) {
+export function WatchProgressMenu(props: WatchProgressMenuProps) {
+    const {
+        accountActionLabel,
+        accountReady,
+        containerRef,
+        nextEntries,
+        onAccountAction,
+        onEntrySelect,
+        onEntryToggle,
+        onReset,
+        onToggleOpen,
+        open,
+        pendingSlug,
+        signedIn,
+        syncError,
+        totalWatchedCount,
+        visibleEntryCount,
+        visibleWatchedCount,
+    } = props;
     const progress = visibleEntryCount
         ? `${(visibleWatchedCount / visibleEntryCount) * 100}%`
         : "0%";

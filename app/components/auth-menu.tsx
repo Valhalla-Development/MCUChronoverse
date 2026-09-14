@@ -178,18 +178,19 @@ interface EmailAuthFormProps {
     submitLabel: string;
 }
 
-function EmailAuthForm({
-    busy,
-    email,
-    mode,
-    onEmailChange,
-    onPasswordChange,
-    onPasswordConfirmationChange,
-    onSubmit,
-    password,
-    passwordConfirmation,
-    submitLabel,
-}: EmailAuthFormProps) {
+function EmailAuthForm(props: EmailAuthFormProps) {
+    const {
+        busy,
+        email,
+        mode,
+        onEmailChange,
+        onPasswordChange,
+        onPasswordConfirmationChange,
+        onSubmit,
+        password,
+        passwordConfirmation,
+        submitLabel,
+    } = props;
     const showAccountEntry = mode === "sign-in" || mode === "sign-up";
     const showConfirmation = mode === "sign-up" || mode === "reset-password";
     const showEmail = mode !== "reset-password";
