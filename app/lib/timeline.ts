@@ -94,35 +94,51 @@ export function filterTimeline(
 ): TimelineEntry[] {
     const query = filters.query.trim().toLocaleLowerCase("en-GB");
     return entries
-        .filter((entry) => {
-            const matchesQuery =
-                query.length === 0 ||
-                entry.title.toLocaleLowerCase("en-GB").includes(query) ||
-                entry.description.toLocaleLowerCase("en-GB").includes(query) ||
-                entry.universe.toLocaleLowerCase("en-GB").includes(query) ||
-                entry.relatedUniverses?.some((universe) =>
-                    universe.toLocaleLowerCase("en-GB").includes(query)
-                ) ||
-                entry.saga.toLocaleLowerCase("en-GB").includes(query);
-            const matchesType =
-                filters.types.length === 0 || filters.types.includes(entry.contentType);
-            const matchesPhase =
-                filters.phases.length === 0 ||
-                (entry.phase !== undefined && filters.phases.includes(entry.phase));
-            const matchesUniverse =
-                filters.universes.length === 0 ||
-                filters.universes.includes(universeFilterForEntry(entry));
-            return matchesQuery && matchesType && matchesPhase && matchesUniverse;
-        })
-        .sort((left, right) => {
-            if (filters.order === "release") {
-                return (
-                    left.releaseDate.localeCompare(right.releaseDate) ||
-                    left.chronologyOrder - right.chronologyOrder
-                );
-            }
-            return left.chronologyOrder - right.chronologyOrder;
-        });
+        .filter((entry) => entryMatchesFilters(entry, filters, query))
+        .sort((left, right) => compareTimelineEntries(left, right, filters.order));
+}
+
+function entryMatchesQuery(entry: TimelineEntry, query: string): boolean {
+    if (query.length === 0) {
+        return true;
+    }
+    const searchableValues = [entry.title, entry.description, entry.universe, entry.saga];
+    return (
+        searchableValues.some((value) => value.toLocaleLowerCase("en-GB").includes(query)) ||
+        Boolean(
+            entry.relatedUniverses?.some((universe) =>
+                universe.toLocaleLowerCase("en-GB").includes(query)
+            )
+        )
+    );
+}
+
+function entryMatchesFilters(
+    entry: TimelineEntry,
+    filters: TimelineFilters,
+    query: string
+): boolean {
+    const matchesType = filters.types.length === 0 || filters.types.includes(entry.contentType);
+    const matchesPhase =
+        filters.phases.length === 0 ||
+        (entry.phase !== undefined && filters.phases.includes(entry.phase));
+    const matchesUniverse =
+        filters.universes.length === 0 || filters.universes.includes(universeFilterForEntry(entry));
+    return entryMatchesQuery(entry, query) && matchesType && matchesPhase && matchesUniverse;
+}
+
+function compareTimelineEntries(
+    left: TimelineEntry,
+    right: TimelineEntry,
+    order: TimelineOrder
+): number {
+    if (order === "release") {
+        return (
+            left.releaseDate.localeCompare(right.releaseDate) ||
+            left.chronologyOrder - right.chronologyOrder
+        );
+    }
+    return left.chronologyOrder - right.chronologyOrder;
 }
 
 export function universeFilterForEntry(entry: TimelineEntry): TimelineUniverseFilter {

@@ -1649,6 +1649,7 @@ function TimelineScene({
 }: TimelineSceneProps) {
     const points =
         layout.streams.find((stream) => stream.id === "main")?.points ?? layout.positions;
+    const focusedEntry = entries.find((_entry, index) => index === focusIndex);
     return (
         <>
             <color args={["#000000"]} attach="background" />
@@ -1674,7 +1675,7 @@ function TimelineScene({
                     <InstancedTimelineNodes
                         onSelect={onSelect}
                         reducedMotion={reducedMotion}
-                        selectedSlug={selectedSlug ?? entries[focusIndex]?.slug}
+                        selectedSlug={selectedSlug ?? focusedEntry?.slug}
                         stream={stream}
                     />
                 </group>

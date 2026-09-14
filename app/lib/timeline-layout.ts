@@ -149,63 +149,71 @@ function connectionTo(target: TimelineStream | undefined, branch: TimelineBranch
     };
 }
 
+function createForkCurve(start: Vector3, end: Vector3, tangent: Vector3): CurvePath<Vector3> {
+    // Bezier handles keep the fork monotonic without the small backward hook
+    // a Catmull-Rom transition can introduce at a level starting tangent.
+    const shelf = end.clone();
+    shelf.x = start.x + Math.min(5, (end.x - start.x) * 0.5);
+    const curve = new CurvePath<Vector3>();
+    curve.add(
+        new CubicBezierCurve3(
+            start.clone(),
+            start.clone().add(new Vector3(2, 0, 0)),
+            shelf.clone().add(new Vector3(-2, 0, 0)),
+            shelf
+        )
+    );
+    curve.add(
+        new CubicBezierCurve3(
+            shelf,
+            shelf.clone().lerp(end, 0.5),
+            end.clone().addScaledVector(tangent, -0.75),
+            end
+        )
+    );
+    return curve;
+}
+
+function createHistoryConnection(
+    streams: readonly TimelineStream[],
+    branch: TimelineBranch
+): TimelineStream | undefined {
+    if (!(branch.forkBefore && branch.forkIntoUniverse)) {
+        return undefined;
+    }
+    const source = streams.find((stream) => stream.id === (branch.id ?? branch.universe));
+    const target = streams.find((stream) => stream.id === branch.forkIntoUniverse);
+    const destination = connectionTo(target, {
+        ...branch,
+        mergeAfter: undefined,
+        mergeAtStart: false,
+        mergeBefore: branch.forkBefore,
+    });
+    if (!(source && destination)) {
+        return undefined;
+    }
+    const start = source.points.at(source.nodePointIndices.at(-1) ?? 0);
+    if (!start) {
+        return undefined;
+    }
+    const curve = createForkCurve(start, destination.point, destination.tangent);
+    return {
+        curve,
+        entries: [],
+        id: `${source.id}:fork`,
+        mergeFadeLength: 2,
+        nodePointIndices: [],
+        points: curve.getPoints(Math.max(8, Math.ceil(start.distanceTo(destination.point)))),
+    };
+}
+
 function createHistoryConnections(
     streams: readonly TimelineStream[],
     branches: readonly TimelineBranch[]
 ): TimelineStream[] {
     return branches.flatMap((branch) => {
-        if (!(branch.forkBefore && branch.forkIntoUniverse)) {
-            return [];
-        }
-        const source = streams.find((stream) => stream.id === (branch.id ?? branch.universe));
-        const target = streams.find((stream) => stream.id === branch.forkIntoUniverse);
-        const destination = connectionTo(target, {
-            ...branch,
-            mergeAfter: undefined,
-            mergeAtStart: false,
-            mergeBefore: branch.forkBefore,
-        });
-        if (!(source && destination)) {
-            // A filtered-out shared past or reset must not leave a dangling connection.
-            return [];
-        }
-        const start = source.points.at(source.nodePointIndices.at(-1) ?? 0);
-        if (!start) {
-            return [];
-        }
-        const end = destination.point;
-        // Bezier handles keep the fork monotonic without the small backward hook
-        // a Catmull-Rom transition can introduce at a level starting tangent.
-        const shelf = end.clone();
-        shelf.x = start.x + Math.min(5, (end.x - start.x) * 0.5);
-        const curve = new CurvePath<Vector3>();
-        curve.add(
-            new CubicBezierCurve3(
-                start.clone(),
-                start.clone().add(new Vector3(2, 0, 0)),
-                shelf.clone().add(new Vector3(-2, 0, 0)),
-                shelf
-            )
-        );
-        curve.add(
-            new CubicBezierCurve3(
-                shelf,
-                shelf.clone().lerp(end, 0.5),
-                end.clone().addScaledVector(destination.tangent, -0.75),
-                end
-            )
-        );
-        const points = curve.getPoints(Math.max(8, Math.ceil(start.distanceTo(end))));
-        return [
-            {
-                curve,
-                entries: [],
-                id: `${source.id}:fork`,
-                mergeFadeLength: 2,
-                nodePointIndices: [],
-                points,
-            },
-        ];
+        const connection = createHistoryConnection(streams, branch);
+        return connection ? [connection] : [];
     });
 }
 
@@ -299,6 +307,39 @@ function appendMergePoints(
     );
 }
 
+function branchTarget(
+    branch: TimelineBranch,
+    main: TimelineStream,
+    streams: readonly TimelineStream[]
+): TimelineStream | undefined {
+    if (branch.mergeIntoUniverse) {
+        return streams.find((stream) => stream.id === branch.mergeIntoUniverse);
+    }
+    return main;
+}
+
+function branchOrigin(
+    branch: TimelineBranch,
+    main: TimelineStream,
+    connection?: { point: Vector3; tangent: Vector3 }
+): Vector3 {
+    if (connection) {
+        return connection.point;
+    }
+    const anchor = branchJunction(main, branch.anchorBefore);
+    if (anchor) {
+        return anchor;
+    }
+    return new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
+}
+
+function branchUniverseMarker(branch: TimelineBranch): string | undefined {
+    if (!branch.showUniverseMarker) {
+        return undefined;
+    }
+    return branch.markerTitle ?? branch.universe;
+}
+
 function createBranchStream(
     entries: readonly TimelineEntry[],
     branch: TimelineBranch,
@@ -309,20 +350,17 @@ function createBranchStream(
     if (!branchEntries.length) {
         return undefined;
     }
-    const target = branch.mergeIntoUniverse
-        ? streams.find((stream) => stream.id === branch.mergeIntoUniverse)
-        : main;
-    const connection = connectionTo(target, branch);
+    const connection = connectionTo(branchTarget(branch, main, streams), branch);
     const junction = connection?.point;
-    const origin =
-        junction ??
-        branchJunction(main, branch.anchorBefore) ??
-        new Vector3(4.4 + (branch.detachedOffsetX ?? 0), 0, 0);
-    const points = createBranchPoints(branch, branchEntries.length, origin);
+    const points = createBranchPoints(
+        branch,
+        branchEntries.length,
+        branchOrigin(branch, main, connection)
+    );
     separateDetachedPoints(points, streams, junction);
-    if (junction && connection) {
+    if (connection) {
         // Approach along the target tangent and hide the merge if the target is filtered out.
-        appendMergePoints(points, junction, connection.tangent, branch.offset);
+        appendMergePoints(points, connection.point, connection.tangent, branch.offset);
     }
     return {
         curve: createTimelineCurve(points),
@@ -332,9 +370,7 @@ function createBranchStream(
         mergeFadeLength: junction ? 2 : undefined,
         nodePointIndices: branchEntries.map((_, index) => index),
         points,
-        universeMarker: branch.showUniverseMarker
-            ? (branch.markerTitle ?? branch.universe)
-            : undefined,
+        universeMarker: branchUniverseMarker(branch),
     };
 }
 
