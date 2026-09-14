@@ -132,14 +132,14 @@ function TimelineDetailPoster({ entry }: { entry: TimelineEntry }) {
                         aria-hidden="true"
                         className="timeline-detail-poster-ambient"
                         fill
-                        sizes="(max-width: 640px) 96px, (max-width: 900px) 208px, 272px"
+                        sizes="(max-width: 640px) 96px, 160px"
                         src={entry.posterUrl}
                     />
                     <Image
                         alt={`${entry.title} poster`}
                         className="timeline-detail-poster"
                         fill
-                        sizes="(max-width: 640px) 96px, (max-width: 900px) 208px, 272px"
+                        sizes="(max-width: 640px) 96px, 160px"
                         src={entry.posterUrl}
                     />
                 </>

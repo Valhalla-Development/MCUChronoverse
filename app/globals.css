@@ -445,7 +445,7 @@ a {
   bottom: 9rem;
   left: 1.75rem;
   z-index: 100;
-  width: min(70rem, calc(100% - 3.5rem));
+  width: min(50rem, calc(100% - 3.5rem));
   max-height: calc(100dvh - 16rem);
   overflow: hidden auto;
   overscroll-behavior: contain;
@@ -457,7 +457,7 @@ a {
     radial-gradient(ellipse at 0% 100%, rgb(197 134 56 / 9%), transparent 50%),
     linear-gradient(135deg, rgb(18 20 29 / 98%), rgb(6 8 13 / 97%));
   border: 1px solid rgb(179 173 218 / 38%);
-  border-radius: 1.15rem;
+  border-radius: 1rem;
   box-shadow:
     0 30px 100px rgb(0 0 0 / 68%),
     0 0 0 1px rgb(255 145 65 / 5%) inset;
@@ -496,15 +496,15 @@ a {
 .timeline-detail-grid {
   position: relative;
   display: grid;
-  grid-template-columns: clamp(13rem, 24vw, 17rem) minmax(0, 1fr);
-  gap: clamp(1.25rem, 3vw, 2.25rem);
-  min-height: 27rem;
-  padding: 1.5rem;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 1.25rem;
+  min-height: 0;
+  padding: 1rem;
 }
 
 .timeline-detail-poster-shell {
   position: relative;
-  min-height: 24rem;
+  min-height: 15rem;
   overflow: hidden;
   background: #0b0c0f;
   border: 1px solid rgb(221 181 105 / 48%);
@@ -584,7 +584,7 @@ a {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 0.5rem 0 0;
+  padding: 0;
 }
 
 .timeline-detail-heading {
@@ -609,10 +609,10 @@ a {
   align-items: center;
   margin: 0;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: #eec775;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
 }
 
 .timeline-detail-eyebrow span {
@@ -625,10 +625,10 @@ a {
   display: inline-flex;
   gap: 0.32rem;
   align-items: center;
-  padding: 0.35rem 0.65rem;
+  padding: 0.25rem 0.5rem;
   overflow: hidden;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.62rem;
+  font-size: 0.55rem;
   font-weight: 650;
   color: #ffe4ad;
   text-transform: uppercase;
@@ -672,8 +672,8 @@ a {
 
 .timeline-detail-title {
   max-width: 100%;
-  margin: 0.9rem 0 0;
-  font-size: clamp(1.8rem, 3.6vw, 3.25rem);
+  margin: 0.55rem 0 0;
+  font-size: clamp(1.4rem, 2.2vw, 1.85rem);
   font-weight: 650;
   line-height: 1.08;
   letter-spacing: -0.045em;
@@ -683,13 +683,13 @@ a {
 
 .timeline-detail-close {
   position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
+  top: 0.75rem;
+  right: 0.75rem;
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
   color: #bfc0d3;
   cursor: pointer;
   background: rgb(255 255 255 / 3%);
@@ -714,9 +714,9 @@ a {
   flex-wrap: wrap;
   gap: 0.4rem 0.8rem;
   align-items: center;
-  margin-top: 0.85rem;
+  margin-top: 0.65rem;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: #a6a5b7;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -735,7 +735,7 @@ a {
 }
 
 .timeline-detail-rating strong {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: #fff1c7;
   letter-spacing: 0;
 }
@@ -746,9 +746,9 @@ a {
 }
 
 .timeline-detail-description {
-  margin: 1rem 0 0;
-  font-size: 0.98rem;
-  line-height: 1.62;
+  margin: 0.75rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
   color: #bfc0cf;
 }
 
@@ -768,8 +768,8 @@ a {
   align-items: center;
   width: fit-content;
   max-width: 100%;
-  padding: 0.45rem 0.5rem 0.45rem 0.65rem;
-  margin-top: 1rem;
+  padding: 0.3rem 0.45rem;
+  margin-top: 0.65rem;
   font-family: var(--font-mono);
   color: rgb(255 255 255 / 54%);
   text-transform: uppercase;
@@ -828,11 +828,11 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-  margin-top: 0.9rem;
+  margin-top: 0.65rem;
 }
 
 .timeline-detail-genres span {
-  padding: 0.4rem 0.75rem;
+  padding: 0.25rem 0.55rem;
   font-family: var(--font-geist-mono), monospace;
   font-size: 0.6rem;
   color: #bfc0d3;
@@ -850,9 +850,9 @@ a {
   gap: 0.7rem;
   align-items: center;
   width: 100%;
-  min-height: 5.25rem;
-  padding: 0.9rem 1rem;
-  margin-top: 1.5rem;
+  min-height: 3.4rem;
+  padding: 0.55rem 0.7rem;
+  margin-top: 0.8rem;
   overflow: hidden;
   text-align: left;
   cursor: pointer;
@@ -893,8 +893,8 @@ a {
 .timeline-detail-watch-check {
   display: grid;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2rem;
+  height: 2rem;
   font-size: 0.68rem;
   color: transparent;
   border: 1px solid rgb(255 255 255 / 22%);
@@ -933,7 +933,7 @@ a {
 .timeline-detail-watch-copy strong {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 500;
   color: rgb(244 241 232 / 68%);
   letter-spacing: 0.06em;
@@ -948,7 +948,7 @@ a {
   display: inline-flex;
   gap: 0.4rem;
   align-items: center;
-  padding: 0.5rem 0.65rem;
+  padding: 0.4rem 0.55rem;
   font-family: var(--font-geist-mono), monospace;
   font-size: 0.58rem;
   color: #c3b7a7;
@@ -1381,11 +1381,11 @@ a {
 .timeline-detail-footer {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.65rem;
   align-items: flex-end;
   justify-content: space-between;
-  padding-top: 1rem;
-  margin-top: 1.25rem;
+  padding-top: 0.7rem;
+  margin-top: 0.7rem;
   border-top: 1px solid rgb(178 166 203 / 14%);
 }
 
@@ -1436,8 +1436,8 @@ a {
   display: inline-flex;
   gap: 0.55rem;
   align-items: center;
-  min-height: 3rem;
-  padding: 0.65rem 0.8rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.55rem;
   font-size: 0.69rem;
   font-weight: 650;
   color: rgb(255 255 255 / 72%);
