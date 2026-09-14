@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { getTitleDetailsByIMDBId, getTitleDetailsByName, type ITitle } from "@valhalladev/movier";
 import { isMetadataCacheRecordStale } from "../app/data/metadata-freshness";
 import { log } from "../app/lib/console";
+import { fetchSeededMovieMetadata } from "./tmdb-metadata";
 
 interface CacheRecord {
     error?: string;
@@ -167,11 +168,14 @@ for (const entry of curatedChronology) {
 
     try {
         // Each item is written immediately and delayed to keep the enrichment run API-friendly.
-        const metadata = selectTitleData(
-            // biome-ignore lint/performance/noAwaitInLoops: Provider lookups are sequential and rate-limited.
-            await lookupTitle(entry.title, entry.releaseDate, entry.imdbUrl),
-            ""
-        );
+        const metadata =
+            entry.contentType === "film" && entry.imdbUrl
+                ? // biome-ignore lint/performance/noAwaitInLoops: Provider lookups are sequential and rate-limited.
+                  await fetchSeededMovieMetadata(entry.imdbUrl, token)
+                : selectTitleData(
+                      await lookupTitle(entry.title, entry.releaseDate, entry.imdbUrl),
+                      ""
+                  );
         // biome-ignore lint/performance/noAwaitInLoops: Trakt lookups share the sequential rate limit.
         const traktUrl = await lookupTraktUrl(metadata.imdbUrl ?? "");
 
