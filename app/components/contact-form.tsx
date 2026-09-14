@@ -72,14 +72,18 @@ function entryTriggerLabel(
 
 function contactPayload(form: FormData, entrySlug: string): ContactPayload {
     return {
-        category: String(form.get("category") ?? ""),
-        context: String(form.get("context") ?? "").trim(),
-        correction: String(form.get("correction") ?? "").trim(),
+        category: formValue(form, "category"),
+        context: formValue(form, "context").trim(),
+        correction: formValue(form, "correction").trim(),
         entrySlug,
-        problem: String(form.get("problem") ?? "").trim(),
-        source: String(form.get("source") ?? "").trim(),
-        turnstileToken: String(form.get("cf-turnstile-response") ?? ""),
+        problem: formValue(form, "problem").trim(),
+        source: formValue(form, "source").trim(),
+        turnstileToken: formValue(form, "cf-turnstile-response"),
     };
+}
+
+function formValue(form: FormData, name: string): string {
+    return String(form.get(name) ?? "");
 }
 
 async function submitContactSuggestion(payload: ContactPayload): Promise<SubmittedIssue> {

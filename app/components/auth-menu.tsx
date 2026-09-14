@@ -8,28 +8,39 @@ import { UiIcon } from "./ui-icon";
 type AuthMode = "forgot-password" | "reset-complete" | "reset-password" | "sign-in" | "sign-up";
 type PendingAction = "discord" | "email" | null;
 
+const emailAuthFallbacks: Record<AuthMode, string> = {
+    "forgot-password": "The reset email could not be sent. Please try again.",
+    "reset-complete": "Those details could not be authenticated. Check them and try again.",
+    "reset-password": "Your password could not be updated. Request a new reset link and try again.",
+    "sign-in": "Those details could not be authenticated. Check them and try again.",
+    "sign-up": "This account could not be created. Check the details and try again.",
+};
+
+const emailAuthErrorRules = [
+    {
+        matches: (message: string) =>
+            message.includes("already registered") || message.includes("already exists"),
+        response: "That email already has an account. Switch to sign in instead.",
+    },
+    {
+        matches: (message: string) => message.includes("signup") && message.includes("disabled"),
+        response: "New account registration is currently disabled.",
+    },
+    {
+        matches: (message: string) => message.includes("password") && message.includes("weak"),
+        response:
+            "That password is too weak. Use at least 8 characters with a less predictable phrase.",
+    },
+    {
+        matches: (message: string) => message.includes("invalid login credentials"),
+        response: "That email or password is incorrect.",
+    },
+] as const;
+
 function describeEmailAuthError(message: string, mode: AuthMode) {
     const normalized = message.toLowerCase();
-    if (normalized.includes("already registered") || normalized.includes("already exists")) {
-        return "That email already has an account. Switch to sign in instead.";
-    }
-    if (normalized.includes("signup") && normalized.includes("disabled")) {
-        return "New account registration is currently disabled.";
-    }
-    if (normalized.includes("password") && normalized.includes("weak")) {
-        return "That password is too weak. Use at least 8 characters with a less predictable phrase.";
-    }
-    if (normalized.includes("invalid login credentials")) {
-        return "That email or password is incorrect.";
-    }
-    let fallback = "Those details could not be authenticated. Check them and try again.";
-    if (mode === "sign-up") {
-        fallback = "This account could not be created. Check the details and try again.";
-    } else if (mode === "forgot-password") {
-        fallback = "The reset email could not be sent. Please try again.";
-    } else if (mode === "reset-password") {
-        fallback = "Your password could not be updated. Request a new reset link and try again.";
-    }
+    const knownError = emailAuthErrorRules.find((rule) => rule.matches(normalized));
+    const fallback = knownError?.response ?? emailAuthFallbacks[mode];
     return process.env.NODE_ENV === "development" ? `${fallback} (${message})` : fallback;
 }
 

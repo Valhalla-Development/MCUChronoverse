@@ -67,25 +67,32 @@ export function parseWatchProgressStore(
     storedValue: string | null,
     legacyValue: string | null = null
 ): WatchProgressStore {
+    return parseCurrentStore(storedValue) ?? parseLegacyStore(legacyValue) ?? emptyStore();
+}
+
+function parseCurrentStore(storedValue: string | null): WatchProgressStore | null {
     try {
         const parsed: unknown = storedValue ? JSON.parse(storedValue) : null;
-        if (typeof parsed === "object" && parsed !== null && "version" in parsed) {
-            if (parsed.version === 2 && "accounts" in parsed && "anonymousSlugs" in parsed) {
-                const accounts = parseAccounts(parsed.accounts);
-                const anonymousSlugs = uniqueStrings(parsed.anonymousSlugs);
-                if (accounts && anonymousSlugs) {
-                    return { accounts, anonymousSlugs, version: 2 };
-                }
-            }
-            const migrated = migrateOwnedSnapshot(parsed);
-            if (migrated) {
-                return migrated;
-            }
-        }
+        return parseVersionedStore(parsed);
     } catch {
         // Invalid local data falls through to the older storage format.
     }
+    return null;
+}
 
+function parseVersionedStore(value: unknown): WatchProgressStore | null {
+    if (typeof value !== "object" || value === null || !("version" in value)) {
+        return null;
+    }
+    if (value.version !== 2 || !("accounts" in value) || !("anonymousSlugs" in value)) {
+        return migrateOwnedSnapshot(value);
+    }
+    const accounts = parseAccounts(value.accounts);
+    const anonymousSlugs = uniqueStrings(value.anonymousSlugs);
+    return accounts && anonymousSlugs ? { accounts, anonymousSlugs, version: 2 } : null;
+}
+
+function parseLegacyStore(legacyValue: string | null): WatchProgressStore | null {
     try {
         const legacySlugs = uniqueStrings(legacyValue ? JSON.parse(legacyValue) : null);
         if (legacySlugs) {
@@ -94,8 +101,7 @@ export function parseWatchProgressStore(
     } catch {
         // Invalid legacy data is discarded below.
     }
-
-    return emptyStore();
+    return null;
 }
 
 export function readScopedProgress(store: WatchProgressStore, userId: string | null) {
