@@ -88,6 +88,83 @@ function passwordsMatch(mode: AuthMode, password: string, confirmation: string) 
     return !(mode === "sign-up" || mode === "reset-password") || password === confirmation;
 }
 
+type EmailAuthOutcome =
+    | { kind: "complete" }
+    | { kind: "error"; message: string }
+    | { kind: "message"; message: string }
+    | { kind: "reset-complete" };
+
+async function authenticateWithEmail(
+    mode: AuthMode,
+    email: string,
+    password: string
+): Promise<EmailAuthOutcome> {
+    const supabase = createClient();
+    if (mode === "forgot-password") {
+        const callbackUrl = new URL("/auth/callback", window.location.origin);
+        callbackUrl.searchParams.set("next", "/?auth=reset-password");
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: callbackUrl.toString(),
+        });
+        return error
+            ? { kind: "error", message: describeEmailAuthError(error.message, mode) }
+            : {
+                  kind: "message",
+                  message:
+                      "If that email belongs to an account, a secure reset link is on its way.",
+              };
+    }
+    if (mode === "reset-password") {
+        const { error } = await supabase.auth.updateUser({ password });
+        return error
+            ? { kind: "error", message: describeEmailAuthError(error.message, mode) }
+            : { kind: "reset-complete" };
+    }
+    const result =
+        mode === "sign-in"
+            ? await supabase.auth.signInWithPassword({ email, password })
+            : await supabase.auth.signUp({
+                  email,
+                  options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+                  password,
+              });
+    if (result.error) {
+        return { kind: "error", message: describeEmailAuthError(result.error.message, mode) };
+    }
+    return mode === "sign-up" && !result.data.session
+        ? {
+              kind: "message",
+              message: "Check your email to confirm your account, then sign in here.",
+          }
+        : { kind: "complete" };
+}
+
+function keepFocusInDialog(event: KeyboardEvent, dialog: HTMLElement | null) {
+    const focusable = dialog?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusable || focusable.length === 0) {
+        return;
+    }
+    const [first] = focusable;
+    const last = focusable.item(focusable.length - 1);
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+    }
+}
+
+function handleDialogKeyDown(event: KeyboardEvent, dialog: HTMLElement | null, close: () => void) {
+    if (event.key === "Escape") {
+        close();
+    } else if (event.key === "Tab") {
+        keepFocusInDialog(event, dialog);
+    }
+}
+
 interface EmailAuthFormProps {
     busy: boolean;
     email: string;
@@ -291,30 +368,8 @@ export function AuthMenu() {
         if (!open) {
             return;
         }
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                close();
-                return;
-            }
-            if (event.key !== "Tab") {
-                return;
-            }
-            const focusable = dialog.current?.querySelectorAll<HTMLElement>(
-                'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'
-            );
-            if (!focusable || focusable.length === 0) {
-                return;
-            }
-            const [first] = focusable;
-            const last = focusable.item(focusable.length - 1);
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last?.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first?.focus();
-            }
-        };
+        const handleKeyDown = (event: KeyboardEvent) =>
+            handleDialogKeyDown(event, dialog.current, close);
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [close, open]);
@@ -351,57 +406,22 @@ export function AuthMenu() {
 
             setPendingAction("email");
             try {
-                const supabase = createClient();
-                if (mode === "forgot-password") {
-                    const callbackUrl = new URL("/auth/callback", window.location.origin);
-                    callbackUrl.searchParams.set("next", "/?auth=reset-password");
-                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                        redirectTo: callbackUrl.toString(),
-                    });
-                    if (error) {
-                        setEmailError(describeEmailAuthError(error.message, mode));
-                    } else {
-                        setMessage(
-                            "If that email belongs to an account, a secure reset link is on its way."
-                        );
-                    }
-                    return;
-                }
-
-                if (mode === "reset-password") {
-                    const { error } = await supabase.auth.updateUser({ password });
-                    if (error) {
-                        setEmailError(describeEmailAuthError(error.message, mode));
-                    } else {
-                        setPassword("");
-                        setPasswordConfirmation("");
-                        setMode("reset-complete");
-                        focusInitialControl();
-                    }
-                    return;
-                }
-
-                const result =
-                    mode === "sign-in"
-                        ? await supabase.auth.signInWithPassword({ email, password })
-                        : await supabase.auth.signUp({
-                              email,
-                              options: {
-                                  emailRedirectTo: `${window.location.origin}/auth/callback`,
-                              },
-                              password,
-                          });
-
-                if (result.error) {
-                    setEmailError(describeEmailAuthError(result.error.message, mode));
-                } else if (mode === "sign-up" && !result.data.session) {
-                    setMessage("Check your email to confirm your account, then sign in here.");
+                const outcome = await authenticateWithEmail(mode, email, password);
+                if (outcome.kind === "error") {
+                    setEmailError(outcome.message);
+                } else if (outcome.kind === "message") {
+                    setMessage(outcome.message);
                     setPassword("");
                     setPasswordConfirmation("");
-                } else {
+                } else if (outcome.kind === "complete") {
                     setPassword("");
                     setPasswordConfirmation("");
                     close();
+                } else {
+                    setPassword("");
+                    setPasswordConfirmation("");
+                    setMode("reset-complete");
+                    focusInitialControl();
                 }
             } catch {
                 setEmailError("The authentication service could not be reached. Please try again.");
