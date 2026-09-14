@@ -87,8 +87,11 @@ const lookupTraktUrl = async (imdbUrl: string): Promise<string> => {
 
     const results = (await response.json()) as TraktSearchResult[];
     const result = results.find((item) => item.type === "movie" || item.type === "show");
-    const slug = result?.type === "movie" ? result.movie?.ids.slug : result?.show?.ids.slug;
-    if (!(result && slug)) {
+    if (!result) {
+        throw new Error(`Trakt returned no movie or show for ${imdbId}`);
+    }
+    const slug = result.type === "movie" ? result.movie?.ids.slug : result.show?.ids.slug;
+    if (!slug) {
         throw new Error(`Trakt returned no movie or show for ${imdbId}`);
     }
 
