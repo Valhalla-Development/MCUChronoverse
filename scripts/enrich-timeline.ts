@@ -31,7 +31,7 @@ interface TraktSearchResult {
     show?: {
         ids: { slug?: string };
     };
-    type: "movie" | "show";
+    type: string;
 }
 
 type MetadataCache = Record<string, CacheRecord>;
