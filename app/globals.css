@@ -447,7 +447,7 @@ a {
   z-index: 100;
   width: min(70rem, calc(100% - 3.5rem));
   max-height: calc(100dvh - 16rem);
-  overflow: auto;
+  overflow: hidden auto;
   overscroll-behavior: contain;
   color: var(--ink);
   scrollbar-color: #71617f #101017;
@@ -763,9 +763,11 @@ a {
 
 .timeline-detail-credits {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.65rem;
   align-items: center;
   width: fit-content;
+  max-width: 100%;
   padding: 0.45rem 0.5rem 0.45rem 0.65rem;
   margin-top: 1rem;
   font-family: var(--font-mono);
@@ -2379,7 +2381,7 @@ a {
 
   .timeline-detail-heading {
     align-self: center;
-    padding-right: 1.8rem;
+    padding-right: 0;
   }
 
   .timeline-detail-close {
@@ -2390,6 +2392,10 @@ a {
   .timeline-detail-title {
     margin-top: 0.6rem;
     font-size: clamp(1.3rem, 5vw, 1.8rem);
+  }
+
+  .timeline-detail-kicker {
+    padding-right: 1.8rem;
   }
 
   .timeline-detail-eyebrow {

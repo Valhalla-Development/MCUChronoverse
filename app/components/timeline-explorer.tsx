@@ -323,8 +323,8 @@ function TimelineDetailFooter({ entry }: { entry: TimelineEntry }) {
                     <TimelineUniverse entry={entry} />
                 </div>
             </div>
-            {entry.imdbUrl ? (
-                <div className="timeline-detail-links">
+            <div className="timeline-detail-links">
+                {entry.imdbUrl ? (
                     <a
                         className="focus-ring timeline-detail-imdb"
                         href={entry.imdbUrl}
@@ -337,20 +337,20 @@ function TimelineDetailFooter({ entry }: { entry: TimelineEntry }) {
                             <UiIcon name="external-link" />
                         </span>
                     </a>
-                    <a
-                        className="focus-ring timeline-detail-imdb timeline-detail-trakt"
-                        href={entry.traktUrl}
-                        rel="noreferrer"
-                        target="_blank"
-                    >
-                        <TraktLogo />
-                        <span>Open on Trakt</span>
-                        <span aria-hidden="true" className="timeline-detail-arrow">
-                            <UiIcon name="external-link" />
-                        </span>
-                    </a>
-                </div>
-            ) : null}
+                ) : null}
+                <a
+                    className="focus-ring timeline-detail-imdb timeline-detail-trakt"
+                    href={entry.traktUrl}
+                    rel="noreferrer"
+                    target="_blank"
+                >
+                    <TraktLogo />
+                    <span>Open on Trakt</span>
+                    <span aria-hidden="true" className="timeline-detail-arrow">
+                        <UiIcon name="external-link" />
+                    </span>
+                </a>
+            </div>
         </div>
     );
 }
