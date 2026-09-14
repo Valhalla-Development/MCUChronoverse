@@ -34,7 +34,7 @@ interface TraktSearchResult {
     type: string;
 }
 
-type MetadataCache = Record<string, CacheRecord>;
+type MetadataCache = Partial<Record<string, CacheRecord>>;
 
 const cachePath = resolve(import.meta.dir, "../app/data/title-metadata.json");
 // biome-ignore lint/correctness/noUndeclaredVariables: This script runs in the Bun runtime.
@@ -165,7 +165,7 @@ for (const entry of curatedChronology) {
         continue;
     }
 
-    if (!refresh) {
+    if (!refresh && cachedEntry) {
         log.info(`Refreshing ${entry.title}, cached metadata is stale or unresolved.`);
     }
 
@@ -192,7 +192,7 @@ for (const entry of curatedChronology) {
         log.ok(`Resolved ${entry.title}`);
     } catch (error) {
         // Keep the last known-good record if a provider is temporarily unavailable.
-        if (!cachedEntry.source) {
+        if (!cachedEntry?.source) {
             cache[entry.slug] = {
                 error: error instanceof Error ? error.message : String(error),
                 fetchedAt: new Date().toISOString(),
