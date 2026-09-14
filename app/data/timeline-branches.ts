@@ -45,7 +45,8 @@ const universeBranches: readonly TimelineBranch[] = [
     {
         cardDepthOffset: 1.7,
         detachedOffsetX: -38,
-        markerCaption: "REVISED FOX HISTORY",
+        markerCaption: "FOX · EARTH-10005",
+        markerTitle: "REVISED HISTORY",
         mergeBefore: "avengers-doomsday",
         offset: [-3.8, 2.8],
         showUniverseMarker: true,
@@ -54,7 +55,8 @@ const universeBranches: readonly TimelineBranch[] = [
     {
         cardDepthOffset: 1.7,
         detachedOffsetX: -60,
-        markerCaption: "ORIGINAL FOX HISTORY",
+        markerCaption: "FOX · EARTH-41578",
+        markerTitle: "ORIGINAL HISTORY",
         mergeBefore: "x-men-days-of-future-past-2014",
         mergeIntoUniverse: "Earth-10005",
         offset: [-6.4, 5.6],

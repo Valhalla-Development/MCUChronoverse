@@ -213,8 +213,10 @@ describe("timeline branches", () => {
             expect(original.points.at(-1)).toEqual(
                 revised.curve.getPoint(Math.max(reset - 0.5, 0) / (revised.points.length - 1))
             );
-            expect(original.universeMarker).toBe("Earth-41578");
-            expect(revised.universeMarker).toBe("Earth-10005");
+            expect(original.universeMarker).toBe("ORIGINAL HISTORY");
+            expect(original.markerCaption).toBe("FOX · EARTH-41578");
+            expect(revised.universeMarker).toBe("REVISED HISTORY");
+            expect(revised.markerCaption).toBe("FOX · EARTH-10005");
             expect(layout.positions).toHaveLength(ordered.length);
             expect(
                 new Set(
