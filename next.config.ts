@@ -66,13 +66,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
     agentRules: false,
-    async headers() {
-        return [
+    headers() {
+        return Promise.resolve([
             {
                 headers: securityHeaders,
                 source: "/(.*)",
             },
-        ];
+        ]);
     },
     images: {
         remotePatterns: [

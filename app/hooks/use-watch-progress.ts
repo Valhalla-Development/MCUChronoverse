@@ -53,8 +53,12 @@ export function useWatchProgress() {
         writeQueue.current = writeQueue.current
             .catch(() => undefined)
             .then(write)
-            .then(() => setSyncError(false))
-            .catch(() => setSyncError(true));
+            .then(() => {
+                setSyncError(false);
+            })
+            .catch(() => {
+                setSyncError(true);
+            });
     }, []);
 
     const setScopedProgress = useCallback((slugs: string[], scopeUserId: string | null) => {

@@ -128,7 +128,7 @@ const lookupTitle = async (
         }
     }
 
-    throw lastError ?? new Error(`No result found for ${title}`);
+    throw lastError instanceof Error ? lastError : new Error(`No result found for ${title}`);
 };
 
 const requireEnvironmentVariable = (name: "TMDB_READ_ACCESS_TOKEN" | "TRAKT_CLIENT_ID") => {
@@ -162,7 +162,7 @@ for (const entry of curatedChronology) {
         continue;
     }
 
-    if (!refresh && cachedEntry) {
+    if (!refresh) {
         log.info(`Refreshing ${entry.title}, cached metadata is stale or unresolved.`);
     }
 
@@ -189,7 +189,7 @@ for (const entry of curatedChronology) {
         log.ok(`Resolved ${entry.title}`);
     } catch (error) {
         // Keep the last known-good record if a provider is temporarily unavailable.
-        if (!cachedEntry?.source) {
+        if (!cachedEntry.source) {
             cache[entry.slug] = {
                 error: error instanceof Error ? error.message : String(error),
                 fetchedAt: new Date().toISOString(),

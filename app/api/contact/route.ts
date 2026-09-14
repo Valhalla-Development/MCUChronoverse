@@ -30,12 +30,13 @@ interface GitHubIssueResult {
 }
 
 function isGitHubRepository(value: string): boolean {
-    const [owner, repository, extra] = value.split("/");
+    const separatorIndex = value.indexOf("/");
+    if (separatorIndex <= 0 || separatorIndex !== value.lastIndexOf("/")) {
+        return false;
+    }
+    const owner = value.slice(0, separatorIndex);
+    const repository = value.slice(separatorIndex + 1);
     return (
-        extra === undefined &&
-        owner !== undefined &&
-        repository !== undefined &&
-        owner.length >= 1 &&
         owner.length <= 39 &&
         repository.length >= 1 &&
         alphaNumericCharacters.includes(owner.charAt(0)) &&

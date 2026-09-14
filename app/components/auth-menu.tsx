@@ -150,10 +150,10 @@ function keepFocusInDialog(event: KeyboardEvent, dialog: HTMLElement | null) {
     const last = focusable.item(focusable.length - 1);
     if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
-        last?.focus();
+        last.focus();
     } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault();
-        first?.focus();
+        first.focus();
     }
 }
 
@@ -362,17 +362,22 @@ export function AuthMenu() {
             setOpen(true);
             focusInitialControl();
         }
-        return () => window.removeEventListener("mcu-chronoverse:open-auth", openAuth);
+        return () => {
+            window.removeEventListener("mcu-chronoverse:open-auth", openAuth);
+        };
     }, [focusInitialControl]);
 
     useEffect(() => {
         if (!open) {
             return;
         }
-        const handleKeyDown = (event: KeyboardEvent) =>
+        const handleKeyDown = (event: KeyboardEvent) => {
             handleDialogKeyDown(event, dialog.current, close);
+        };
         window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
     }, [close, open]);
 
     const handleOAuth = useCallback(() => {
@@ -431,6 +436,12 @@ export function AuthMenu() {
             }
         },
         [close, email, focusInitialControl, mode, password, passwordConfirmation]
+    );
+    const handleEmailAuthSubmit = useCallback(
+        (event: React.FormEvent<HTMLFormElement>) => {
+            handleEmailAuth(event).catch(() => undefined);
+        },
+        [handleEmailAuth]
     );
 
     const changeMode = useCallback(
@@ -569,7 +580,7 @@ export function AuthMenu() {
                         onEmailChange={handleEmailChange}
                         onPasswordChange={handlePasswordChange}
                         onPasswordConfirmationChange={handlePasswordConfirmationChange}
-                        onSubmit={handleEmailAuth}
+                        onSubmit={handleEmailAuthSubmit}
                         password={password}
                         passwordConfirmation={passwordConfirmation}
                         submitLabel={emailSubmitLabel}

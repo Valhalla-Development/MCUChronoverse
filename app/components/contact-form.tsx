@@ -196,9 +196,15 @@ export function ContactForm({ entries, turnstileSiteKey }: ContactFormProps) {
         },
         [entryRequired, selectedEntry]
     );
+    const handleFormSubmit = useCallback(
+        (event: FormEvent<HTMLFormElement>) => {
+            handleSubmit(event).catch(() => undefined);
+        },
+        [handleSubmit]
+    );
 
     return (
-        <form className="grid gap-6" onSubmit={handleSubmit}>
+        <form className="grid gap-6" onSubmit={handleFormSubmit}>
             <div className="grid gap-4">
                 <label className="grid gap-2">
                     <span className="font-mono text-[0.7rem] text-white/45 uppercase tracking-[0.16em]">
