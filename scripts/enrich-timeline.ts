@@ -4,7 +4,6 @@ import { resolve } from "node:path";
 import { getTitleDetailsByIMDBId, getTitleDetailsByName, type ITitle } from "@valhalladev/movier";
 import { isMetadataCacheRecordStale } from "../app/data/metadata-freshness";
 import { log } from "../app/lib/console";
-import { fetchSeededMovieMetadata } from "./tmdb-metadata";
 
 interface CacheRecord {
     error?: string;
@@ -103,7 +102,13 @@ const lookupTitle = async (
     const imdbId = imdbUrl?.match(imdbIdPattern)?.[1];
     if (imdbId) {
         // Existing IMDb IDs are curated identifiers and avoid ambiguous title matches.
-        return getTitleDetailsByIMDBId(imdbId, { tmdbReadAccessToken: token });
+        const resolved = await getTitleDetailsByIMDBId(imdbId, {
+            tmdbReadAccessToken: token,
+        });
+        if (resolved.mainSource.sourceId !== imdbId) {
+            throw new Error(`Movier returned a different IMDb identity for ${imdbId}`);
+        }
+        return resolved;
     }
 
     const baseTitle = title.replace(seasonSuffix, "");
@@ -162,14 +167,11 @@ for (const entry of curatedChronology) {
 
     try {
         // Each item is written immediately and delayed to keep the enrichment run API-friendly.
-        const metadata =
-            entry.contentType === "film" && entry.imdbUrl
-                ? // biome-ignore lint/performance/noAwaitInLoops: Provider lookups are sequential and rate-limited.
-                  await fetchSeededMovieMetadata(entry.imdbUrl, token)
-                : selectTitleData(
-                      await lookupTitle(entry.title, entry.releaseDate, entry.imdbUrl),
-                      ""
-                  );
+        const metadata = selectTitleData(
+            // biome-ignore lint/performance/noAwaitInLoops: Provider lookups are sequential and rate-limited.
+            await lookupTitle(entry.title, entry.releaseDate, entry.imdbUrl),
+            ""
+        );
         // biome-ignore lint/performance/noAwaitInLoops: Trakt lookups share the sequential rate limit.
         const traktUrl = await lookupTraktUrl(metadata.imdbUrl ?? "");
 
