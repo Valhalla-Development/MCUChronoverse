@@ -165,13 +165,13 @@
     "fetchedAt": "2026-09-14T10:44:50.043Z",
     "requestedTitle": "The Consultant",
     "source": {
-      "description": "Follows a relationship between employee and boss, asking how far we will go to get ahead, and to survive.",
-      "genres": ["comedy", "drama", "thriller"],
-      "imdbUrl": "https://www.imdb.com/title/tt16152716/",
-      "posterUrl": "https://m.media-amazon.com/images/M/MV5BNzEwMWZmZTQtNzdlOC00MDFkLWE5ZWQtYWYxMTA3OWZkNzM5XkEyXkFqcGc@._V1_.jpg",
-      "rating": 6.5,
-      "runtime": "33m",
-      "traktUrl": "https://app.trakt.tv/shows/the-consultant-2023"
+      "description": "Agents Coulson and Sitwell plan to derail General Thaddeus \"Thunderbolt\" Ross from interfering with S.H.I.E.L.D. affairs with a very special person.",
+      "genres": ["short", "comedy", "drama", "sciFi"],
+      "imdbUrl": "https://www.imdb.com/title/tt2011118/",
+      "posterUrl": "https://m.media-amazon.com/images/M/MV5BZGMxYzBkMTEtZDljYi00YjM2LTgxMTMtNjFiOWQwMTg0NjhmXkEyXkFqcGc@._V1_.jpg",
+      "rating": 6.3,
+      "runtime": "4m",
+      "traktUrl": "https://app.trakt.tv/movies/marvel-one-shot-the-consultant-2011"
     },
     "status": "resolved"
   },

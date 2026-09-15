@@ -158,6 +158,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 110,
         contentType: "one-shot",
+        imdbUrl: "https://www.imdb.com/title/tt2011118/",
         phase: "Phase One",
         placement: "2010",
         releaseDate: "2011-09-13",
