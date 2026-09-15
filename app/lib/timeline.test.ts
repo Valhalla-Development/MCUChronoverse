@@ -23,7 +23,7 @@ describe("chronology", () => {
 });
 
 describe("Sony chronology", () => {
-    test("places the seeded trilogy between Eternals and No Way Home without MCU membership", () => {
+    test("places the legacy Spider-Man films after the Fox reference block", () => {
         const sony = chronology.filter((entry) => entry.universe === "Earth-96283");
         expect(
             sony.map((entry) => [entry.slug, entry.placement, entry.releaseDate, entry.imdbUrl])
@@ -50,12 +50,11 @@ describe("Sony chronology", () => {
                 "https://www.imdb.com/title/tt1872181/",
             ],
         ]);
-        const eternalsIndex = ordered.findIndex((entry) => entry.slug === "eternals");
-        expect(ordered.slice(eternalsIndex, eternalsIndex + 7).map((entry) => entry.slug)).toEqual([
-            "eternals",
+        const foxIndex = ordered.findIndex((entry) => entry.slug === "logan-2017");
+        expect(ordered.slice(foxIndex + 1, foxIndex + 7).map((entry) => entry.slug)).toEqual([
             ...sony.map((entry) => entry.slug),
             ...andrew.map((entry) => entry.slug),
-            "spider-man-no-way-home",
+            "what-if-season-1",
         ]);
         const captainIndex = ordered.findIndex((entry) => entry.slug === "captain-marvel");
         expect(ordered[captainIndex + 1].slug).toBe("iron-man");
@@ -132,9 +131,13 @@ describe("Fox X-Men chronology", () => {
     test("places the Fox stories after Loki Season 1 for reference context", () => {
         const ordered = filterTimeline(chronology, emptyTimelineFilters);
         const start = ordered.findIndex((entry) => entry.slug === "loki-season-1");
-        expect(ordered.slice(start, start + 15).map((entry) => entry.slug)).toEqual([
+        const sony = chronology.filter(
+            (entry) => entry.universe === "Earth-96283" || entry.universe === "Earth-120703"
+        );
+        expect(ordered.slice(start, start + 20).map((entry) => entry.slug)).toEqual([
             "loki-season-1",
             ...foxExpected.map(([slug]) => slug),
+            ...sony.map((entry) => entry.slug),
             "what-if-season-1",
         ]);
         const lokiSeasonTwo = ordered.findIndex((entry) => entry.slug === "loki-season-2");
