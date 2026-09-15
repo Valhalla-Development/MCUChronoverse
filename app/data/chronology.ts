@@ -85,6 +85,8 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     },
     {
         chronologyOrder: 50,
+        chronologyWarning:
+            "The during-credits scene contains a major spoiler for Avengers: Infinity War. First-time viewers should watch it after Avengers: Infinity War.",
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt4154664/",
@@ -437,6 +439,8 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     },
     {
         chronologyOrder: 310,
+        chronologyWarning:
+            "The after-credits scene contains a major spoiler for Avengers: Endgame. First-time viewers should watch it after Avengers: Endgame.",
         contentType: "film",
         creditScenes: { after: true, during: false },
         imdbUrl: "https://www.imdb.com/title/tt3480822/",
@@ -598,6 +602,8 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     },
     {
         chronologyOrder: 430,
+        chronologyWarning:
+            "Both credit scenes contain major spoilers for Avengers: Infinity War. First-time viewers should watch them after Avengers: Infinity War.",
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt5095030/",
