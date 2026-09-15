@@ -1544,5 +1544,47 @@
       "traktUrl": "https://app.trakt.tv/movies/fantastic-four-2015"
     },
     "status": "resolved"
+  },
+  "blade-1998": {
+    "fetchedAt": "2026-09-15T16:07:00.964Z",
+    "requestedTitle": "Blade",
+    "source": {
+      "description": "The Daywalker known as \"Blade\" - a half-vampire, half-mortal man - becomes the protector of humanity against an underground army of vampires.",
+      "genres": ["Horror", "Action"],
+      "imdbUrl": "https://www.imdb.com/title/tt0120611/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/oWT70TvbsmQaqyphCZpsnQR7R32.jpg",
+      "rating": 6.854,
+      "runtime": "2h 1m",
+      "traktUrl": "https://app.trakt.tv/movies/blade-1998"
+    },
+    "status": "resolved"
+  },
+  "blade-ii-2002": {
+    "fetchedAt": "2026-09-15T16:07:02.158Z",
+    "requestedTitle": "Blade II",
+    "source": {
+      "description": "Blade forms an uneasy alliance with the vampire council in order to combat the Reapers, who are feeding on vampires.",
+      "genres": ["Fantasy", "Horror", "Action", "Thriller"],
+      "imdbUrl": "https://www.imdb.com/title/tt0187738/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/wAn6VYamKbnOtfyTZ6arVtkMzDv.jpg",
+      "rating": 6.574,
+      "runtime": "1h 57m",
+      "traktUrl": "https://app.trakt.tv/movies/blade-ii-2002"
+    },
+    "status": "resolved"
+  },
+  "blade-trinity-2004": {
+    "fetchedAt": "2026-09-15T16:07:03.263Z",
+    "requestedTitle": "Blade: Trinity",
+    "source": {
+      "description": "For years, Blade has fought against the vampires in the cover of the night. But now, after falling into the crosshairs of the FBI, he is forced out into the daylight, where he is driven to join forces with a clan of human vampire hunters he never knew existed—The Nightstalkers. Together with Abigail and Hannibal, two deftly trained Nightstalkers, Blade follows a trail of blood to the ancient creature that is also hunting him—the original vampire, Dracula.",
+      "genres": ["Action", "Horror", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0359013/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/6f7iXvPOnf83MaLB1JmPzUor1rr.jpg",
+      "rating": 5.864,
+      "runtime": "1h 53m",
+      "traktUrl": "https://app.trakt.tv/movies/blade-trinity-2004"
+    },
+    "status": "resolved"
   }
 }

@@ -72,6 +72,9 @@ describe("timeline branches", () => {
             ["fantastic-four-2005", "wandavision"],
             ["fantastic-four-rise-of-the-silver-surfer", "wandavision"],
             ["fantastic-four-2015", "wandavision"],
+            ["blade-1998", "wandavision"],
+            ["blade-ii-2002", "wandavision"],
+            ["blade-trinity-2004", "wandavision"],
             ["loki-season-2", "agatha-all-along"],
             ["what-if-season-2", "agatha-all-along"],
             ["what-if-season-3", "daredevil-born-again-season-1"],
@@ -110,6 +113,7 @@ describe("timeline branches", () => {
             ["Earth-89521", ["marvel-zombies"]],
             ["Earth-121698", ["fantastic-four-2005", "fantastic-four-rise-of-the-silver-surfer"]],
             ["Earth-15866", ["fantastic-four-2015"]],
+            ["Earth-26320", ["blade-1998", "blade-ii-2002", "blade-trinity-2004"]],
             ["Earth-828", ["the-fantastic-four-first-steps"]],
             ["TBD", ["avengers-secret-wars"]],
         ]);
@@ -120,7 +124,7 @@ describe("timeline branches", () => {
             expect(main.universeMarker).toBe("Earth-616");
             expect(main.entries).toHaveLength(77);
             expect(main.entries.every((entry) => entry.universe === "Earth-616")).toBe(true);
-            expect(layout.streams.flatMap((stream) => stream.entries)).toHaveLength(107);
+            expect(layout.streams.flatMap((stream) => stream.entries)).toHaveLength(110);
             for (const [universe, slugs] of expected) {
                 const streams = layout.streams.filter(
                     (item) => item.entries[0]?.universe === universe
@@ -341,7 +345,7 @@ describe("timeline branches", () => {
         expect(layout.streams[0].points.slice(0, mainEntries.length)).toEqual(original.positions);
         expect(original.cardDepthOffsets.every((offset) => offset === 0)).toBe(true);
         expect(layout.cardDepthOffsets.filter((offset) => offset !== 0)).toEqual(
-            Array.from({ length: 30 }, () => 1.7)
+            Array.from({ length: 33 }, () => 1.7)
         );
         const withoutTail = createTimelineLayout(
             entries.filter((entry) => entry.universe !== "TBD")

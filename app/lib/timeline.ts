@@ -17,6 +17,7 @@ export const universeFilters = [
     { label: "MCU", value: "mcu" },
     { label: "Sony Spider-Man", value: "sony-spider-man" },
     { label: "Fox X-Men", value: "fox-x-men" },
+    { label: "Blade", value: "blade" },
     { label: "TVA & Multiverse", value: "multiverse" },
     { label: "Marvel Zombies", value: "marvel-zombies" },
     { label: "Fantastic Four", value: "fantastic-four" },
@@ -156,6 +157,9 @@ export function universeFilterForEntry(entry: TimelineEntry): TimelineUniverseFi
     }
     if (["Earth-121698", "Earth-15866", "Earth-828"].includes(entry.universe)) {
         return "fantastic-four";
+    }
+    if (entry.universe === "Earth-26320") {
+        return "blade";
     }
     if (entry.universe === "TBD") {
         return "unconfirmed";

@@ -24,6 +24,7 @@ export type McuPhase = (typeof phases)[number];
 export type ContentStatus = "released" | "announced";
 
 export type Saga =
+    | "Blade Universe"
     | "Fantastic Four Universe"
     | "Infinity Saga"
     | "Multiverse Saga"

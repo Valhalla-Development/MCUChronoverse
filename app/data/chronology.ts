@@ -946,6 +946,48 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     },
     {
         chronologyOrder: 680,
+        contentType: "film",
+        creditScenes: { after: false, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt0120611/",
+        note: "The first film in the Blade trilogy. It is placed in the early legacy block as reference context for Blade in Deadpool & Wolverine.",
+        placement: "1998",
+        releaseDate: "1998-08-21",
+        saga: "Blade Universe",
+        slug: "blade-1998",
+        status: "released",
+        title: "Blade",
+        universe: "Earth-26320",
+    },
+    {
+        chronologyOrder: 690,
+        contentType: "film",
+        creditScenes: { after: false, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt0187738/",
+        note: "Continues the Blade trilogy on Earth-26320. It remains in the early legacy block as reference context for Deadpool & Wolverine.",
+        placement: "2002",
+        releaseDate: "2002-03-22",
+        saga: "Blade Universe",
+        slug: "blade-ii-2002",
+        status: "released",
+        title: "Blade II",
+        universe: "Earth-26320",
+    },
+    {
+        chronologyOrder: 700,
+        contentType: "film",
+        creditScenes: { after: false, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt0359013/",
+        note: "Concludes the Blade trilogy on Earth-26320. It remains in the early legacy block as reference context for Deadpool & Wolverine.",
+        placement: "2004",
+        releaseDate: "2004-12-08",
+        saga: "Blade Universe",
+        slug: "blade-trinity-2004",
+        status: "released",
+        title: "Blade: Trinity",
+        universe: "Earth-26320",
+    },
+    {
+        chronologyOrder: 710,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt10168312/",
         phase: "Phase Four",
@@ -958,7 +1000,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Multiverse",
     },
     {
-        chronologyOrder: 690,
+        chronologyOrder: 720,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt16027014/",
         phase: "Phase Six",
@@ -971,7 +1013,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-89521",
     },
     {
-        chronologyOrder: 700,
+        chronologyOrder: 730,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt9140560/",
         phase: "Phase Four",
@@ -984,7 +1026,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 710,
+        chronologyOrder: 740,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt9376612/",
@@ -998,7 +1040,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 720,
+        chronologyOrder: 750,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt9208876/",
         phase: "Phase Four",
@@ -1011,7 +1053,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 730,
+        chronologyOrder: 760,
         contentType: "short",
         imdbUrl: "https://www.imdb.com/title/tt11107678/",
         phase: "Phase Three",
@@ -1024,7 +1066,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 740,
+        chronologyOrder: 770,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt6320628/",
@@ -1038,7 +1080,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 750,
+        chronologyOrder: 780,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt9032400/",
@@ -1052,7 +1094,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 760,
+        chronologyOrder: 790,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt10872600/",
@@ -1066,7 +1108,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 770,
+        chronologyOrder: 800,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt9419884/",
@@ -1080,7 +1122,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 780,
+        chronologyOrder: 810,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt10160804/",
         phase: "Phase Four",
@@ -1093,7 +1135,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 790,
+        chronologyOrder: 820,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt10234724/",
         phase: "Phase Four",
@@ -1106,7 +1148,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 800,
+        chronologyOrder: 830,
         contentType: "film",
         creditScenes: { after: false, during: true },
         imdbUrl: "https://www.imdb.com/title/tt9114286/",
@@ -1120,7 +1162,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 810,
+        chronologyOrder: 840,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt13966962/",
         phase: "Phase Five",
@@ -1133,7 +1175,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 820,
+        chronologyOrder: 850,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt10857160/",
         phase: "Phase Four",
@@ -1146,7 +1188,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 830,
+        chronologyOrder: 860,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt10857164/",
         phase: "Phase Four",
@@ -1159,7 +1201,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 840,
+        chronologyOrder: 870,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt10648342/",
@@ -1173,7 +1215,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 850,
+        chronologyOrder: 880,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt13623126/",
         phase: "Phase Five",
@@ -1186,7 +1228,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 860,
+        chronologyOrder: 890,
         contentType: "special",
         imdbUrl: "https://www.imdb.com/title/tt15318872/",
         phase: "Phase Four",
@@ -1199,7 +1241,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 870,
+        chronologyOrder: 900,
         contentType: "special",
         imdbUrl: "https://www.imdb.com/title/tt13623136/",
         phase: "Phase Four",
@@ -1212,7 +1254,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 880,
+        chronologyOrder: 910,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt10954600/",
@@ -1226,7 +1268,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 890,
+        chronologyOrder: 920,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt6791350/",
@@ -1240,7 +1282,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 900,
+        chronologyOrder: 930,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt13157618/",
         phase: "Phase Five",
@@ -1253,7 +1295,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 910,
+        chronologyOrder: 940,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt10676048/",
@@ -1267,7 +1309,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 920,
+        chronologyOrder: 950,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt9140554/",
         phase: "Phase Five",
@@ -1280,7 +1322,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "TVA / Multiverse",
     },
     {
-        chronologyOrder: 930,
+        chronologyOrder: 960,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt6263850/",
@@ -1295,7 +1337,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-10005",
     },
     {
-        chronologyOrder: 940,
+        chronologyOrder: 970,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt10168312/",
         phase: "Phase Five",
@@ -1308,7 +1350,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Multiverse",
     },
     {
-        chronologyOrder: 950,
+        chronologyOrder: 980,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt15571732/",
         phase: "Phase Five",
@@ -1321,7 +1363,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 960,
+        chronologyOrder: 990,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt10168312/",
         phase: "Phase Five",
@@ -1334,7 +1376,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Multiverse",
     },
     {
-        chronologyOrder: 970,
+        chronologyOrder: 1000,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt18923754/",
         phase: "Phase Five",
@@ -1347,7 +1389,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 980,
+        chronologyOrder: 1010,
         contentType: "film",
         creditScenes: { after: true, during: false },
         imdbUrl: "https://www.imdb.com/title/tt14513804/",
@@ -1361,7 +1403,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 990,
+        chronologyOrder: 1020,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt20969586/",
@@ -1375,7 +1417,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 1000,
+        chronologyOrder: 1030,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt10676052/",
@@ -1389,7 +1431,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-828",
     },
     {
-        chronologyOrder: 1010,
+        chronologyOrder: 1040,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt21066182/",
         phase: "Phase Six",
@@ -1402,7 +1444,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 1020,
+        chronologyOrder: 1050,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt18923754/",
         phase: "Phase Six",
@@ -1415,7 +1457,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 1030,
+        chronologyOrder: 1060,
         contentType: "special",
         imdbUrl: "https://www.imdb.com/title/tt36042156/",
         phase: "Phase Six",
@@ -1428,7 +1470,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 1040,
+        chronologyOrder: 1070,
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt22084616/",
@@ -1442,7 +1484,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 1050,
+        chronologyOrder: 1080,
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt23112594/",
         phase: "Phase Six",
@@ -1455,7 +1497,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 1060,
+        chronologyOrder: 1090,
         contentType: "film",
         imdbUrl: "https://www.imdb.com/title/tt21357150/",
         note: "The Fox connection marks a viewing-order crossover. It does not mean those films take place on Earth-616. The in-universe date and relationship to Logan’s 2029 setting remain unconfirmed.",
@@ -1469,7 +1511,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 1070,
+        chronologyOrder: 1100,
         contentType: "film",
         imdbUrl: "https://www.imdb.com/title/tt21361444/",
         phase: "Phase Six",
