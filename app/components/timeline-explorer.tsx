@@ -415,6 +415,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
         watchedSlugs,
     } = useWatchProgress();
     const [pendingWatchSlug, setPendingWatchSlug] = useState<string | null>(null);
+    const [checklistMarkedSlugs, setChecklistMarkedSlugs] = useState<string[]>([]);
     const [pendingWatchReturnIndex, setPendingWatchReturnIndex] = useState<number | null>(null);
     const filtersRef = useRef<HTMLElement>(null);
     const watchlistRef = useRef<HTMLElement>(null);
@@ -495,18 +496,19 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
     ).length;
     const watchableVisibleCount = visibleEntries.filter(isWatchable).length;
     const nextUnwatchedEntries = useMemo(() => {
-        const pendingEntry = visibleEntries.find((entry) => entry.slug === pendingWatchSlug);
-        const upcomingEntries = visibleEntries.filter(
-            (entry) => !watchedSlugs.includes(entry.slug) && entry.slug !== pendingWatchSlug
+        // Keep rows in place throughout a checklist session so repeated clicks stay predictable.
+        return visibleEntries.filter(
+            (entry) =>
+                !watchedSlugs.includes(entry.slug) || checklistMarkedSlugs.includes(entry.slug)
         );
-        return [pendingEntry, ...upcomingEntries].filter((entry) => entry !== undefined);
-    }, [pendingWatchSlug, visibleEntries, watchedSlugs]);
+    }, [checklistMarkedSlugs, visibleEntries, watchedSlugs]);
     const toggleFilters = useCallback(() => {
         setWatchlistOpen(false);
         setFiltersOpen((current) => !current);
     }, []);
     const toggleWatchlist = useCallback(() => {
         setFiltersOpen(false);
+        setChecklistMarkedSlugs([]);
         setWatchlistOpen((current) => !current);
     }, []);
     const closeDetail = useCallback(() => {
@@ -694,17 +696,12 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
             if (!(slug && targetEntry && isWatchable(targetEntry))) {
                 return;
             }
-            const entryIndex = visibleEntries.findIndex((entry) => entry.slug === slug);
-            const undoing = pendingWatchSlug === slug;
+            setChecklistMarkedSlugs((current) =>
+                current.includes(slug) ? current : [...current, slug]
+            );
             toggleWatched(slug);
-            clearTimeout(pendingWatchTimeout.current ?? undefined);
-            if (undoing) {
-                undoPendingWatch(entryIndex);
-                return;
-            }
-            beginPendingWatch(slug, entryIndex);
         },
-        [beginPendingWatch, pendingWatchSlug, toggleWatched, undoPendingWatch, visibleEntries]
+        [toggleWatched, visibleEntries]
     );
     const handleTimelineChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const index = Number(event.currentTarget.value);
@@ -808,12 +805,12 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                     onReset={resetWatchStatus}
                     onToggleOpen={toggleWatchlist}
                     open={watchlistOpen}
-                    pendingSlug={pendingWatchSlug}
                     signedIn={Boolean(authUser)}
                     syncError={syncError}
                     totalWatchedCount={watchedSlugs.length}
                     visibleEntryCount={watchableVisibleCount}
                     visibleWatchedCount={watchedVisibleCount}
+                    watchedSlugs={watchedSlugs}
                 />
 
                 <aside

@@ -18,44 +18,45 @@ interface WatchProgressMenuProps {
     onReset: () => void;
     onToggleOpen: () => void;
     open: boolean;
-    pendingSlug: string | null;
     signedIn: boolean;
     syncError: boolean;
     totalWatchedCount: number;
     visibleEntryCount: number;
     visibleWatchedCount: number;
+    watchedSlugs: string[];
 }
 
 interface WatchProgressTileProps {
     entry: TimelineEntry;
     onEntrySelect: MouseEventHandler<HTMLButtonElement>;
     onEntryToggle: MouseEventHandler<HTMLButtonElement>;
-    pendingSlug: string | null;
+    watchedSlugs: string[];
 }
 
 function WatchProgressTile({
     entry,
     onEntrySelect,
     onEntryToggle,
-    pendingSlug,
+    watchedSlugs,
 }: WatchProgressTileProps) {
     const watchable = isWatchable(entry);
-    const pending = watchable && pendingSlug === entry.slug;
+    const watched = watchable && watchedSlugs.includes(entry.slug);
     let markLabel = `${entry.title} has not been released`;
     let markIcon: "check" | "minus" | "undo" = "minus";
     let markText = "Soon";
     if (watchable) {
-        markLabel = pending
+        markLabel = watched
             ? `Undo marking ${entry.title} as watched`
             : `Mark ${entry.title} as watched`;
-        markIcon = pending ? "undo" : "check";
-        markText = pending ? "Undo" : "Mark";
+        markIcon = watched ? "undo" : "check";
+        markText = watched ? "Undo" : "Mark";
     }
 
     return (
         <div
-            className={`timeline-watchlist-tile-row ${pending ? "timeline-watchlist-tile-row-pending" : ""}`}
+            className="timeline-watchlist-tile-row"
             data-unreleased={!watchable}
+            data-watched={watched}
         >
             <button
                 className="focus-ring timeline-watchlist-tile"
@@ -84,17 +85,18 @@ function WatchProgressTile({
                         {entry.placement}
                     </span>
                     <strong>{entry.title}</strong>
+                    {watched ? <span className="sr-only">Watched</span> : null}
                 </span>
                 <span aria-hidden="true" className="timeline-watchlist-tile-arrow">
-                    <UiIcon name="external-link" />
+                    <UiIcon name={watched ? "check" : "external-link"} />
                 </span>
             </button>
             <button
                 aria-label={markLabel}
                 className="focus-ring timeline-watchlist-mark"
-                data-pending={pending}
                 data-slug={entry.slug}
                 data-unreleased={!watchable}
+                data-watched={watched}
                 disabled={!watchable}
                 onClick={onEntryToggle}
                 type="button"
@@ -120,7 +122,7 @@ export function WatchProgressMenu(props: WatchProgressMenuProps) {
         onReset,
         onToggleOpen,
         open,
-        pendingSlug,
+        watchedSlugs,
         signedIn,
         syncError,
         totalWatchedCount,
@@ -206,7 +208,7 @@ export function WatchProgressMenu(props: WatchProgressMenuProps) {
                                         key={entry.slug}
                                         onEntrySelect={onEntrySelect}
                                         onEntryToggle={onEntryToggle}
-                                        pendingSlug={pendingSlug}
+                                        watchedSlugs={watchedSlugs}
                                     />
                                 ))
                             ) : (
