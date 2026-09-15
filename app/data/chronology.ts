@@ -905,7 +905,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 650,
         contentType: "film",
-        creditScenes: { after: false, during: false },
+        creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt0120667/",
         note: "The 2005 Fantastic Four continuity. It is placed here as reference context for the Human Torch appearance in Deadpool & Wolverine.",
         placement: "2005",
@@ -919,7 +919,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 660,
         contentType: "film",
-        creditScenes: { after: false, during: false },
+        creditScenes: { after: false, during: true },
         imdbUrl: "https://www.imdb.com/title/tt0486576/",
         note: "Continues the 2005 Fantastic Four continuity. It remains in the early legacy block as reference context for Deadpool & Wolverine.",
         placement: "2007",
@@ -975,7 +975,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 700,
         contentType: "film",
-        creditScenes: { after: false, during: false },
+        creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt0359013/",
         note: "Concludes the Blade trilogy on Earth-26320. It remains in the early legacy block as reference context for Deadpool & Wolverine.",
         placement: "2004",
@@ -989,7 +989,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 710,
         contentType: "film",
-        creditScenes: { after: false, during: false },
+        creditScenes: { after: false, during: true },
         imdbUrl: "https://www.imdb.com/title/tt0287978/",
         note: "The first film in the Earth-701306 continuity. It is placed in the early legacy block as context for Elektra in Deadpool & Wolverine.",
         placement: "2003",
