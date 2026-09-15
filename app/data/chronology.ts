@@ -719,6 +719,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 560,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0145487/",
         placement: "2002",
         releaseDate: "2002-05-03",
@@ -731,6 +732,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 570,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0316654/",
         placement: "2004",
         releaseDate: "2004-06-30",
@@ -743,6 +745,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 580,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0413300/",
         placement: "2007",
         releaseDate: "2007-05-04",
@@ -755,6 +758,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 590,
         contentType: "film",
+        creditScenes: { after: false, during: true },
         imdbUrl: "https://www.imdb.com/title/tt0948470/",
         placement: "2012",
         releaseDate: "2012-07-03",
@@ -767,6 +771,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 600,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt1872181/",
         placement: "2014",
         releaseDate: "2014-05-02",
@@ -1125,6 +1130,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 890,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt1270798/",
         note: "Shared history before Days of Future Past changes events in 1973. The original and revised Fox histories both inherit these events. Earth-41578 is the Appendix reference designation used here for the original history, not an on-screen label.",
         placement: "1962",
@@ -1140,6 +1146,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 900,
         contentType: "film",
+        creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt1877832/",
         note: "Wolverine travels from the original history in 2023 to 1973 and changes the future. First Class is shared history; the original trilogy does not carry over unchanged into the revised history. Chronological order uses the 1973 intervention. Earth-41578 follows the Appendix reference classification; Earth-10005 is identified on screen in Deadpool & Wolverine.",
         placement: "1973 and 2023",
@@ -1155,6 +1162,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 910,
         contentType: "film",
+        creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt0458525/",
         note: "Original Fox timeline. The main story takes place in the late 1970s, with earlier scenes beginning in 1845.",
         placement: "Late 1970s",
@@ -1168,6 +1176,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 920,
         contentType: "film",
+        creditScenes: { after: true, during: false },
         imdbUrl: "https://www.imdb.com/title/tt3385516/",
         note: "Revised Fox timeline following the changes in Days of Future Past.",
         placement: "1983",
@@ -1181,6 +1190,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 930,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt6565702/",
         note: "Revised Fox timeline, after Apocalypse.",
         placement: "1992",
@@ -1194,6 +1204,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 940,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0120903/",
         note: "Original Fox timeline, before its future is rewritten in Days of Future Past.",
         placement: "Near future, original timeline",
@@ -1207,6 +1218,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 950,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0290334/",
         note: "Original Fox timeline, following X-Men.",
         placement: "After X-Men",
@@ -1220,6 +1232,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 960,
         contentType: "film",
+        creditScenes: { after: true, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0376994/",
         note: "Original Fox timeline, following X2.",
         placement: "After X2",
@@ -1233,6 +1246,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 970,
         contentType: "film",
+        creditScenes: { after: false, during: true },
         imdbUrl: "https://www.imdb.com/title/tt1430132/",
         note: "Original Fox timeline, after The Last Stand and before Days of Future Past.",
         placement: "2013",
@@ -1246,6 +1260,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 980,
         contentType: "film",
+        creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt1431045/",
         note: "Fox Deadpool continuity, leading to Deadpool 2 and Deadpool & Wolverine.",
         placement: "2016",
@@ -1259,6 +1274,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 990,
         contentType: "film",
+        creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt5463162/",
         note: "Fox Deadpool continuity. Release-order mode places Logan first to preserve this film's references.",
         placement: "2018 and time travel",
@@ -1272,6 +1288,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 1000,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt4682266/",
         note: "Fox X-Men spin-off. Its precise calendar placement is not established, so it follows the contemporary Deadpool films.",
         placement: "Undated, contemporary",
@@ -1299,6 +1316,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 1020,
         contentType: "film",
+        creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt3315342/",
         note: "Set in 2029 on Earth-10005, after the contemporary events of Deadpool & Wolverine. The crossover connection does not move Logan to Earth-616 or establish whether it precedes Doomsday. Choose release order to see Logan before the Deadpool films reveal its ending.",
         placement: "2029",
