@@ -668,19 +668,6 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     },
     {
         chronologyOrder: 520,
-        contentType: "film",
-        creditScenes: { after: true, during: true },
-        phase: "Phase Four",
-        placement: "2025",
-        releaseDate: "2022-07-08",
-        saga: "Multiverse Saga",
-        slug: "thor-love-and-thunder",
-        status: "released",
-        title: "Thor: Love and Thunder",
-        universe: "Earth-616",
-    },
-    {
-        chronologyOrder: 530,
         contentType: "short",
         phase: "Phase Three",
         placement: "Summer 2024",
@@ -692,7 +679,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 540,
+        chronologyOrder: 530,
         contentType: "film",
         creditScenes: { after: true, during: true },
         phase: "Phase Three",
@@ -705,7 +692,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 550,
+        chronologyOrder: 540,
         contentType: "film",
         creditScenes: { after: true, during: true },
         phase: "Phase Four",
@@ -718,7 +705,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 560,
+        chronologyOrder: 550,
         contentType: "film",
         creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0145487/",
@@ -731,7 +718,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-96283",
     },
     {
-        chronologyOrder: 570,
+        chronologyOrder: 560,
         contentType: "film",
         creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0316654/",
@@ -744,7 +731,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-96283",
     },
     {
-        chronologyOrder: 580,
+        chronologyOrder: 570,
         contentType: "film",
         creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt0413300/",
@@ -757,7 +744,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-96283",
     },
     {
-        chronologyOrder: 590,
+        chronologyOrder: 580,
         contentType: "film",
         creditScenes: { after: false, during: true },
         imdbUrl: "https://www.imdb.com/title/tt0948470/",
@@ -770,7 +757,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-120703",
     },
     {
-        chronologyOrder: 600,
+        chronologyOrder: 590,
         contentType: "film",
         creditScenes: { after: false, during: false },
         imdbUrl: "https://www.imdb.com/title/tt1872181/",
@@ -783,7 +770,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-120703",
     },
     {
-        chronologyOrder: 610,
+        chronologyOrder: 600,
         contentType: "film",
         creditScenes: { after: true, during: true },
         phase: "Phase Four",
@@ -796,7 +783,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 620,
+        chronologyOrder: 610,
         contentType: "film",
         creditScenes: { after: true, during: true },
         phase: "Phase Four",
@@ -809,7 +796,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 630,
+        chronologyOrder: 620,
         contentType: "series",
         phase: "Phase Four",
         placement: "Christmas 2024",
@@ -821,7 +808,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 640,
+        chronologyOrder: 630,
         contentType: "series",
         phase: "Phase Four",
         placement: "2025",
@@ -833,7 +820,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 650,
+        chronologyOrder: 640,
         contentType: "film",
         creditScenes: { after: false, during: true },
         phase: "Phase Four",
@@ -846,7 +833,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 660,
+        chronologyOrder: 650,
         contentType: "series",
         phase: "Phase Five",
         placement: "2025",
@@ -858,7 +845,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 670,
+        chronologyOrder: 660,
         contentType: "series",
         phase: "Phase Four",
         placement: "2025",
@@ -870,7 +857,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         universe: "Earth-616",
     },
     {
-        chronologyOrder: 680,
+        chronologyOrder: 670,
         contentType: "series",
         phase: "Phase Four",
         placement: "2025",
@@ -879,6 +866,19 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         slug: "ms-marvel",
         status: "released",
         title: "Ms. Marvel",
+        universe: "Earth-616",
+    },
+    {
+        chronologyOrder: 680,
+        contentType: "film",
+        creditScenes: { after: true, during: true },
+        phase: "Phase Four",
+        placement: "2025",
+        releaseDate: "2022-07-08",
+        saga: "Multiverse Saga",
+        slug: "thor-love-and-thunder",
+        status: "released",
+        title: "Thor: Love and Thunder",
         universe: "Earth-616",
     },
     {
