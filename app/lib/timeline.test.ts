@@ -23,7 +23,7 @@ describe("chronology", () => {
 });
 
 describe("Sony chronology", () => {
-    test("places the seeded trilogy between Eternals and No Way Home without MCU membership", () => {
+    test("places legacy Spider-Man films before the other reference blocks", () => {
         const sony = chronology.filter((entry) => entry.universe === "Earth-96283");
         expect(
             sony.map((entry) => [entry.slug, entry.placement, entry.releaseDate, entry.imdbUrl])
@@ -50,12 +50,19 @@ describe("Sony chronology", () => {
                 "https://www.imdb.com/title/tt1872181/",
             ],
         ]);
-        const eternalsIndex = ordered.findIndex((entry) => entry.slug === "eternals");
-        expect(ordered.slice(eternalsIndex, eternalsIndex + 7).map((entry) => entry.slug)).toEqual([
-            "eternals",
+        const foxIndex = ordered.findIndex((entry) => entry.slug === "logan-2017");
+        expect(ordered.slice(foxIndex + 1, foxIndex + 15).map((entry) => entry.slug)).toEqual([
             ...sony.map((entry) => entry.slug),
             ...andrew.map((entry) => entry.slug),
-            "spider-man-no-way-home",
+            "fantastic-four-2005",
+            "fantastic-four-rise-of-the-silver-surfer",
+            "fantastic-four-2015",
+            "blade-1998",
+            "blade-ii-2002",
+            "blade-trinity-2004",
+            "daredevil-2003",
+            "elektra-2005",
+            "what-if-season-1",
         ]);
         const captainIndex = ordered.findIndex((entry) => entry.slug === "captain-marvel");
         expect(ordered[captainIndex + 1].slug).toBe("iron-man");
@@ -129,18 +136,28 @@ const fox = filterTimeline(chronology, {
 });
 
 describe("Fox X-Men chronology", () => {
-    test("orders the Fox stories by their main setting", () => {
+    test("places the Fox stories after Loki Season 1 for reference context", () => {
         const ordered = filterTimeline(chronology, emptyTimelineFilters);
-        const start = ordered.findIndex((entry) => entry.slug === "visionquest");
-        expect(ordered.slice(start, start + 16).map((entry) => entry.slug)).toEqual([
-            "visionquest",
-            ...foxExpected.slice(0, -1).map(([slug]) => slug),
-            "deadpool-and-wolverine",
-            "logan-2017",
-            "avengers-doomsday",
+        const start = ordered.findIndex((entry) => entry.slug === "loki-season-1");
+        const sony = chronology.filter(
+            (entry) => entry.universe === "Earth-96283" || entry.universe === "Earth-120703"
+        );
+        const fantasticFour = chronology.filter(
+            (entry) => entry.universe === "Earth-121698" || entry.universe === "Earth-15866"
+        );
+        const blade = chronology.filter((entry) => entry.universe === "Earth-26320");
+        const legacyDaredevil = chronology.filter((entry) => entry.universe === "Earth-701306");
+        expect(ordered.slice(start, start + 28).map((entry) => entry.slug)).toEqual([
+            "loki-season-1",
+            ...foxExpected.map(([slug]) => slug),
+            ...sony.map((entry) => entry.slug),
+            ...fantasticFour.map((entry) => entry.slug),
+            ...blade.map((entry) => entry.slug),
+            ...legacyDaredevil.map((entry) => entry.slug),
+            "what-if-season-1",
         ]);
-        const formerStart = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
-        expect(ordered.at(formerStart + 1)?.slug).toBe("agatha-all-along");
+        const lokiSeasonTwo = ordered.findIndex((entry) => entry.slug === "loki-season-2");
+        expect(ordered.at(lokiSeasonTwo + 1)?.slug).toBe("deadpool-and-wolverine");
         expect(fox.at(-1)?.slug).toBe("logan-2017");
     });
 
@@ -201,8 +218,8 @@ describe("timeline filters", () => {
             universes: ["fox-x-men"],
         });
         expect(chronological.slice(-2).map((entry) => entry.slug)).toEqual([
-            "deadpool-and-wolverine",
             "logan-2017",
+            "deadpool-and-wolverine",
         ]);
         const release = filterTimeline(chronological, {
             ...emptyTimelineFilters,
@@ -214,8 +231,10 @@ describe("timeline filters", () => {
     });
     test("groups entries into clear universe choices", () => {
         const expectedCounts = {
-            "fantastic-four": 1,
+            blade: 3,
+            "fantastic-four": 4,
             "fox-x-men": 14,
+            "legacy-daredevil": 2,
             "marvel-zombies": 1,
             mcu: 77,
             multiverse: 5,

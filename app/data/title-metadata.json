@@ -165,13 +165,13 @@
     "fetchedAt": "2026-09-14T10:44:50.043Z",
     "requestedTitle": "The Consultant",
     "source": {
-      "description": "Follows a relationship between employee and boss, asking how far we will go to get ahead, and to survive.",
-      "genres": ["comedy", "drama", "thriller"],
-      "imdbUrl": "https://www.imdb.com/title/tt16152716/",
-      "posterUrl": "https://m.media-amazon.com/images/M/MV5BNzEwMWZmZTQtNzdlOC00MDFkLWE5ZWQtYWYxMTA3OWZkNzM5XkEyXkFqcGc@._V1_.jpg",
-      "rating": 6.5,
-      "runtime": "33m",
-      "traktUrl": "https://app.trakt.tv/shows/the-consultant-2023"
+      "description": "Agents Coulson and Sitwell plan to derail General Thaddeus \"Thunderbolt\" Ross from interfering with S.H.I.E.L.D. affairs with a very special person.",
+      "genres": ["short", "comedy", "drama", "sciFi"],
+      "imdbUrl": "https://www.imdb.com/title/tt2011118/",
+      "posterUrl": "https://m.media-amazon.com/images/M/MV5BZGMxYzBkMTEtZDljYi00YjM2LTgxMTMtNjFiOWQwMTg0NjhmXkEyXkFqcGc@._V1_.jpg",
+      "rating": 6.3,
+      "runtime": "4m",
+      "traktUrl": "https://app.trakt.tv/movies/marvel-one-shot-the-consultant-2011"
     },
     "status": "resolved"
   },
@@ -813,13 +813,13 @@
     "fetchedAt": "2026-09-14T10:47:27.854Z",
     "requestedTitle": "Loki Season 2",
     "source": {
-      "description": "The cast and crew of Loki: Season 2 pull back the curtain on Loki's latest MCU adventure.",
-      "genres": ["documentary"],
-      "imdbUrl": "https://www.imdb.com/title/tt28889780/",
-      "posterUrl": "https://m.media-amazon.com/images/M/MV5BNTliODE5MmEtMjRmMi00N2Y3LTgwNzgtNjI2YjM4MGVjZjdmXkEyXkFqcGc@._V1_.jpg",
-      "rating": 7.6,
-      "runtime": "58m",
-      "traktUrl": "https://app.trakt.tv/movies/marvel-studios-assembled-the-making-of-loki-season-2-2023"
+      "description": "The mercurial villain Loki resumes his role as the God of Mischief in a new series that takes place after the events of “Avengers: Endgame.”",
+      "genres": ["action", "adventure", "fantasy", "sciFi"],
+      "imdbUrl": "https://www.imdb.com/title/tt9140554/",
+      "posterUrl": "https://m.media-amazon.com/images/M/MV5BYzA2YjM2ZWQtYTZhMS00OTI3LTlhYzQtZjBiZWZkMDdlNjA5XkEyXkFqcGc@._V1_.jpg",
+      "rating": 8.2,
+      "runtime": "50m",
+      "traktUrl": "https://app.trakt.tv/shows/loki"
     },
     "status": "resolved"
   },
@@ -1500,6 +1500,118 @@
       "rating": 6.051,
       "runtime": "1h 34m",
       "traktUrl": "https://app.trakt.tv/movies/the-new-mutants-2020"
+    },
+    "status": "resolved"
+  },
+  "fantastic-four-2005": {
+    "fetchedAt": "2026-09-15T15:58:24.172Z",
+    "requestedTitle": "Fantastic Four",
+    "source": {
+      "description": "During a space voyage, four scientists are altered by cosmic rays: Reed Richards gains the ability to stretch his body; Sue Storm can become invisible; Johnny Storm controls fire; and Ben Grimm is turned into a super-strong … thing. Together, these \"Fantastic Four\" must now thwart the evil plans of Dr. Doom and save the world from certain destruction.",
+      "genres": ["Action", "Fantasy", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0120667/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/4YMcYEFS8sFuW3soP1HVmgR3cSm.jpg",
+      "rating": 5.8,
+      "runtime": "1h 46m",
+      "traktUrl": "https://app.trakt.tv/movies/fantastic-four-2005"
+    },
+    "status": "resolved"
+  },
+  "fantastic-four-rise-of-the-silver-surfer": {
+    "fetchedAt": "2026-09-15T15:58:25.266Z",
+    "requestedTitle": "Fantastic Four: Rise of the Silver Surfer",
+    "source": {
+      "description": "The Fantastic Four return to the big screen as a new and all powerful enemy threatens the Earth. The seemingly unstoppable 'Silver Surfer', but all is not what it seems and there are old and new enemies that pose a greater threat than the intrepid superheroes realize.",
+      "genres": ["Science Fiction", "Adventure", "Action"],
+      "imdbUrl": "https://www.imdb.com/title/tt0486576/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/pyk3c1a4U6nxRJPljPQbP8elTSU.jpg",
+      "rating": 5.637,
+      "runtime": "1h 32m",
+      "traktUrl": "https://app.trakt.tv/movies/fantastic-four-rise-of-the-silver-surfer-2007"
+    },
+    "status": "resolved"
+  },
+  "fantastic-four-2015": {
+    "fetchedAt": "2026-09-15T15:58:26.442Z",
+    "requestedTitle": "Fantastic Four",
+    "source": {
+      "description": "Four young outsiders teleport to a dangerous universe, which alters their physical form in shocking ways. Their lives irrevocably upended, the team must learn to harness their daunting new abilities and work together to save Earth from a former friend turned enemy.",
+      "genres": ["Action", "Adventure", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt1502712/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/cDroz5qSlP8xZ6tOpeYoPkBvKyL.jpg",
+      "rating": 4.433,
+      "runtime": "1h 40m",
+      "traktUrl": "https://app.trakt.tv/movies/fantastic-four-2015"
+    },
+    "status": "resolved"
+  },
+  "blade-1998": {
+    "fetchedAt": "2026-09-15T16:07:00.964Z",
+    "requestedTitle": "Blade",
+    "source": {
+      "description": "The Daywalker known as \"Blade\" - a half-vampire, half-mortal man - becomes the protector of humanity against an underground army of vampires.",
+      "genres": ["Horror", "Action"],
+      "imdbUrl": "https://www.imdb.com/title/tt0120611/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/oWT70TvbsmQaqyphCZpsnQR7R32.jpg",
+      "rating": 6.854,
+      "runtime": "2h 1m",
+      "traktUrl": "https://app.trakt.tv/movies/blade-1998"
+    },
+    "status": "resolved"
+  },
+  "blade-ii-2002": {
+    "fetchedAt": "2026-09-15T16:07:02.158Z",
+    "requestedTitle": "Blade II",
+    "source": {
+      "description": "Blade forms an uneasy alliance with the vampire council in order to combat the Reapers, who are feeding on vampires.",
+      "genres": ["Fantasy", "Horror", "Action", "Thriller"],
+      "imdbUrl": "https://www.imdb.com/title/tt0187738/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/wAn6VYamKbnOtfyTZ6arVtkMzDv.jpg",
+      "rating": 6.574,
+      "runtime": "1h 57m",
+      "traktUrl": "https://app.trakt.tv/movies/blade-ii-2002"
+    },
+    "status": "resolved"
+  },
+  "blade-trinity-2004": {
+    "fetchedAt": "2026-09-15T16:07:03.263Z",
+    "requestedTitle": "Blade: Trinity",
+    "source": {
+      "description": "For years, Blade has fought against the vampires in the cover of the night. But now, after falling into the crosshairs of the FBI, he is forced out into the daylight, where he is driven to join forces with a clan of human vampire hunters he never knew existed—The Nightstalkers. Together with Abigail and Hannibal, two deftly trained Nightstalkers, Blade follows a trail of blood to the ancient creature that is also hunting him—the original vampire, Dracula.",
+      "genres": ["Action", "Horror", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0359013/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/6f7iXvPOnf83MaLB1JmPzUor1rr.jpg",
+      "rating": 5.864,
+      "runtime": "1h 53m",
+      "traktUrl": "https://app.trakt.tv/movies/blade-trinity-2004"
+    },
+    "status": "resolved"
+  },
+  "daredevil-2003": {
+    "fetchedAt": "2026-09-15T19:18:53.888Z",
+    "requestedTitle": "Daredevil",
+    "source": {
+      "description": "By day, blind attorney Matt Murdock toils for justice in Hell's Kitchen. By night, he's Daredevil, The Man Without Fear - a powerful, masked vigilante stalking the dark streets with an uncanny \"radar sense\" that allows him to \"see\" with superhuman capabilities. But when the love of his life, fiery Elektra Natchios, is targeted by New York City's ruthless Kingpin of crime and his deadly assassin Bullseye, Daredevil may be about to meet his match.",
+      "genres": ["Fantasy", "Action"],
+      "imdbUrl": "https://www.imdb.com/title/tt0287978/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/oCDBwSkntYamuw8VJIxMRCtDBmi.jpg",
+      "rating": 5.3,
+      "runtime": "1h 43m",
+      "traktUrl": "https://app.trakt.tv/movies/daredevil-2003"
+    },
+    "status": "resolved"
+  },
+  "elektra-2005": {
+    "fetchedAt": "2026-09-15T19:18:55.043Z",
+    "requestedTitle": "Elektra",
+    "source": {
+      "description": "Elektra the warrior survives a near-death experience, becomes an assassin-for-hire, and tries to protect her two latest targets, a single father and his young daughter, from a group of supernatural assassins.",
+      "genres": ["Action", "Fantasy", "Adventure"],
+      "imdbUrl": "https://www.imdb.com/title/tt0357277/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/gC6s6NKHneSrOKyQZnUMb443RKU.jpg",
+      "rating": 5.046,
+      "runtime": "1h 37m",
+      "traktUrl": "https://app.trakt.tv/movies/elektra-2005"
     },
     "status": "resolved"
   }

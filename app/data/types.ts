@@ -24,6 +24,9 @@ export type McuPhase = (typeof phases)[number];
 export type ContentStatus = "released" | "announced";
 
 export type Saga =
+    | "Blade Universe"
+    | "Daredevil and Elektra Universe"
+    | "Fantastic Four Universe"
     | "Infinity Saga"
     | "Multiverse Saga"
     | "Sony Spider-Man Universe"
@@ -36,6 +39,7 @@ export interface CreditScenesInfo {
 
 export interface TimelineEntry {
     chronologyOrder: number;
+    chronologyWarning?: string;
     contentType: ContentType;
     creditScenes?: CreditScenesInfo;
     description: string;
