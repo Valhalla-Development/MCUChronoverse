@@ -1502,5 +1502,47 @@
       "traktUrl": "https://app.trakt.tv/movies/the-new-mutants-2020"
     },
     "status": "resolved"
+  },
+  "fantastic-four-2005": {
+    "fetchedAt": "2026-09-15T15:58:24.172Z",
+    "requestedTitle": "Fantastic Four",
+    "source": {
+      "description": "During a space voyage, four scientists are altered by cosmic rays: Reed Richards gains the ability to stretch his body; Sue Storm can become invisible; Johnny Storm controls fire; and Ben Grimm is turned into a super-strong … thing. Together, these \"Fantastic Four\" must now thwart the evil plans of Dr. Doom and save the world from certain destruction.",
+      "genres": ["Action", "Fantasy", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt0120667/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/4YMcYEFS8sFuW3soP1HVmgR3cSm.jpg",
+      "rating": 5.8,
+      "runtime": "1h 46m",
+      "traktUrl": "https://app.trakt.tv/movies/fantastic-four-2005"
+    },
+    "status": "resolved"
+  },
+  "fantastic-four-rise-of-the-silver-surfer": {
+    "fetchedAt": "2026-09-15T15:58:25.266Z",
+    "requestedTitle": "Fantastic Four: Rise of the Silver Surfer",
+    "source": {
+      "description": "The Fantastic Four return to the big screen as a new and all powerful enemy threatens the Earth. The seemingly unstoppable 'Silver Surfer', but all is not what it seems and there are old and new enemies that pose a greater threat than the intrepid superheroes realize.",
+      "genres": ["Science Fiction", "Adventure", "Action"],
+      "imdbUrl": "https://www.imdb.com/title/tt0486576/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/pyk3c1a4U6nxRJPljPQbP8elTSU.jpg",
+      "rating": 5.637,
+      "runtime": "1h 32m",
+      "traktUrl": "https://app.trakt.tv/movies/fantastic-four-rise-of-the-silver-surfer-2007"
+    },
+    "status": "resolved"
+  },
+  "fantastic-four-2015": {
+    "fetchedAt": "2026-09-15T15:58:26.442Z",
+    "requestedTitle": "Fantastic Four",
+    "source": {
+      "description": "Four young outsiders teleport to a dangerous universe, which alters their physical form in shocking ways. Their lives irrevocably upended, the team must learn to harness their daunting new abilities and work together to save Earth from a former friend turned enemy.",
+      "genres": ["Action", "Adventure", "Science Fiction"],
+      "imdbUrl": "https://www.imdb.com/title/tt1502712/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/cDroz5qSlP8xZ6tOpeYoPkBvKyL.jpg",
+      "rating": 4.433,
+      "runtime": "1h 40m",
+      "traktUrl": "https://app.trakt.tv/movies/fantastic-four-2015"
+    },
+    "status": "resolved"
   }
 }

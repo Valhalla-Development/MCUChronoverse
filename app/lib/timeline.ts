@@ -154,7 +154,7 @@ export function universeFilterForEntry(entry: TimelineEntry): TimelineUniverseFi
     if (entry.universe === "Earth-89521") {
         return "marvel-zombies";
     }
-    if (entry.universe === "Earth-828") {
+    if (["Earth-121698", "Earth-15866", "Earth-828"].includes(entry.universe)) {
         return "fantastic-four";
     }
     if (entry.universe === "TBD") {

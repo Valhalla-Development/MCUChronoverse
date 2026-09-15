@@ -23,7 +23,7 @@ describe("chronology", () => {
 });
 
 describe("Sony chronology", () => {
-    test("places the legacy Spider-Man films after the Fox reference block", () => {
+    test("places legacy Spider-Man films before the Fantastic Four references", () => {
         const sony = chronology.filter((entry) => entry.universe === "Earth-96283");
         expect(
             sony.map((entry) => [entry.slug, entry.placement, entry.releaseDate, entry.imdbUrl])
@@ -51,9 +51,12 @@ describe("Sony chronology", () => {
             ],
         ]);
         const foxIndex = ordered.findIndex((entry) => entry.slug === "logan-2017");
-        expect(ordered.slice(foxIndex + 1, foxIndex + 7).map((entry) => entry.slug)).toEqual([
+        expect(ordered.slice(foxIndex + 1, foxIndex + 10).map((entry) => entry.slug)).toEqual([
             ...sony.map((entry) => entry.slug),
             ...andrew.map((entry) => entry.slug),
+            "fantastic-four-2005",
+            "fantastic-four-rise-of-the-silver-surfer",
+            "fantastic-four-2015",
             "what-if-season-1",
         ]);
         const captainIndex = ordered.findIndex((entry) => entry.slug === "captain-marvel");
@@ -134,10 +137,14 @@ describe("Fox X-Men chronology", () => {
         const sony = chronology.filter(
             (entry) => entry.universe === "Earth-96283" || entry.universe === "Earth-120703"
         );
-        expect(ordered.slice(start, start + 20).map((entry) => entry.slug)).toEqual([
+        const fantasticFour = chronology.filter(
+            (entry) => entry.universe === "Earth-121698" || entry.universe === "Earth-15866"
+        );
+        expect(ordered.slice(start, start + 23).map((entry) => entry.slug)).toEqual([
             "loki-season-1",
             ...foxExpected.map(([slug]) => slug),
             ...sony.map((entry) => entry.slug),
+            ...fantasticFour.map((entry) => entry.slug),
             "what-if-season-1",
         ]);
         const lokiSeasonTwo = ordered.findIndex((entry) => entry.slug === "loki-season-2");
@@ -215,7 +222,7 @@ describe("timeline filters", () => {
     });
     test("groups entries into clear universe choices", () => {
         const expectedCounts = {
-            "fantastic-four": 1,
+            "fantastic-four": 4,
             "fox-x-men": 14,
             "marvel-zombies": 1,
             mcu: 77,
