@@ -1586,5 +1586,33 @@
       "traktUrl": "https://app.trakt.tv/movies/blade-trinity-2004"
     },
     "status": "resolved"
+  },
+  "daredevil-2003": {
+    "fetchedAt": "2026-09-15T19:18:53.888Z",
+    "requestedTitle": "Daredevil",
+    "source": {
+      "description": "By day, blind attorney Matt Murdock toils for justice in Hell's Kitchen. By night, he's Daredevil, The Man Without Fear - a powerful, masked vigilante stalking the dark streets with an uncanny \"radar sense\" that allows him to \"see\" with superhuman capabilities. But when the love of his life, fiery Elektra Natchios, is targeted by New York City's ruthless Kingpin of crime and his deadly assassin Bullseye, Daredevil may be about to meet his match.",
+      "genres": ["Fantasy", "Action"],
+      "imdbUrl": "https://www.imdb.com/title/tt0287978/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/oCDBwSkntYamuw8VJIxMRCtDBmi.jpg",
+      "rating": 5.3,
+      "runtime": "1h 43m",
+      "traktUrl": "https://app.trakt.tv/movies/daredevil-2003"
+    },
+    "status": "resolved"
+  },
+  "elektra-2005": {
+    "fetchedAt": "2026-09-15T19:18:55.043Z",
+    "requestedTitle": "Elektra",
+    "source": {
+      "description": "Elektra the warrior survives a near-death experience, becomes an assassin-for-hire, and tries to protect her two latest targets, a single father and his young daughter, from a group of supernatural assassins.",
+      "genres": ["Action", "Fantasy", "Adventure"],
+      "imdbUrl": "https://www.imdb.com/title/tt0357277/",
+      "posterUrl": "https://image.tmdb.org/t/p/w780/gC6s6NKHneSrOKyQZnUMb443RKU.jpg",
+      "rating": 5.046,
+      "runtime": "1h 37m",
+      "traktUrl": "https://app.trakt.tv/movies/elektra-2005"
+    },
+    "status": "resolved"
   }
 }

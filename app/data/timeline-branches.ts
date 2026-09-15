@@ -80,6 +80,16 @@ const universeBranches: readonly TimelineBranch[] = [
     {
         anchorBefore: "wandavision",
         cardDepthOffset: 1.7,
+        detachedOffsetX: -74,
+        markerCaption: "DAREDEVIL · ELEKTRA",
+        markerTitle: "EARTH-701306",
+        offset: [-11.6, 11.2],
+        showUniverseMarker: true,
+        universe: "Earth-701306",
+    },
+    {
+        anchorBefore: "wandavision",
+        cardDepthOffset: 1.7,
         detachedOffsetX: -62,
         markerCaption: "BLADE",
         markerTitle: "EARTH-26320",

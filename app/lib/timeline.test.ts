@@ -23,7 +23,7 @@ describe("chronology", () => {
 });
 
 describe("Sony chronology", () => {
-    test("places legacy Spider-Man films before Fantastic Four and Blade references", () => {
+    test("places legacy Spider-Man films before the other reference blocks", () => {
         const sony = chronology.filter((entry) => entry.universe === "Earth-96283");
         expect(
             sony.map((entry) => [entry.slug, entry.placement, entry.releaseDate, entry.imdbUrl])
@@ -51,7 +51,7 @@ describe("Sony chronology", () => {
             ],
         ]);
         const foxIndex = ordered.findIndex((entry) => entry.slug === "logan-2017");
-        expect(ordered.slice(foxIndex + 1, foxIndex + 13).map((entry) => entry.slug)).toEqual([
+        expect(ordered.slice(foxIndex + 1, foxIndex + 15).map((entry) => entry.slug)).toEqual([
             ...sony.map((entry) => entry.slug),
             ...andrew.map((entry) => entry.slug),
             "fantastic-four-2005",
@@ -60,6 +60,8 @@ describe("Sony chronology", () => {
             "blade-1998",
             "blade-ii-2002",
             "blade-trinity-2004",
+            "daredevil-2003",
+            "elektra-2005",
             "what-if-season-1",
         ]);
         const captainIndex = ordered.findIndex((entry) => entry.slug === "captain-marvel");
@@ -144,12 +146,14 @@ describe("Fox X-Men chronology", () => {
             (entry) => entry.universe === "Earth-121698" || entry.universe === "Earth-15866"
         );
         const blade = chronology.filter((entry) => entry.universe === "Earth-26320");
-        expect(ordered.slice(start, start + 26).map((entry) => entry.slug)).toEqual([
+        const legacyDaredevil = chronology.filter((entry) => entry.universe === "Earth-701306");
+        expect(ordered.slice(start, start + 28).map((entry) => entry.slug)).toEqual([
             "loki-season-1",
             ...foxExpected.map(([slug]) => slug),
             ...sony.map((entry) => entry.slug),
             ...fantasticFour.map((entry) => entry.slug),
             ...blade.map((entry) => entry.slug),
+            ...legacyDaredevil.map((entry) => entry.slug),
             "what-if-season-1",
         ]);
         const lokiSeasonTwo = ordered.findIndex((entry) => entry.slug === "loki-season-2");
@@ -230,6 +234,7 @@ describe("timeline filters", () => {
             blade: 3,
             "fantastic-four": 4,
             "fox-x-men": 14,
+            "legacy-daredevil": 2,
             "marvel-zombies": 1,
             mcu: 77,
             multiverse: 5,

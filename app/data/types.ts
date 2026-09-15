@@ -25,6 +25,7 @@ export type ContentStatus = "released" | "announced";
 
 export type Saga =
     | "Blade Universe"
+    | "Daredevil and Elektra Universe"
     | "Fantastic Four Universe"
     | "Infinity Saga"
     | "Multiverse Saga"

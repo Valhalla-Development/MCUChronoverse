@@ -18,6 +18,7 @@ export const universeFilters = [
     { label: "Sony Spider-Man", value: "sony-spider-man" },
     { label: "Fox X-Men", value: "fox-x-men" },
     { label: "Blade", value: "blade" },
+    { label: "Legacy Daredevil", value: "legacy-daredevil" },
     { label: "TVA & Multiverse", value: "multiverse" },
     { label: "Marvel Zombies", value: "marvel-zombies" },
     { label: "Fantastic Four", value: "fantastic-four" },
@@ -160,6 +161,9 @@ export function universeFilterForEntry(entry: TimelineEntry): TimelineUniverseFi
     }
     if (entry.universe === "Earth-26320") {
         return "blade";
+    }
+    if (entry.universe === "Earth-701306") {
+        return "legacy-daredevil";
     }
     if (entry.universe === "TBD") {
         return "unconfirmed";
