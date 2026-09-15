@@ -7,7 +7,8 @@ type EnrichedTimelineFields = Pick<
 >;
 
 type CuratedTimelineEntry = Omit<TimelineEntry, keyof EnrichedTimelineFields> &
-    Partial<EnrichedTimelineFields>;
+    Partial<EnrichedTimelineFields> &
+    Pick<TimelineEntry, "imdbUrl">;
 
 interface TitleMetadataRecord {
     source: EnrichedTimelineFields | null;
@@ -29,6 +30,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 10,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt13968252/",
         phase: "Phase Six",
         placement: "1260 BC to 1896 AD",
         releaseDate: "2025-08-01",
@@ -45,6 +47,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
             after: true,
             during: false,
         },
+        imdbUrl: "https://www.imdb.com/title/tt0458339/",
         phase: "Phase One",
         placement: "1943 to 1945",
         releaseDate: "2011-07-22",
@@ -57,6 +60,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 30,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt3475734/",
         phase: "Phase Two",
         placement: "1946 to 1947",
         releaseDate: "2015-01-06",
@@ -69,6 +73,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 40,
         contentType: "one-shot",
+        imdbUrl: "https://www.imdb.com/title/tt3067038/",
         phase: "Phase Two",
         placement: "1946",
         releaseDate: "2013-09-24",
@@ -82,6 +87,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 50,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt4154664/",
         phase: "Phase Three",
         placement: "1995",
         releaseDate: "2019-03-08",
@@ -95,6 +101,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 60,
         contentType: "film",
         creditScenes: { after: true, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt0371746/",
         phase: "Phase One",
         placement: "2008",
         releaseDate: "2008-05-02",
@@ -108,6 +115,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 70,
         contentType: "film",
         creditScenes: { after: true, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt1228705/",
         phase: "Phase One",
         placement: "2010",
         releaseDate: "2010-05-07",
@@ -121,6 +129,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 80,
         contentType: "film",
         creditScenes: { after: false, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt0800080/",
         phase: "Phase One",
         placement: "2010",
         releaseDate: "2008-06-13",
@@ -133,6 +142,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 90,
         contentType: "one-shot",
+        imdbUrl: "https://www.imdb.com/title/tt2011109/",
         phase: "Phase One",
         placement: "2010",
         releaseDate: "2011-10-25",
@@ -146,6 +156,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 100,
         contentType: "film",
         creditScenes: { after: true, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt0800369/",
         phase: "Phase One",
         placement: "2010",
         releaseDate: "2011-05-06",
@@ -172,6 +183,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 120,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt0848228/",
         phase: "Phase One",
         placement: "2012",
         releaseDate: "2012-05-04",
@@ -184,6 +196,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 130,
         contentType: "one-shot",
+        imdbUrl: "https://www.imdb.com/title/tt2247732/",
         phase: "Phase One",
         placement: "2012",
         releaseDate: "2012-09-25",
@@ -197,6 +210,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 140,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt1981115/",
         phase: "Phase Two",
         placement: "2013",
         releaseDate: "2013-11-08",
@@ -210,6 +224,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 150,
         contentType: "film",
         creditScenes: { after: true, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt1300854/",
         phase: "Phase Two",
         placement: "Christmas 2013",
         releaseDate: "2013-05-03",
@@ -222,6 +237,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 160,
         contentType: "one-shot",
+        imdbUrl: "https://www.imdb.com/title/tt3438640/",
         phase: "Phase Two",
         placement: "Early 2014",
         releaseDate: "2014-02-25",
@@ -235,6 +251,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 170,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt1843866/",
         phase: "Phase Two",
         placement: "2014",
         releaseDate: "2014-04-04",
@@ -248,6 +265,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 180,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt2015381/",
         phase: "Phase Two",
         placement: "2014",
         releaseDate: "2014-08-01",
@@ -261,6 +279,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 190,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt3896198/",
         phase: "Phase Three",
         placement: "2014",
         releaseDate: "2017-05-05",
@@ -273,6 +292,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 200,
         contentType: "short",
+        imdbUrl: "https://www.imdb.com/title/tt13623148/",
         phase: "Phase Four",
         placement: "2014",
         releaseDate: "2022-08-10",
@@ -285,6 +305,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 210,
         contentType: "short",
+        imdbUrl: "https://www.imdb.com/title/tt13623148/",
         phase: "Phase Five",
         placement: "2014",
         releaseDate: "2023-09-06",
@@ -297,6 +318,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 220,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt3322312/",
         phase: "Phase Two",
         placement: "2014",
         releaseDate: "2015-04-10",
@@ -309,6 +331,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 230,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt2357547/",
         phase: "Phase Two",
         placement: "2015",
         releaseDate: "2015-11-20",
@@ -322,6 +345,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 240,
         contentType: "film",
         creditScenes: { after: false, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt2395427/",
         phase: "Phase Two",
         placement: "2015",
         releaseDate: "2015-05-01",
@@ -335,6 +359,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 250,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt0478970/",
         phase: "Phase Two",
         placement: "2015",
         releaseDate: "2015-07-17",
@@ -347,6 +372,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 260,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt3322312/",
         phase: "Phase Three",
         placement: "2015",
         releaseDate: "2016-03-18",
@@ -359,6 +385,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 270,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt3322314/",
         phase: "Phase Three",
         placement: "2015",
         releaseDate: "2016-09-30",
@@ -371,6 +398,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 280,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt3322310/",
         phase: "Phase Three",
         placement: "2016",
         releaseDate: "2017-03-17",
@@ -383,6 +411,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 290,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt4230076/",
         phase: "Phase Three",
         placement: "2016",
         releaseDate: "2017-08-18",
@@ -396,6 +425,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 300,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt3498820/",
         phase: "Phase Three",
         placement: "2016",
         releaseDate: "2016-05-06",
@@ -409,6 +439,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 310,
         contentType: "film",
         creditScenes: { after: true, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt3480822/",
         phase: "Phase Four",
         placement: "2016",
         releaseDate: "2021-07-09",
@@ -422,6 +453,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 320,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt1825683/",
         phase: "Phase Three",
         placement: "2016",
         releaseDate: "2018-02-16",
@@ -435,6 +467,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 330,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt2250912/",
         phase: "Phase Three",
         placement: "2016",
         releaseDate: "2017-07-07",
@@ -447,6 +480,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 340,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt5675620/",
         phase: "Phase Three",
         placement: "2016",
         releaseDate: "2017-11-17",
@@ -460,6 +494,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 350,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt1211837/",
         phase: "Phase Three",
         placement: "2016 to 2017",
         releaseDate: "2016-11-04",
@@ -472,6 +507,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 360,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt2357547/",
         phase: "Phase Three",
         placement: "2017",
         releaseDate: "2018-03-08",
@@ -484,6 +520,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 370,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt3322314/",
         phase: "Phase Three",
         placement: "2017",
         releaseDate: "2018-06-22",
@@ -496,6 +533,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 380,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt3322310/",
         phase: "Phase Three",
         placement: "2017",
         releaseDate: "2018-09-07",
@@ -508,6 +546,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 390,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt3322312/",
         phase: "Phase Three",
         placement: "2017",
         releaseDate: "2018-10-19",
@@ -521,6 +560,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 400,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt3501632/",
         phase: "Phase Three",
         placement: "2017",
         releaseDate: "2017-11-03",
@@ -533,6 +573,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 410,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt5675620/",
         phase: "Phase Three",
         placement: "2018",
         releaseDate: "2019-01-18",
@@ -545,6 +586,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 420,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt2357547/",
         phase: "Phase Three",
         placement: "2018",
         releaseDate: "2019-06-14",
@@ -558,6 +600,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 430,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt5095030/",
         phase: "Phase Three",
         placement: "2018",
         releaseDate: "2018-07-06",
@@ -571,6 +614,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 440,
         contentType: "film",
         creditScenes: { after: true, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt4154756/",
         phase: "Phase Three",
         placement: "2018",
         releaseDate: "2018-04-27",
@@ -584,6 +628,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 450,
         contentType: "film",
         creditScenes: { after: true, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt4154796/",
         phase: "Phase Three",
         placement: "2018 and 2023",
         releaseDate: "2019-04-26",
@@ -596,6 +641,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 460,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt9140554/",
         phase: "Phase Four",
         placement: "Outside linear time",
         releaseDate: "2021-06-09",
@@ -608,6 +654,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 470,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt10168312/",
         phase: "Phase Four",
         placement: "Multiverse",
         releaseDate: "2021-08-11",
@@ -620,6 +667,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 480,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt16027014/",
         phase: "Phase Six",
         placement: "Multiverse",
         releaseDate: "2025-09-24",
@@ -632,6 +680,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 490,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt9140560/",
         phase: "Phase Four",
         placement: "2023",
         releaseDate: "2021-01-15",
@@ -645,6 +694,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 500,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt9376612/",
         phase: "Phase Four",
         placement: "2024",
         releaseDate: "2021-09-03",
@@ -657,6 +707,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 510,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt9208876/",
         phase: "Phase Four",
         placement: "2024",
         releaseDate: "2021-03-19",
@@ -669,6 +720,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 520,
         contentType: "short",
+        imdbUrl: "https://www.imdb.com/title/tt11107678/",
         phase: "Phase Three",
         placement: "Summer 2024",
         releaseDate: "2019-09-17",
@@ -682,6 +734,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 530,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt6320628/",
         phase: "Phase Three",
         placement: "2024",
         releaseDate: "2019-07-02",
@@ -695,6 +748,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 540,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt9032400/",
         phase: "Phase Four",
         placement: "2024",
         releaseDate: "2021-11-05",
@@ -773,6 +827,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 600,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt10872600/",
         phase: "Phase Four",
         placement: "Late 2024",
         releaseDate: "2021-12-17",
@@ -786,6 +841,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 610,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt9419884/",
         phase: "Phase Four",
         placement: "2024",
         releaseDate: "2022-05-06",
@@ -798,6 +854,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 620,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt10160804/",
         phase: "Phase Four",
         placement: "Christmas 2024",
         releaseDate: "2021-11-24",
@@ -810,6 +867,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 630,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt10234724/",
         phase: "Phase Four",
         placement: "2025",
         releaseDate: "2022-03-30",
@@ -823,6 +881,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 640,
         contentType: "film",
         creditScenes: { after: false, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt9114286/",
         phase: "Phase Four",
         placement: "2025",
         releaseDate: "2022-11-11",
@@ -835,6 +894,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 650,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt13966962/",
         phase: "Phase Five",
         placement: "2025",
         releaseDate: "2024-01-09",
@@ -847,6 +907,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 660,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt10857160/",
         phase: "Phase Four",
         placement: "2025",
         releaseDate: "2022-08-18",
@@ -859,6 +920,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 670,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt10857164/",
         phase: "Phase Four",
         placement: "2025",
         releaseDate: "2022-06-08",
@@ -872,6 +934,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 680,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt10648342/",
         phase: "Phase Four",
         placement: "2025",
         releaseDate: "2022-07-08",
@@ -884,6 +947,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 690,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt13623126/",
         phase: "Phase Five",
         placement: "2025",
         releaseDate: "2025-06-24",
@@ -896,6 +960,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 700,
         contentType: "special",
+        imdbUrl: "https://www.imdb.com/title/tt15318872/",
         phase: "Phase Four",
         placement: "Late 2025",
         releaseDate: "2022-10-07",
@@ -908,6 +973,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 710,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt13157618/",
         phase: "Phase Five",
         placement: "2026",
         releaseDate: "2023-06-21",
@@ -921,6 +987,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 720,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt10676048/",
         phase: "Phase Five",
         placement: "2026",
         releaseDate: "2023-11-10",
@@ -933,6 +1000,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 730,
         contentType: "special",
+        imdbUrl: "https://www.imdb.com/title/tt13623136/",
         phase: "Phase Four",
         placement: "Christmas 2025",
         releaseDate: "2022-11-25",
@@ -946,6 +1014,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 740,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt6791350/",
         phase: "Phase Five",
         placement: "2026",
         releaseDate: "2023-05-05",
@@ -959,6 +1028,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 750,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt10954600/",
         phase: "Phase Five",
         placement: "2026",
         releaseDate: "2023-02-17",
@@ -971,6 +1041,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 760,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt9140554/",
         phase: "Phase Five",
         placement: "Outside linear time",
         releaseDate: "2023-10-05",
@@ -983,6 +1054,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 770,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt10168312/",
         phase: "Phase Five",
         placement: "Multiverse",
         releaseDate: "2023-12-22",
@@ -995,6 +1067,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 780,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt15571732/",
         phase: "Phase Five",
         placement: "2026",
         releaseDate: "2024-09-18",
@@ -1007,6 +1080,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 790,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt10168312/",
         phase: "Phase Five",
         placement: "Multiverse",
         releaseDate: "2024-12-22",
@@ -1019,6 +1093,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 800,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt18923754/",
         phase: "Phase Five",
         placement: "Late 2026 to early 2027",
         releaseDate: "2025-03-04",
@@ -1032,6 +1107,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 810,
         contentType: "film",
         creditScenes: { after: true, during: false },
+        imdbUrl: "https://www.imdb.com/title/tt14513804/",
         phase: "Phase Five",
         placement: "2027",
         releaseDate: "2025-02-14",
@@ -1045,6 +1121,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 820,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt20969586/",
         phase: "Phase Five",
         placement: "2027",
         releaseDate: "2025-05-02",
@@ -1058,6 +1135,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 830,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt10676052/",
         phase: "Phase Six",
         placement: "1960s alternate universe",
         releaseDate: "2025-07-25",
@@ -1070,6 +1148,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 840,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt21066182/",
         phase: "Phase Six",
         placement: "2027",
         releaseDate: "2026-01-27",
@@ -1082,6 +1161,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 850,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt18923754/",
         phase: "Phase Six",
         placement: "2027",
         releaseDate: "2026-03-24",
@@ -1094,6 +1174,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 860,
         contentType: "special",
+        imdbUrl: "https://www.imdb.com/title/tt36042156/",
         phase: "Phase Six",
         placement: "2027",
         releaseDate: "2026-05-12",
@@ -1107,6 +1188,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 870,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt22084616/",
         phase: "Phase Six",
         placement: "2028",
         releaseDate: "2026-07-31",
@@ -1119,6 +1201,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 880,
         contentType: "series",
+        imdbUrl: "https://www.imdb.com/title/tt23112594/",
         phase: "Phase Six",
         placement: "TBD",
         releaseDate: "2026-10-14",
@@ -1304,6 +1387,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
         chronologyOrder: 1010,
         contentType: "film",
         creditScenes: { after: true, during: true },
+        imdbUrl: "https://www.imdb.com/title/tt6263850/",
         note: "Wade’s home is Earth-10005; the Happy Hogan interview is a visit to Earth-616. The story also visits the TVA and the Void. The connection before Avengers: Doomsday groups the Fox films for viewing, not a confirmed merger of universes or a confirmed chronology relative to Doomsday.",
         phase: "Phase Five",
         placement: "2024 and outside linear time",
@@ -1331,6 +1415,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 1030,
         contentType: "film",
+        imdbUrl: "https://www.imdb.com/title/tt21357150/",
         note: "The Fox connection marks a viewing-order crossover. It does not mean those films take place on Earth-616. The in-universe date and relationship to Logan’s 2029 setting remain unconfirmed.",
         phase: "Phase Six",
         placement: "TBD",
@@ -1344,6 +1429,7 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     {
         chronologyOrder: 1040,
         contentType: "film",
+        imdbUrl: "https://www.imdb.com/title/tt21361444/",
         phase: "Phase Six",
         placement: "TBD",
         releaseDate: "2027-12-17",
@@ -1357,6 +1443,13 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
 
 export const chronology: readonly TimelineEntry[] = curatedChronology.map((entry) => {
     const metadata = metadataBySlug[entry.slug];
+    if (
+        metadata?.status === "resolved" &&
+        metadata.source?.imdbUrl !== entry.imdbUrl &&
+        process.env.TIMELINE_ALLOW_INCOMPLETE_METADATA !== "1"
+    ) {
+        throw new Error(`Cached IMDb identity does not match curated seed for ${entry.slug}`);
+    }
     const mergedEntry = {
         ...(metadata?.status === "resolved" ? metadata.source : null),
         ...entry,

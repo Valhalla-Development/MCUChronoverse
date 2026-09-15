@@ -813,13 +813,13 @@
     "fetchedAt": "2026-09-14T10:47:27.854Z",
     "requestedTitle": "Loki Season 2",
     "source": {
-      "description": "The cast and crew of Loki: Season 2 pull back the curtain on Loki's latest MCU adventure.",
-      "genres": ["documentary"],
-      "imdbUrl": "https://www.imdb.com/title/tt28889780/",
-      "posterUrl": "https://m.media-amazon.com/images/M/MV5BNTliODE5MmEtMjRmMi00N2Y3LTgwNzgtNjI2YjM4MGVjZjdmXkEyXkFqcGc@._V1_.jpg",
-      "rating": 7.6,
-      "runtime": "58m",
-      "traktUrl": "https://app.trakt.tv/movies/marvel-studios-assembled-the-making-of-loki-season-2-2023"
+      "description": "The mercurial villain Loki resumes his role as the God of Mischief in a new series that takes place after the events of “Avengers: Endgame.”",
+      "genres": ["action", "adventure", "fantasy", "sciFi"],
+      "imdbUrl": "https://www.imdb.com/title/tt9140554/",
+      "posterUrl": "https://m.media-amazon.com/images/M/MV5BYzA2YjM2ZWQtYTZhMS00OTI3LTlhYzQtZjBiZWZkMDdlNjA5XkEyXkFqcGc@._V1_.jpg",
+      "rating": 8.2,
+      "runtime": "50m",
+      "traktUrl": "https://app.trakt.tv/shows/loki"
     },
     "status": "resolved"
   },
