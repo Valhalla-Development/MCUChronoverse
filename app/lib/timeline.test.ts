@@ -129,18 +129,16 @@ const fox = filterTimeline(chronology, {
 });
 
 describe("Fox X-Men chronology", () => {
-    test("orders the Fox stories by their main setting", () => {
+    test("places the Fox stories after Loki Season 1 for reference context", () => {
         const ordered = filterTimeline(chronology, emptyTimelineFilters);
-        const start = ordered.findIndex((entry) => entry.slug === "visionquest");
-        expect(ordered.slice(start, start + 16).map((entry) => entry.slug)).toEqual([
-            "visionquest",
-            ...foxExpected.slice(0, -1).map(([slug]) => slug),
-            "deadpool-and-wolverine",
-            "logan-2017",
-            "avengers-doomsday",
+        const start = ordered.findIndex((entry) => entry.slug === "loki-season-1");
+        expect(ordered.slice(start, start + 15).map((entry) => entry.slug)).toEqual([
+            "loki-season-1",
+            ...foxExpected.map(([slug]) => slug),
+            "what-if-season-1",
         ]);
-        const formerStart = ordered.findIndex((entry) => entry.slug === "what-if-season-2");
-        expect(ordered.at(formerStart + 1)?.slug).toBe("agatha-all-along");
+        const lokiSeasonTwo = ordered.findIndex((entry) => entry.slug === "loki-season-2");
+        expect(ordered.at(lokiSeasonTwo + 1)?.slug).toBe("deadpool-and-wolverine");
         expect(fox.at(-1)?.slug).toBe("logan-2017");
     });
 
@@ -201,8 +199,8 @@ describe("timeline filters", () => {
             universes: ["fox-x-men"],
         });
         expect(chronological.slice(-2).map((entry) => entry.slug)).toEqual([
-            "deadpool-and-wolverine",
             "logan-2017",
+            "deadpool-and-wolverine",
         ]);
         const release = filterTimeline(chronological, {
             ...emptyTimelineFilters,
