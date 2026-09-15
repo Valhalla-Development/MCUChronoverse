@@ -752,6 +752,27 @@ a {
   color: #bfc0cf;
 }
 
+.timeline-detail-chronology-warning {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.65rem 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: rgb(255 226 193 / 78%);
+  background: rgb(255 138 61 / 7%);
+  border: 1px solid rgb(255 173 85 / 28%);
+  border-radius: 0.65rem;
+}
+
+.timeline-detail-chronology-warning strong {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: #ffad55;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
 .timeline-detail-note {
   padding-left: 0.75rem;
   margin: 0.75rem 0 0;

@@ -39,6 +39,7 @@ export interface CreditScenesInfo {
 
 export interface TimelineEntry {
     chronologyOrder: number;
+    chronologyWarning?: string;
     contentType: ContentType;
     creditScenes?: CreditScenesInfo;
     description: string;

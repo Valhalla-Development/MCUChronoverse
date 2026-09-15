@@ -669,6 +669,8 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     },
     {
         chronologyOrder: 480,
+        chronologyWarning:
+            "Contains major spoilers for X-Men, X2, and X-Men: The Last Stand. First-time viewers should watch the original X-Men trilogy before this film.",
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt1877832/",
@@ -797,6 +799,8 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     },
     {
         chronologyOrder: 570,
+        chronologyWarning:
+            "Contains major spoilers for Logan. First-time viewers should watch Logan before this film.",
         contentType: "film",
         creditScenes: { after: true, during: true },
         imdbUrl: "https://www.imdb.com/title/tt5463162/",
@@ -1029,6 +1033,8 @@ export const curatedChronology: readonly CuratedTimelineEntry[] = [
     },
     {
         chronologyOrder: 740,
+        chronologyWarning:
+            "Contains spoilers for character introductions in Shang-Chi and the Legend of the Ten Rings, The Falcon and the Winter Soldier, Hawkeye, Ms. Marvel, and Ironheart. First-time viewers should watch those titles first.",
         contentType: "series",
         imdbUrl: "https://www.imdb.com/title/tt16027014/",
         phase: "Phase Six",

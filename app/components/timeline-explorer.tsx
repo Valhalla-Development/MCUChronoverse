@@ -101,6 +101,7 @@ interface TimelineDetailProps {
     entry: TimelineEntry;
     onClose: () => void;
     onToggleWatched: () => void;
+    order: TimelineOrder;
     watched: boolean;
 }
 
@@ -228,10 +229,16 @@ function TimelineDetailMetadata({ entry }: { entry: TimelineEntry }) {
     );
 }
 
-function TimelineDetailStory({ entry }: { entry: TimelineEntry }) {
+function TimelineDetailStory({ entry, order }: Pick<TimelineDetailProps, "entry" | "order">) {
     return (
         <>
             <p className="timeline-detail-description">{entry.description}</p>
+            {order === "chronology" && entry.chronologyWarning ? (
+                <aside className="timeline-detail-chronology-warning">
+                    <strong>Chronological-order spoiler</strong>
+                    <span>{entry.chronologyWarning}</span>
+                </aside>
+            ) : null}
             {entry.note ? <p className="timeline-detail-note">{entry.note}</p> : null}
             {entry.genres && entry.genres.length > 0 ? (
                 <div className="timeline-detail-genres">
@@ -248,7 +255,7 @@ function TimelineDetailWatch({
     onToggleWatched,
     watchable,
     watched,
-}: Omit<TimelineDetailProps, "entry" | "onClose"> & { watchable: boolean }) {
+}: Omit<TimelineDetailProps, "entry" | "onClose" | "order"> & { watchable: boolean }) {
     let watchAction = "Unavailable";
     let watchLabel = "Not released yet";
     if (watchable) {
@@ -355,7 +362,7 @@ function TimelineDetailFooter({ entry }: { entry: TimelineEntry }) {
     );
 }
 
-function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDetailProps) {
+function TimelineDetail({ entry, onClose, onToggleWatched, order, watched }: TimelineDetailProps) {
     const watchable = isWatchable(entry);
     return (
         <motion.aside
@@ -378,7 +385,7 @@ function TimelineDetail({ entry, onClose, onToggleWatched, watched }: TimelineDe
                 >
                     <TimelineDetailHeading entry={entry} onClose={onClose} />
                     <TimelineDetailMetadata entry={entry} />
-                    <TimelineDetailStory entry={entry} />
+                    <TimelineDetailStory entry={entry} order={order} />
                     <TimelineDetailWatch
                         onToggleWatched={onToggleWatched}
                         watchable={watchable}
@@ -993,6 +1000,7 @@ export function TimelineExplorer({ entries }: TimelineExplorerProps) {
                             key={selectedEntry.slug}
                             onClose={closeDetail}
                             onToggleWatched={toggleSelectedWatched}
+                            order={filters.order}
                             watched={watchedSlugs.includes(selectedEntry.slug)}
                         />
                     ) : null}
