@@ -29,21 +29,6 @@ export const metadata: Metadata = {
 
 const currentYear = new Date().getFullYear();
 
-const principles = [
-    {
-        label: "Story first",
-        text: "Entries follow in-universe chronology instead of release date, with broad placements marked honestly when the story leaves room for interpretation.",
-    },
-    {
-        label: "One shared map",
-        text: "Films, series, specials, shorts, and one-shots use the same data model and the same filters across both timeline views.",
-    },
-    {
-        label: "Built to branch",
-        text: "Earth-616 anchors the archive, while alternate universes, branching histories, and stories outside linear time are identified honestly.",
-    },
-];
-
 export default function AboutPage() {
     return (
         <main className="relative min-h-screen overflow-hidden">
@@ -105,24 +90,6 @@ export default function AboutPage() {
                             <UiIcon className="h-4 w-4" name="external-link" />
                         </Link>
                     </aside>
-                </div>
-
-                <div className="mt-16 grid gap-px border border-white/10 bg-white/10 md:grid-cols-3">
-                    {principles.map((principle, index) => (
-                        <article
-                            className="group relative bg-[#0a0b0e] p-6 transition-colors hover:bg-[#0d0e12] sm:p-8"
-                            key={principle.label}
-                        >
-                            <p className="font-mono text-[0.7rem] text-signal uppercase tracking-[0.16em]">
-                                Protocol 0{index + 1}
-                            </p>
-                            <span className="absolute top-0 left-0 h-px w-0 bg-signal transition-all duration-300 group-hover:w-full" />
-                            <h2 className="mt-10 font-semibold text-2xl tracking-[-0.03em]">
-                                {principle.label}
-                            </h2>
-                            <p className="mt-4 text-white/48 leading-7">{principle.text}</p>
-                        </article>
-                    ))}
                 </div>
 
                 <div className="mt-20 grid gap-10 border-white/10 border-t pt-12 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-16">
